@@ -1,3 +1,10 @@
+using AuthService.Proto;
+using Grpc.Net.Client;
+using ApiGateway.Dtos;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -16,38 +23,124 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromMinutes(5),
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
     options.Events = new JwtBearerEvents
     {
-        OnChallenge = context =>
-        {
-            context.HandleResponse();
-            context.Response.StatusCode = 401;
-            context.Response.ContentType = "application/json";
-            return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
-        }
+        // OnChallenge = context =>
+        // {
+        //     context.HandleResponse();
+        //     context.Response.StatusCode = 401;
+        //     context.Response.ContentType = "application/json";
+        //     return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
+        // }
+        // OnMessageReceived = context =>
+        // {
+        //     var authHeader = context.Request.Headers["Authorization"].ToString();
+        //     if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+        //     {
+        //         context.Token = authHeader.Substring("Bearer ".Length).Trim();
+        //     }
+        //     Console.WriteLine($"Token received: {context.Token}");
+        //     return Task.CompletedTask;
+        // },
+        // OnAuthenticationFailed = context =>
+        // {
+        //     Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+        //     return Task.CompletedTask;
+        // },
+        // OnChallenge = context =>
+        // {
+        //     Console.WriteLine($"Challenge triggered: {context.Error}, {context.ErrorDescription}");
+        //     return Task.CompletedTask;
+        // }
     };
 });
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
+{
+    o.Address = new Uri("https://localhost:7254");
+});
+
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
 
 app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Headers.ContainsKey("Authorization"))
+    {
+        Console.WriteLine($"Header Authorization: {context.Request.Headers["Authorization"]}");
+    }
+    else
+    {
+        Console.WriteLine("Authorization header missing");
+    }
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization(); 
 
-app.MapGet();
+// routes
+app.MapGet("/users", async (HttpContext http, Auth.AuthClient authClient) =>
+{
+    var users = new List<UserDto>();
 
+    using var call = authClient.GetAllUsers(new Google.Protobuf.WellKnownTypes.Empty());
+
+    while (await call.ResponseStream.MoveNext(http.RequestAborted))
+    {
+        var curr = call.ResponseStream.Current;
+        users.Add(new UserDto(curr.Id, curr.Username, curr.Name));
+    }
+
+    return Results.Ok(users);
+}).RequireAuthorization();
+
+app.MapGet("/users/{id:int}", async (int id, Auth.AuthClient authClient) =>
+{
+    var user = await authClient.GetUserAsync(new GetUserModel { Id = id });
+    return user is null ? Results.NotFound() : Results.Ok(new UserDto
+    (
+        user.Id,
+        user.Username,
+        user.Name
+    ));
+}).RequireAuthorization();
+
+app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authClient) =>
+{
+    await authClient.RegisterAsync(new RegisterModel
+    {
+        Username = registerDto.Username,
+        Name = registerDto.Name,
+        Password = registerDto.Password
+    });
+
+    return Results.Ok(new { message = "User registered successfully" });
+});
+
+app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
+{
+    var jwt = await authClient.LoginAsync(new LoginModel
+    {
+        Username = loginDto.Username,
+        Password = loginDto.Password
+    });
+
+    return Results.Ok(new { token = jwt.Token });
+});
 
 app.Run();

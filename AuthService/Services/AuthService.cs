@@ -5,7 +5,6 @@ using Grpc.Core;
 using Microsoft.AspNetCore.Identity;
 using AuthService.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;

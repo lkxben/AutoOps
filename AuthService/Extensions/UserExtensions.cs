@@ -4,8 +4,6 @@ using AuthService.Proto;
 
 namespace AuthService.Extensions
 {
-
-
     public static class UserExtensions
     {
         public static UserDto ToDto(this User user) =>
