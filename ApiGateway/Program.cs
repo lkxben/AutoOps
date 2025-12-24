@@ -30,33 +30,13 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
-        // OnChallenge = context =>
-        // {
-        //     context.HandleResponse();
-        //     context.Response.StatusCode = 401;
-        //     context.Response.ContentType = "application/json";
-        //     return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
-        // }
-        // OnMessageReceived = context =>
-        // {
-        //     var authHeader = context.Request.Headers["Authorization"].ToString();
-        //     if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
-        //     {
-        //         context.Token = authHeader.Substring("Bearer ".Length).Trim();
-        //     }
-        //     Console.WriteLine($"Token received: {context.Token}");
-        //     return Task.CompletedTask;
-        // },
-        // OnAuthenticationFailed = context =>
-        // {
-        //     Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-        //     return Task.CompletedTask;
-        // },
-        // OnChallenge = context =>
-        // {
-        //     Console.WriteLine($"Challenge triggered: {context.Error}, {context.ErrorDescription}");
-        //     return Task.CompletedTask;
-        // }
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
+        }
     };
 });
 
@@ -64,31 +44,18 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
-    o.Address = new Uri("https://localhost:7254");
+    o.Address = new Uri(builder.Configuration.GetConnectionString("AuthService")!);
 });
 
 var app = builder.Build();
 
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
-// }
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
-
-app.Use(async (context, next) =>
-{
-    if (context.Request.Headers.ContainsKey("Authorization"))
-    {
-        Console.WriteLine($"Header Authorization: {context.Request.Headers["Authorization"]}");
-    }
-    else
-    {
-        Console.WriteLine("Authorization header missing");
-    }
-    await next();
-});
 
 app.UseAuthentication();
 app.UseAuthorization(); 
