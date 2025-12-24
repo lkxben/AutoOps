@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "AuthService.Proto";
+
+package Auth;
+
+service Auth {
+    rpc GetAllUsers (google.protobuf.Empty) returns (stream UserModel);
+    rpc GetUser (GetUserModel) returns (UserModel);
+    rpc Register (RegisterModel) returns (google.protobuf.Empty);
+    rpc Login (LoginModel) returns (JwtModel);
+}
+
+message GetUserModel {
+    int32 id = 1;
+}
+
+message UserModel {
+	int32 id = 1;
+    string username = 2;
+    string name = 3;
+}
+
+message LoginModel {
+    string username = 1;
+    string password = 2;
+}
+
+message RegisterModel {
+    string username = 1;
+    string name = 2;
+    string password = 3;
+}
+
+message JwtModel {
+    string token = 1;
+}

@@ -1,4 +1,4 @@
-namespace AuthService.Dtos;
+namespace ApiGateway.Dtos;
 
 public record class LoginDto(
     string Username,
