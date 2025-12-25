@@ -40,7 +40,9 @@ namespace AuthService.Protos
 		
         public override async Task<UserModel> GetUser(GetUserModel request, ServerCallContext context)
         {
-            var user = await _db.Users.FindAsync(request.Id);
+            if (!Guid.TryParse(request.Id, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user ID"));
+            var user = await _db.Users.FindAsync(userId);
             if (user == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "User not found"));

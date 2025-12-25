@@ -10,7 +10,7 @@ namespace AuthService.Extensions
         {
             return new UserModel
             {
-                Id = user.Id, 
+                Id = user.Id.ToString(),
                 Username = user.UserName!,
                 Name = user.Name
             };

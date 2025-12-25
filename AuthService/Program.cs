@@ -21,7 +21,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AuthServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection")));
-builder.Services.AddIdentity<User, Role>(options =>
+builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequireUppercase = false;

@@ -1,5 +1,6 @@
 using AuthService.Protos;
 using Grpc.Net.Client;
+using Grpc.Core;
 using ApiGateway.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -60,6 +61,27 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization(); 
 
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (RpcException ex)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = ex.StatusCode switch
+        {
+            StatusCode.NotFound => 404,
+            StatusCode.Unauthenticated => 401,
+            StatusCode.InvalidArgument => 400,
+            StatusCode.AlreadyExists => 409,
+            _ => 500
+        };
+        await context.Response.WriteAsJsonAsync(new { error = ex.Status.Detail });
+    }
+});
+
 // routes
 app.MapGet("/users", async (HttpContext http, Auth.AuthClient authClient) =>
 {
@@ -76,7 +98,7 @@ app.MapGet("/users", async (HttpContext http, Auth.AuthClient authClient) =>
     return Results.Ok(users);
 }).RequireAuthorization();
 
-app.MapGet("/users/{id:int}", async (int id, Auth.AuthClient authClient) =>
+app.MapGet("/users/{id}", async (string id, Auth.AuthClient authClient) =>
 {
     var user = await authClient.GetUserAsync(new GetUserModel { Id = id });
     return user is null ? Results.NotFound() : Results.Ok(new UserDto

@@ -14,11 +14,11 @@ service Auth {
 }
 
 message GetUserModel {
-    int32 id = 1;
+    string id = 1;
 }
 
 message UserModel {
-	int32 id = 1;
+	string id = 1;
     string username = 2;
     string name = 3;
 }
