@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // services
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(5001, listenOptions =>
+    options.ListenLocalhost(5002, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
         listenOptions.UseHttps();
