@@ -2,11 +2,11 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-option csharp_namespace = "WorkflowTaskService.Proto";
+option csharp_namespace = "WorkflowService.Protos";
 
-package WorkflowTask;
+package WorkflowTaskSvc;
 
-service WorkflowTask {
+service WorkflowTaskSvc {
     rpc CreateTask (CreateWorkflowTaskModel) returns (CreateWorkflowTaskResponse);
     rpc GetTask (GetWorkflowTaskModel) returns (WorkflowTaskModel);
 }
@@ -32,6 +32,7 @@ enum WorkflowTaskStatus {
 
 message WorkflowTaskModel {
     string id = 1;
-    string results = 2;
-    TaskStatus status = 3;
+    string inputData = 2;
+    WorkflowTaskStatus status = 3;
+    string results = 4;
 }

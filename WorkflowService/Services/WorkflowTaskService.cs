@@ -4,37 +4,45 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
+using System.Data.Common;
+using WorkflowService.Data;
+using WorkflowService.Entities;
+using WorkflowService.Extensions;
+using WorkflowService.Protos;
 
-namespace WorkflowTaskService.Proto
+namespace WorkflowService.Protos
 {
-    public class WorkflowTaskImp : WorkflowTask.WorkflowTaskBase
+    public class WorkflowTaskSvcImp : WorkflowTaskSvc.WorkflowTaskSvcBase
 	{
-		private readonly ILogger<WorkflowTaskImp> _logger;
-        private readonly AuthServiceContext _db;
+		private readonly ILogger<WorkflowTaskSvcImp> _logger;
+        private readonly WorkflowServiceContext _db;
         private readonly IConfiguration _configuration;
-		public WorkflowTaskImp(ILogger<WorkflowTaskImp> logger, AuthServiceContext db, IConfiguration configuration) 
+		public WorkflowTaskSvcImp(ILogger<WorkflowTaskSvcImp> logger, WorkflowServiceContext db, IConfiguration configuration) 
 		{
 			_logger = logger;
             _db = db;
             _configuration = configuration;
 		}
 
-        public override async Task CreateTask(CreateWorkflowTaskModel request, ServerCallContext context)
+        public override async Task<CreateWorkflowTaskResponse> CreateTask(CreateWorkflowTaskModel request, ServerCallContext context)
         {
-            var users = await _db.Users.Select(user => user.ToModel()).ToListAsync(); 
-            foreach (var user in users)
+            var task = new WorkflowTask
             {
-                await responseStream.WriteAsync(user);
-            }
+                InputData = request.InputData
+            };
+            _db.WorkflowTasks.Add(task);
+            await _db.SaveChangesAsync();
+            return new CreateWorkflowTaskResponse { Id = task.Id.ToString() };
         }
 
-        public override async Task GetTask(GetWorkflowTaskModel request, ServerCallContext context)
+        public override async Task<WorkflowTaskModel> GetTask(GetWorkflowTaskModel request, ServerCallContext context)
         {
-            var users = await _db.Users.Select(user => user.ToModel()).ToListAsync(); 
-            foreach (var user in users)
-            {
-                await responseStream.WriteAsync(user);
-            }
+            if (!Guid.TryParse(request.Id, out var taskId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid task ID"));
+            var task = await _db.WorkflowTasks.SingleOrDefaultAsync(t => t.Id == taskId);
+            if (task == null)
+                throw new RpcException(new Status(StatusCode.NotFound, "Task not found"));
+            return task.ToModel();
         }
 	}
 }
