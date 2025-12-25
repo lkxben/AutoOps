@@ -3,6 +3,7 @@ using WorkflowService.Entities;
 using Microsoft.EntityFrameworkCore;
 using WorkflowService.Protos;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,22 @@ builder.Services.AddDbContext<WorkflowServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection")));
 
 builder.Services.AddGrpc();
+
+var rabbitMQSettings = builder.Configuration.GetSection("RabbitMQSettings").Get<RabbitMQSettings>();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(rabbitMQSettings.Host, 6000, "/", h =>
+        {
+            h.Username(rabbitMQSettings.Username);
+            h.Password(rabbitMQSettings.Password);
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 

@@ -9,6 +9,8 @@ using WorkflowService.Data;
 using WorkflowService.Entities;
 using WorkflowService.Extensions;
 using WorkflowService.Protos;
+using MassTransit;
+using Contracts.Workflow;
 
 namespace WorkflowService.Protos
 {
@@ -16,12 +18,12 @@ namespace WorkflowService.Protos
 	{
 		private readonly ILogger<WorkflowTaskSvcImp> _logger;
         private readonly WorkflowServiceContext _db;
-        private readonly IConfiguration _configuration;
-		public WorkflowTaskSvcImp(ILogger<WorkflowTaskSvcImp> logger, WorkflowServiceContext db, IConfiguration configuration) 
+        private readonly IPublishEndpoint _publishEndpoint;
+		public WorkflowTaskSvcImp(ILogger<WorkflowTaskSvcImp> logger, WorkflowServiceContext db, IPublishEndpoint publishEndpoint) 
 		{
 			_logger = logger;
             _db = db;
-            _configuration = configuration;
+            _publishEndpoint = publishEndpoint;
 		}
 
         public override async Task<CreateWorkflowTaskResponse> CreateTask(CreateWorkflowTaskModel request, ServerCallContext context)
@@ -32,6 +34,7 @@ namespace WorkflowService.Protos
             };
             _db.WorkflowTasks.Add(task);
             await _db.SaveChangesAsync();
+            await _publishEndpoint.Publish(new WorkflowTaskCreated(task.Id, task.InputData));
             return new CreateWorkflowTaskResponse { Id = task.Id.ToString() };
         }
 

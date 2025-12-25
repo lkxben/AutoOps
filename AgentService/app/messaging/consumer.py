@@ -5,12 +5,17 @@ from app.config import settings
 
 async def start_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
-    async with connection:
-        channel = await connection.channel()
-        queue = await channel.declare_queue(settings.TASK_QUEUE, durable=True)
+    channel = await connection.channel()
 
-        async with queue.iterator() as queue_iter:
-            async for message in queue_iter:
-                async with message.process():
-                    payload = json.loads(message.body)
-                    await handle_task(payload)
+    queue = await channel.declare_queue(
+        settings.TASK_QUEUE,
+        durable=True
+    )
+
+    await queue.bind(settings.TASK_EXCHANGE)
+
+    async with queue.iterator() as queue_iter:
+        async for message in queue_iter:
+            async with message.process():
+                payload = json.loads(message.body)
+                await handle_task(payload)
