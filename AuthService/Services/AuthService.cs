@@ -1,5 +1,5 @@
 using AuthService.Data;
-using AuthService.Entities.User;
+using AuthService.Entities;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +10,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace AuthService.Proto
+namespace AuthService.Protos
 {
     public class AuthServiceImp : Auth.AuthBase
 	{

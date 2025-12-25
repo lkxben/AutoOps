@@ -1,5 +1,5 @@
-using AuthService.Entities.User;
-using AuthService.Proto;
+using AuthService.Entities;
+using AuthService.Protos;
 
 namespace AuthService.Extensions
 {

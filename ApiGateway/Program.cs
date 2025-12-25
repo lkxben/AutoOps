@@ -1,4 +1,4 @@
-using AuthService.Proto;
+using AuthService.Protos;
 using Grpc.Net.Client;
 using ApiGateway.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

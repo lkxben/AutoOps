@@ -1,8 +1,8 @@
 using AuthService.Data;
-using AuthService.Entities.User;
+using AuthService.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using AuthService.Proto;
+using AuthService.Protos;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
