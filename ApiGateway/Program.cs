@@ -1,4 +1,5 @@
 using AuthService.Protos;
+using WorkflowService.Protos;
 using Grpc.Net.Client;
 using Grpc.Core;
 using ApiGateway.Dtos;
@@ -46,6 +47,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
     o.Address = new Uri(builder.Configuration.GetConnectionString("AuthService")!);
+});
+
+builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
+{
+    o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
 });
 
 var app = builder.Build();
@@ -130,6 +136,28 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
     });
 
     return Results.Ok(new { token = jwt.Token });
+});
+
+app.MapGet("/tasks/{id}", async (string id, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
+{
+    var task = await wftClient.GetTaskAsync(new GetWorkflowTaskModel { Id = id });
+    return task is null ? Results.NotFound() : Results.Ok(new WorkflowTaskDto
+    (
+        task.Id,
+        task.InputData,
+        task.Status,
+        task.Results
+    ));
+}).RequireAuthorization();
+
+app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
+{
+    var results = await wftClient.CreateTaskAsync(new CreateWorkflowTaskModel
+    {
+        InputData = dto.InputData
+    });
+
+    return Results.Ok(new IdDto(results.Id));
 });
 
 app.Run();
