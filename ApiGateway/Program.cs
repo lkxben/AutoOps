@@ -158,6 +158,6 @@ app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, WorkflowTaskSvc.Workflow
     });
 
     return Results.Ok(new IdDto(results.Id));
-});
+}).RequireAuthorization();
 
 app.Run();
