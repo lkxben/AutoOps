@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-option csharp_namespace = "AuthService.Proto";
+option csharp_namespace = "AuthService.Protos";
 
 package Auth;
 
@@ -14,11 +14,11 @@ service Auth {
 }
 
 message GetUserModel {
-    int32 id = 1;
+    string id = 1;
 }
 
 message UserModel {
-	int32 id = 1;
+	string id = 1;
     string username = 2;
     string name = 3;
 }

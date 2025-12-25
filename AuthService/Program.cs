@@ -1,8 +1,8 @@
 using AuthService.Data;
-using AuthService.Entities.User;
+using AuthService.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using AuthService.Proto;
+using AuthService.Protos;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +21,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AuthServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection")));
-builder.Services.AddIdentity<User, Role>(options =>
+builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequireUppercase = false;

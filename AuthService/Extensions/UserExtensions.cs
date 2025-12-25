@@ -1,5 +1,5 @@
-using AuthService.Entities.User;
-using AuthService.Proto;
+using AuthService.Entities;
+using AuthService.Protos;
 
 namespace AuthService.Extensions
 {
@@ -10,7 +10,7 @@ namespace AuthService.Extensions
         {
             return new UserModel
             {
-                Id = user.Id, 
+                Id = user.Id.ToString(),
                 Username = user.UserName!,
                 Name = user.Name
             };

@@ -1,5 +1,5 @@
 using AuthService.Data;
-using AuthService.Entities.User;
+using AuthService.Entities;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +10,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace AuthService.Proto
+namespace AuthService.Protos
 {
     public class AuthServiceImp : Auth.AuthBase
 	{
@@ -40,7 +40,9 @@ namespace AuthService.Proto
 		
         public override async Task<UserModel> GetUser(GetUserModel request, ServerCallContext context)
         {
-            var user = await _db.Users.FindAsync(request.Id);
+            if (!Guid.TryParse(request.Id, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user ID"));
+            var user = await _db.Users.FindAsync(userId);
             if (user == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "User not found"));

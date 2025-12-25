@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option csharp_namespace = "WorkflowService.Protos";
+
+package WorkflowTaskSvc;
+
+service WorkflowTaskSvc {
+    rpc CreateTask (CreateWorkflowTaskModel) returns (CreateWorkflowTaskResponse);
+    rpc GetTask (GetWorkflowTaskModel) returns (WorkflowTaskModel);
+}
+
+message CreateWorkflowTaskModel {
+    string inputData = 1;
+}
+
+message GetWorkflowTaskModel {
+    string id = 1;
+}
+
+message CreateWorkflowTaskResponse {
+    string id = 1;
+}
+
+enum WorkflowTaskStatus {
+    PENDING = 0;
+    IN_PROGRESS = 1;
+    COMPLETED = 2;
+    FAILED = 3;
+}
+
+message WorkflowTaskModel {
+    string id = 1;
+    string inputData = 2;
+    WorkflowTaskStatus status = 3;
+    string results = 4;
+}
