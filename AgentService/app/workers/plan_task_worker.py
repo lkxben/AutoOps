@@ -16,16 +16,18 @@ async def get_agent():
 
 async def handle_workflow_task(payload: dict):
     msg_data = payload.get("message", {})
-    task_id = msg_data.get("taskId")
-    input_data = msg_data.get("inputData")
+    task_id = msg_data.get("task_id")
+    input_data = msg_data.get("input_data")
     print(f"[PlanningWorker] Processing task {task_id}")
 
     agent_instance = await get_agent()
     results = await agent_instance.run(input_data, task_id)
 
     payload_to_send = {
-        "taskId": task_id,
+        "event_type": "plan_result",
+        "task_id": task_id,
         "task": input_data,
+        "plan": results["messages"][-1].content
     }
 
     await publisher.publish(payload_to_send)

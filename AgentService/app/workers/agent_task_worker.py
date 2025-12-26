@@ -1,13 +1,14 @@
 import asyncio
 import json
 import aio_pika
+from collections import defaultdict
 from app.agent.react_agent import ReactAgent
 from app.config import settings
 from app.messaging.agent_queue_publisher import AgentQueuePublisher
-from langchain_core.output_parsers.openai_tools import parse_tool_call
 
 agent = None
 publisher = AgentQueuePublisher()
+thread_locks = defaultdict(lambda: asyncio.Lock())
 
 async def get_agent():
     global agent
@@ -16,15 +17,26 @@ async def get_agent():
     return agent
 
 async def handle_agent_task(payload: dict):
-    task_id = payload.get("taskId")
-    task = payload.get("task")
-    print(f"[ReactWorker] Processing task {task_id}")
+    asyncio.create_task(_handle_agent_task(payload))
+
+async def _handle_agent_task(payload: dict):
+    event_type = payload.get("event_type")
+    thread_id = payload.get("task_id")
+    print(f"[ReactAgentWorker] Processing task {thread_id}")
 
     agent_instance = await get_agent()
-    results = await agent_instance.run(task, task_id)
-    for m in results["messages"]:
-        m.pretty_print()
+    lock = thread_locks[thread_id]
 
-    # await publisher.publish(results)
+    async with lock:
+        if event_type == "plan_result":
+            task = payload.get("task")
+            plan = payload.get("plan")
+            results = await agent_instance.start_task(thread_id, task, plan)
+            for m in results["messages"]:
+                m.pretty_print()
 
-    print(f"[ReactWorker] Completed task {task_id} and sent to Agent queue")
+        elif event_type == "tool_result":
+            tool_result = payload.get("tool_result")
+            results = await agent_instance.continue_task(thread_id, tool_result)
+            for m in results["messages"]:
+                m.pretty_print()

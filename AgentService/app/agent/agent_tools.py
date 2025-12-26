@@ -11,7 +11,6 @@ publisher = ToolCallPublisher()
 
 async def tool_call(task_id: str, tool_type: str, **kwargs):
     payload = {
-        "event_type": "tool_call",
         "task_id": task_id,
         "tool_type": tool_type,
         "inputs": kwargs

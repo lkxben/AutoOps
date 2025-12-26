@@ -9,6 +9,8 @@ from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from app.agent.agent_tools import add, subtract, multiply, divide, tool_call
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from pydantic import BaseModel
+from typing import Any, Dict
 
 class ReactAgent:
     _instance = None
@@ -23,9 +25,15 @@ class ReactAgent:
     def __init__(self, db_uri: str):
         class State(MessagesState):
             task: str
+            plan: str
             
         self.State = State
         self.db_uri = db_uri
+
+        class ReactOutputSchema(BaseModel):
+            tool_type: Optional[str] = None
+            inputs: Optional[Dict[str, Any]] = None
+            final_answer: Optional[Any] = None
 
         tool_registry = {
             "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
@@ -39,108 +47,127 @@ class ReactAgent:
             for name, info in tool_registry.items()
         )
 
+        self.tool_names = "|".join(
+            f"{name}"
+            for name, info in tool_registry.items()
+        )
+
         self.llm = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.3,
             max_tokens=100
         )
 
+        self.llm = self.llm.with_structured_output(ReactOutputSchema)
+
     async def _async_init(self):
-        self.checkpointer_cm = AsyncPostgresSaver.from_conn_string(self.db_uri)
-            
         def react(state: self.State):
-            last_plan = state["messages"][-1].content
+            last_plan = state["plan"]
+            task = state["task"]
             executor_instructions = f"""
-            You are a highly capable ReAct agent (Reasoning + Acting). Your goal is to execute a previously approved plan step by step by calling tools.
+            You are a ReAct agent. Execute the approved plan step by step, using the available tools.
 
-            You have access to the following tools and their descriptions:
+            Task to accomplish:
+            {task}
 
-            {self.tool_descriptions}
-
-            Plan to Execute:
+            Plan to follow:
             {last_plan}
 
-            Instructions:
-            1. Execute one step at a time by generating a single tool call per response.
-            2. Each tool call must be output as **valid JSON**, following this format:
-
+            Rules:
+            1. Follow the plan **one tool call at a time**.
+            2. You will receive the result of each tool call as "tool_result". Use it to inform the next step.
+            3. Only output the final answer **after all steps are completed** and the task is fully accomplished.
+            4. Each response must be exactly **one JSON object**:
+            a) Tool call:
             {{
-            "tool_type": "function_name",
-            "inputs": {{
-                "arg1": value1,
-                "arg2": value2
+                "tool_type": "<tool_name>",
+                "inputs": {{
+                    "arg1": value1,
+                    "arg2": value2
+                }}
             }}
-            }}
-
-            - The keys in `inputs` must match the tool input names.
-            - Values must be JSON-serializable (numbers, strings, booleans, lists, dicts).
-            - Only generate **one JSON object per response** for a single tool call.
-            3. Wait for the result of the tool call before proceeding to the next step.
-            4. Do NOT include any extra text, explanations, or commentary.
-            5. Once all steps are completed, output the FINAL ANSWER as a separate JSON object:
-
+            b) Final answer (only if the task is complete):
             {{
-            "final_answer": <value>
+                "final_answer": <value>
             }}
+            5. Inputs must match tool parameters exactly and be JSON-serializable (numbers, strings, booleans, lists, dicts).
+            6. Do NOT include explanations, commentary, or multiple steps in one response.
 
-            Example:
-
-            Step: "Multiply 5 by 2"
-
-            {{
-            "tool_type": "multiply",
-            "inputs": {{
-                "a": 5,
-                "b": 2
-            }}
-            }}
-
-            # Wait for result, then next step:
-
-            {{
-            "tool_type": "add",
-            "inputs": {{
-                "a": 10,
-                "b": 3
-            }}
-            }}
-
-            FINAL ANSWER:
-
-            {{
-            "final_answer": 13
-            }}
+            Available tools:
+            {self.tool_descriptions}
             """
-            return {"messages": [self.llm.invoke([SystemMessage(content=executor_instructions)] + state["messages"])]}
+            tool_call_result = self.llm.invoke([SystemMessage(content=executor_instructions)] + state["messages"])
+            return {"messages": [AIMessage(content=tool_call_result.json())]}
         
         def dummy_node(state: self.State):
             return state
+        
+        def should_end(state):
+            last_msg = state["messages"][-1].content
+            try:
+                data = json.loads(last_msg)
+                if data.get("final_answer") is not None:
+                    return END
+                elif data.get("tool_type") is not None:
+                    return "tools"
+                else:
+                    return "react"  # stay in react until a valid output
+            except json.JSONDecodeError:
+                return "react"
 
         # Compiling
         builder = StateGraph(self.State)
         builder.add_node("react", react)
         builder.add_node("tools", dummy_node)
         builder.add_conditional_edges(
-            "react", tools_condition
+            "react", should_end, [END, "tools", "react"]
         )
         builder.add_edge(START, "react")
         builder.add_edge("tools", "react")
         self.builder = builder
 
-    async def run(self, task: str, thread_id: str):
+    async def start_task(self, thread_id: str, task: str, plan: str):
         thread = {"configurable": {"thread_id": thread_id}}
-        async with self.checkpointer_cm as checkpointer:
+        async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(interrupt_before=["tools"], checkpointer=checkpointer)
-            results = await asyncio.to_thread(graph.invoke, {"task": task}, thread)
+            results = await graph.ainvoke({"task": task, "plan": plan}, thread)
+        
         last_msg = results["messages"][-1].content.strip()
         try:
             tool_call_data = json.loads(last_msg)
         except json.JSONDecodeError:
-            print("Invalid JSON from LLM:", last_msg)
             return results
+        
+        if tool_call_data["final_answer"]:
+            return results
+        
+        asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
+        return results
 
-        if "FINAL_ANSWER" in tool_call_data:
+    async def continue_task(self, thread_id: str, tool_result: dict):
+        thread = {"configurable": {"thread_id": thread_id}}
+        async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
+            await checkpointer.setup()
+            graph = self.builder.compile(checkpointer=checkpointer)
+            results = await graph.ainvoke(
+                None,
+                updates={"messages": [
+                    HumanMessage(content=json.dumps({
+                        "role": "system",
+                        "content": f"Tool call result received: {tool_result}. Use this to decide the next step."
+                    }))
+                ]},
+                config=thread
+            )
+        
+        last_msg = results["messages"][-1].content.strip()
+        try:
+            tool_call_data = json.loads(last_msg)
+        except json.JSONDecodeError:
+            return results
+        
+        if tool_call_data["final_answer"]:
             return results
         
         asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
