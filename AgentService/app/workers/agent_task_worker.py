@@ -3,10 +3,10 @@ import json
 import aio_pika
 from app.agent.react_agent import ReactAgent
 from app.config import settings
-from app.messaging.react_publisher import ReactPublisher
+from app.messaging.agent_queue_publisher import AgentQueuePublisher
 
 agent = None
-publisher = ReactPublisher()
+publisher = AgentQueuePublisher()
 
 async def get_agent():
     global agent
@@ -14,7 +14,7 @@ async def get_agent():
         agent = await ReactAgent.get_instance(settings.AGENT_DB)
     return agent
 
-async def handle_react_task(payload: dict):
+async def handle_agent_task(payload: dict):
     task_id = payload.get("taskId")
     task = payload.get("task")
     print(f"[ReactWorker] Processing task {task_id}")
@@ -26,4 +26,4 @@ async def handle_react_task(payload: dict):
 
     # await publisher.publish(results)
 
-    print(f"[ReactWorker] Completed task {task_id} and sent to React queue")
+    print(f"[ReactWorker] Completed task {task_id} and sent to Agent queue")

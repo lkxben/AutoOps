@@ -3,10 +3,10 @@ import json
 import aio_pika
 from app.agent.planning_agent import PlanningAgent
 from app.config import settings
-from app.messaging.react_publisher import ReactPublisher
+from app.messaging.agent_queue_publisher import AgentQueuePublisher
 
 agent = None
-publisher = ReactPublisher()
+publisher = AgentQueuePublisher()
 
 async def get_agent():
     global agent
@@ -30,4 +30,4 @@ async def handle_workflow_task(payload: dict):
 
     await publisher.publish(payload_to_send)
 
-    print(f"[PlanningWorker] Completed task {task_id} and sent to React queue")
+    print(f"[PlanningWorker] Completed task {task_id} and sent to Agent queue")
