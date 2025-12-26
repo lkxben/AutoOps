@@ -4,6 +4,7 @@ import aio_pika
 from app.agent.react_agent import ReactAgent
 from app.config import settings
 from app.messaging.agent_queue_publisher import AgentQueuePublisher
+from langchain_core.output_parsers.openai_tools import parse_tool_call
 
 agent = None
 publisher = AgentQueuePublisher()

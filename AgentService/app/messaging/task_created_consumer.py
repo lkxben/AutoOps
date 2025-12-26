@@ -25,4 +25,4 @@ async def start_task_created_consumer():
         async for message in queue_iter:
             async with message.process():
                 payload = json.loads(message.body)
-                await handle_workflow_task(payload)
+                await handle_workflow_task(payload) # change to asyncio.create_task + asyncio.Semaphore later
