@@ -9,7 +9,8 @@ async def start_consumer():
 
     queue = await channel.declare_queue(
         settings.TASK_QUEUE,
-        durable=True
+        durable=True,
+        passive=False
     )
 
     await queue.bind(settings.TASK_EXCHANGE)
