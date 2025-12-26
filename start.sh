@@ -14,7 +14,7 @@ trap cleanup SIGINT
 (cd AuthService && dotnet run) &
 (cd ApiGateway && dotnet run) &
 (cd WorkflowService && dotnet run) &
-(cd AgentService && pip install -r requirements.txt && uvicorn app.main:app --reload) &
+(cd AgentService && source venv/bin/activate && uvicorn app.main:app --reload) &
 
 # Wait for all background jobs
 wait
