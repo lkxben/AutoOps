@@ -74,8 +74,6 @@ class ReactAgent:
             task = state["task"]
             current_step = state["current_step"]
             current_step_text = self.get_current_step_text(plan, state["current_step"])
-            print(f"CURRENT_STEP: {current_step}")
-            print(f"Instruction: {current_step_text}")
             executor_instructions = f"""
             You are an execution agent responsible for carrying out a pre-approved plan.
 
@@ -111,8 +109,7 @@ class ReactAgent:
             {self.tool_descriptions}
             """
             tool_call_result = self.llm.invoke([SystemMessage(content=executor_instructions)] + state["messages"])
-
-            return {"messages": [AIMessage(content=tool_call_result.json())], "current_step": current_step + 1 } # add more
+            return {"messages": [AIMessage(content=tool_call_result.json())]} # add more
         
         def dummy_node(state: self.State):
             return state
@@ -163,19 +160,21 @@ class ReactAgent:
     async def continue_task(self, thread_id: str, tool_result: dict):
         thread = {"configurable": {"thread_id": thread_id}}
 
+        tool_msg = ToolMessage(
+            content=json.dumps(tool_result),
+            tool_call_id=str(uuid.uuid4())
+        )
+
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
-            graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
+            graph = self.builder.compile(interrupt_before=["tools"], checkpointer=checkpointer)
             state = await checkpointer.aget(thread)
             state = state["channel_values"]
-            if state["current_step"] > state["total_steps"]:
-                return
-
-            current_step = state["current_step"]
+            current_step = state["current_step"] + 1
             new_results = list(state["results_array"])
             new_results.append(tool_result)
             plan = state["plan"]
-            current_step_text = self.get_current_step_text(plan, current_step)
+            current_step_text = self.get_current_step_text(plan, state["current_step"])
             sys_msg = SystemMessage(content=f"""
             You are continuing execution of a previously approved plan for task: {state['task']}.
 
@@ -209,7 +208,7 @@ class ReactAgent:
                 updates={
                     "messages": [sys_msg],
                     "results_array": new_results,
-                    # "current_step": current_step
+                    "current_step": current_step
                 },
                 config=thread
             )

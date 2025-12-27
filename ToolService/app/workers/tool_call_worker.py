@@ -32,6 +32,7 @@ async def handle_tool_call(payload: dict):
         return
 
     print(f"[ToolWorker] Processing tool call for task {task_id}")
+    print("HERE")
 
     fn = available_tools[tool_type]["fn"]
 
