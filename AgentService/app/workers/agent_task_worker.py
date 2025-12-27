@@ -32,8 +32,8 @@ async def _handle_agent_task(payload: dict):
             task = payload.get("task")
             plan = payload.get("plan")
             results = await agent_instance.start_task(thread_id, task, plan)
-            for m in results["messages"]:
-                m.pretty_print()
+            # for m in results["messages"]:
+            #     m.pretty_print()
 
         elif event_type == "tool_result":
             tool_result = payload.get("tool_result")

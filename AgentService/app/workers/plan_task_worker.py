@@ -30,6 +30,5 @@ async def handle_workflow_task(payload: dict):
         "plan": results["messages"][-1].content
     }
 
-    await publisher.publish(payload_to_send)
-
     print(f"[PlanningWorker] Completed task {task_id} and sent to Agent queue")
+    await publisher.publish(payload_to_send)

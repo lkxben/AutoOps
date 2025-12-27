@@ -3,7 +3,7 @@ import asyncio
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langchain_groq import ChatGroq
 from typing import TypedDict, Annotated, Optional
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanMessage, ToolMessage
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
@@ -11,6 +11,7 @@ from app.agent.agent_tools import add, subtract, multiply, divide, tool_call
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
 from typing import Any, Dict
+import uuid
 
 class ReactAgent:
     _instance = None
@@ -26,6 +27,8 @@ class ReactAgent:
         class State(MessagesState):
             task: str
             plan: str
+            last_tool_call: dict = {}
+            thoughts: str = ""
             
         self.State = State
         self.db_uri = db_uri
@@ -34,6 +37,9 @@ class ReactAgent:
             tool_type: Optional[str] = None
             inputs: Optional[Dict[str, Any]] = None
             final_answer: Optional[Any] = None
+            thoughts: Optional[str] = None
+        
+        self.ReactOutputSchema = ReactOutputSchema
 
         tool_registry = {
             "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
@@ -62,42 +68,32 @@ class ReactAgent:
 
     async def _async_init(self):
         def react(state: self.State):
-            last_plan = state["plan"]
+            plan = state["plan"]
             task = state["task"]
+            last_tool_call = state.get("last_tool_call", {})
             executor_instructions = f"""
-            You are a ReAct agent. Execute the approved plan step by step, using the available tools.
+            You are executing a previously approved plan to accomplish the task: {task}.
+            You will perform **one tool call at a time**, and wait for its result before proceeding to the next step.
 
-            Task to accomplish:
-            {task}
+            Plan:
+            {plan}
 
-            Plan to follow:
-            {last_plan}
+            You are executing a plan for a task. Follow these rules exactly:
 
-            Rules:
-            1. Follow the plan **one tool call at a time**.
-            2. You will receive the result of each tool call as "tool_result". Use it to inform the next step.
-            3. Only output the final answer **after all steps are completed** and the task is fully accomplished.
-            4. Each response must be exactly **one JSON object**:
-            a) Tool call:
-            {{
-                "tool_type": "<tool_name>",
-                "inputs": {{
-                    "arg1": value1,
-                    "arg2": value2
-                }}
-            }}
-            b) Final answer (only if the task is complete):
-            {{
-                "final_answer": <value>
-            }}
-            5. Inputs must match tool parameters exactly and be JSON-serializable (numbers, strings, booleans, lists, dicts).
-            6. Do NOT include explanations, commentary, or multiple steps in one response.
+            1. Only provide one JSON object per response.
+            2. If a step requires a tool call, ONLY output "tool_type" and "inputs".
+            3. NEVER include "final_answer" until **all steps of the plan are fully complete**.
+            4. Do NOT repeat previous tool calls.
+            5. Include "thoughts" optionally for reasoning.
+            6. Keep track of plan progress internally.
 
             Available tools:
             {self.tool_descriptions}
             """
             tool_call_result = self.llm.invoke([SystemMessage(content=executor_instructions)] + state["messages"])
-            return {"messages": [AIMessage(content=tool_call_result.json())]}
+            state["last_tool_call"] = tool_call_result.dict()
+            print(state.get("thoughts", "No thoughts yet"))
+            return {"messages": [AIMessage(content=tool_call_result.json())]} # add more
         
         def dummy_node(state: self.State):
             return state
@@ -147,16 +143,44 @@ class ReactAgent:
 
     async def continue_task(self, thread_id: str, tool_result: dict):
         thread = {"configurable": {"thread_id": thread_id}}
+
+        tool_msg = ToolMessage(
+            content=json.dumps(tool_result),
+            tool_call_id=str(uuid.uuid4())
+        )
+
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)
+            state = await checkpointer.aget(thread)
+            state = state["channel_values"]
+            sys_msg = SystemMessage(content=f"""
+            You are executing a previously approved plan to accomplish the task: {state["task"]}.
+            You will only perform **one tool call at a time**, waiting for the result before moving to the next step.
+
+            Plan:
+            {state["plan"]}
+
+            Previously executed tool:
+            {state.get("last_tool_call", {})}
+
+            Result of that tool:
+            {tool_result}
+
+            Rules:
+            - Respond with exactly one JSON object.
+            - Use "tool_type" and "inputs" for the next tool call.
+            - Include optional "thoughts" for reasoning/debugging.
+            - Only include "final_answer" when all steps of the plan are complete.
+
+            Available tools:
+            {self.tool_descriptions}
+            """)
+
             results = await graph.ainvoke(
                 None,
                 updates={"messages": [
-                    HumanMessage(content=json.dumps({
-                        "role": "system",
-                        "content": f"Tool call result received: {tool_result}. Use this to decide the next step."
-                    }))
+                    sys_msg
                 ]},
                 config=thread
             )
