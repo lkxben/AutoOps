@@ -46,21 +46,29 @@ class PlanningAgent:
         def create_plan(state: self.State):
             human_feedback = state.get('human_feedback', '')
             planner_instructions = f"""
-        You are a highly capable task planning assistant. Your goal is to create a step-by-step plan for completing a given task. 
-        You have access to the following tools and their descriptions:
+            You are a task planning assistant.
 
-        {self.tools_description}
+            Your job is to produce a clear, human-readable step-by-step plan for solving the user's task.
 
-        Instructions:
-        1. Break the task into clear, actionable steps.
-        2. Each step should be concise and focused on achieving a specific part of the task.
-        3. Number your steps sequentially starting from 1.
-        4. Take into account any human feedback: {human_feedback}. Update your plan accordingly.
-        5. Do NOT generate tool calls yet — only create the numbered plan.
-        6. Output format must be strictly numbered steps.
+            IMPORTANT RULES:
+            1. DO NOT call tools.
+            2. DO NOT use JSON, function syntax, or code.
+            3. Each step must be written in natural language.
+            4. Each step must correspond to exactly ONE tool call later.
+            5. Steps must be strictly sequential — no parallel or combined actions.
+            6. Do NOT include explanations, reasoning, or commentary.
 
-        Human Task: {state['messages'][-1].content}
-        """
+            You MUST take into account the following human feedback (if any) when generating the plan:
+            {human_feedback}
+
+            Available tools:
+            {self.tools_description}
+
+            User task:
+            {state['messages'][-1].content}
+
+            Return ONLY a numbered list.
+            """
             return {"messages": [self.llm_with_tools.invoke([SystemMessage(content=planner_instructions)])]}
 
         def should_continue(state: self.State):
