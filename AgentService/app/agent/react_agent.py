@@ -12,7 +12,6 @@ from app.agent.agent_tools import add, subtract, multiply, divide, tool_call
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
 from typing import Any, Dict
-import uuid
 
 class ReactAgent:
     _instance = None
@@ -40,8 +39,13 @@ class ReactAgent:
             tool_type: str = None
             inputs: Dict[str, Any] = None
             thoughts: Optional[str] = None
+            
+        class FinalAnswerSchema(BaseModel):
+            answer: str
+            thoughts: str
         
         self.ReactOutputSchema = ReactOutputSchema
+        self.FinalAnswerSchema = FinalAnswerSchema
 
         tool_registry = {
             "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
@@ -66,7 +70,8 @@ class ReactAgent:
             max_tokens=100
         )
 
-        self.llm = self.llm.with_structured_output(ReactOutputSchema)
+        self.react_llm = self.llm.with_structured_output(ReactOutputSchema)
+        self.final_llm = self.llm.with_structured_output(FinalAnswerSchema)
 
     async def _async_init(self):
         def react(state: self.State):
@@ -74,64 +79,93 @@ class ReactAgent:
             task = state["task"]
             current_step = state["current_step"]
             current_step_text = self.get_current_step_text(plan, state["current_step"])
-            executor_instructions = f"""
-            You are an execution agent responsible for carrying out a pre-approved plan.
+            sys_msg = SystemMessage(content=f"""
+You are an execution agent responsible for carrying out a pre-approved plan.
 
-            Task:
-            {task}
+Task:
+{task}
 
-            Plan:
-            {plan}
+Plan:
+{plan}
 
-            You are currently executing **one step at a time**.
+You are currently executing **one step at a time**.
 
-            Rules:
-            1. Do NOT modify, reorder, or reinterpret the plan.
-            2. Execute ONLY the current step.
-            3. Do NOT infer or compute future steps.
-            4. Do NOT provide a final answer until all steps are completed.
-            5. Output exactly **ONE JSON object** per step.
-            6. Each step requires exactly **one tool call**, follow the order given. Output:
-            {{
-                "tool_type": "<tool_name>",
-                "inputs": {{
-                    "arg1": value1,
-                    "arg2": value2
-                }},
-                "thoughts": "optional reasoning or notes"
-            }}
-            7. If you have no thoughts, omit the "thoughts" field entirely.
+Rules:
+1. Do NOT modify, reorder, or reinterpret the plan.
+2. Execute ONLY the current step.
+3. Do NOT infer or compute future steps.
+4. Do NOT provide a final answer until all steps are completed.
+5. Output exactly **ONE JSON object** per step.
+6. Each step requires exactly **one tool call**, follow the order given. Output:
+{{
+    "tool_type": "<tool_name>",
+    "inputs": {{
+        "arg1": value1,
+        "arg2": value2
+    }},
+    "thoughts": "optional reasoning or notes"
+}}
+7. If you have no thoughts, omit the "thoughts" field entirely.
 
-            You are currently executing:
-            Step {current_step}: {current_step_text}
+You are currently executing:
+Step {current_step}: {current_step_text}
 
-            Available tools:
-            {self.tool_descriptions}
-            """
-            tool_call_result = self.llm.invoke([SystemMessage(content=executor_instructions)] + state["messages"])
+Results so far: {state["results_array"]}  # index corresponds to step numbers; initialize with None at index 0
 
-            return {"messages": [AIMessage(content=tool_call_result.json())]}
+Available tools:
+{self.tool_descriptions}
+""")
+
+            tool_call_result = self.react_llm.invoke([sys_msg])
+
+            return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())]}
         
         def dummy_node(state: self.State):
             return state
         
+        def final_answer(state: self.State):
+            summary_prompt = f"""
+You have completed all steps of the task.
+
+Task:
+{state['task']}
+
+Plan:
+{state['plan']}
+
+Results from each step:
+{state['results_array']}
+
+Provide the final answer to the user. Include thought process under "thoughts" field.
+"""
+            result = self.final_llm.invoke([
+                SystemMessage(content=summary_prompt)
+            ])
+
+            print(f"FINAL THOUGHTS: {result.thoughts}")
+
+            return {"messages": [AIMessage(content=result.answer)]}
+
         def should_end(state):
             current_step = state["current_step"]
             total_steps = state["total_steps"]
 
             if current_step > total_steps:
-                return END
+                return "final"
             return "tools"
                 
         # Compiling
         builder = StateGraph(self.State)
         builder.add_node("react", react)
         builder.add_node("tools", dummy_node)
+        builder.add_node("final", final_answer)
+
         builder.add_conditional_edges(
-            "react", should_end, [END, "tools"]
+            "react", should_end, ["final", "tools"]
         )
         builder.add_edge(START, "react")
         builder.add_edge("tools", "react")
+        builder.add_edge("final", END)
         self.builder = builder
 
     async def start_task(self, thread_id: str, task: str, plan: str):
@@ -165,58 +199,36 @@ class ReactAgent:
             await checkpointer.setup()
             checkpoint = await checkpointer.aget(thread)
             state = dict(checkpoint["channel_values"])
-
             current_step = state["current_step"] + 1
-            if current_step > state["total_steps"]:
-                return state
             new_results = list(state["results_array"])
             new_results.append(tool_result)
-            plan = state["plan"]
-            current_step_text = self.get_current_step_text(plan, current_step)
-            sys_msg = SystemMessage(content=f"""
-            You are continuing execution of a previously approved plan for task: {state['task']}.
 
-            Current step ({current_step} of {state["total_steps"]}):
-            {current_step_text}  # natural language for this specific step
+            if current_step > state["total_steps"]:
+                graph = self.builder.compile(checkpointer=checkpointer)
+                await graph.aupdate_state(
+                    thread,
+                    {"current_step": current_step, "results_array": new_results}
+                )
+                results = await graph.ainvoke(None, config=thread)
+                return results
+            
+            else:
+                graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
 
-            Results so far: {new_results}  # index corresponds to step numbers; initialize with None at index 0
-            Last tool call result: {tool_result}
-
-            Rules:
-            1. Only execute this step.
-            2. Each step requires exactly **one tool call**, follow the order given. Output:
-            {{
-                "tool_type": "<tool_name>",
-                "inputs": {{
-                    "arg1": value1,
-                    "arg2": value2
-                }},
-                "thoughts": "optional reasoning or notes"
-            }}
-            3. If you have no thoughts, omit the "thoughts" field entirely.
-            4. Do not output anything else.
-            5. All steps require exactly one tool call.
-
-            Available tools:
-            {self.tool_descriptions}
-            """)
-
-            graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
-
-            await graph.aupdate_state(
-                thread,
-                {"current_step": current_step, "results_array": new_results, "messages": sys_msg}
-            )
-            results = await graph.ainvoke(None, config=thread)
-        
-        last_msg = results["messages"][-1].content.strip()
-        try:
-            tool_call_data = json.loads(last_msg)
-        except json.JSONDecodeError:
-            return
-        
-        asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
-        return
+                await graph.aupdate_state(
+                    thread,
+                    {"current_step": current_step, "results_array": new_results}
+                )
+                results = await graph.ainvoke(None, config=thread)
+            
+                last_msg = results["messages"][-1].content.strip()
+                try:
+                    tool_call_data = json.loads(last_msg)
+                except json.JSONDecodeError:
+                    return
+                
+                asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
+                return
     
     def get_current_step_text(self, plan: str, current_step: int) -> str:
         lines = plan.splitlines()

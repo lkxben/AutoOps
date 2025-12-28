@@ -46,29 +46,29 @@ class PlanningAgent:
         def create_plan(state: self.State):
             human_feedback = state.get('human_feedback', '')
             planner_instructions = f"""
-            You are a task planning assistant.
+You are a task planning assistant.
 
-            Your job is to produce a clear, human-readable step-by-step plan for solving the user's task.
+Your job is to produce a clear, human-readable step-by-step plan for solving the user's task.
 
-            IMPORTANT RULES:
-            1. DO NOT call tools.
-            2. DO NOT use JSON, function syntax, or code.
-            3. Each step must be written in natural language.
-            4. Each step must correspond to exactly ONE tool call later.
-            5. Steps must be strictly sequential — no parallel or combined actions.
-            6. Do NOT include explanations, reasoning, or commentary.
+IMPORTANT RULES:
+1. DO NOT call tools.
+2. DO NOT use JSON, function syntax, or code.
+3. Each step must be written in natural language.
+4. Each step must correspond to exactly ONE tool call later.
+5. Steps must be strictly sequential — no parallel or combined actions.
+6. Do NOT include explanations, reasoning, or commentary.
 
-            You MUST take into account the following human feedback (if any) when generating the plan:
-            {human_feedback}
+You MUST take into account the following human feedback (if any) when generating the plan:
+{human_feedback}
 
-            Available tools:
-            {self.tools_description}
+Available tools:
+{self.tools_description}
 
-            User task:
-            {state['messages'][-1].content}
+User task:
+{state['messages'][-1].content}
 
-            Return ONLY a numbered list.
-            """
+Return ONLY a numbered list.
+"""
             return {"messages": [self.llm_with_tools.invoke([SystemMessage(content=planner_instructions)])]}
 
         def should_continue(state: self.State):
@@ -100,23 +100,3 @@ class PlanningAgent:
             graph = self.builder.compile(checkpointer=checkpointer)
             results = await asyncio.to_thread(graph.invoke, {"messages": [msg]}, thread)
         return results
-
-# png_bytes = graph.get_graph().draw_mermaid_png()
-
-# with open("graph.png", "wb") as f:
-#     f.write(png_bytes)
-
-# thread = {"configurable": {"thread_id": "1"}}
-# msg = HumanMessage(content="Give me the result of ((5 * 3) / ((9 - 3) * 3))")
-# results = graph.invoke({"messages": [msg]}, thread)
-# for m in results["messages"]:
-#     m.pretty_print()
-
-# while True:
-#     further_feedback = input("Any feedback for the plan? (press Enter to continue) ")
-#     graph.update_state(thread, {"human_feedback": further_feedback}, as_node="feedback")
-#     results = graph.invoke(None, thread)
-#     for m in results["messages"]:
-#         m.pretty_print()
-#     if further_feedback == "":
-#         break
