@@ -94,7 +94,7 @@ Return ONLY a numbered list.
 
     async def run(self, task: str, thread_id: str):
         msg = HumanMessage(content=task)
-        thread = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
+        thread = {"configurable": {"thread_id": thread_id}}
         async with self.checkpointer_cm as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)

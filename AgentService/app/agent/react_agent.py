@@ -136,13 +136,19 @@ Plan:
 Results from each step:
 {state['results_array']}
 
-Provide the final answer to the user. Include thought process under "thoughts" field.
+
+Provide the final answer to the user. Include brief thought process under "thoughts" field.
+Output ONLY JSON conforming to the schema:
+{{
+  "answer": "<final answer>",
+  "thoughts": "<reasoning, maximum 300 characters>"
+}}
+Do NOT include extra text. Make sure the JSON is valid and complete. 
+If your reasoning is too long, summarise it so it fits within the limit.
 """
             result = self.final_llm.invoke([
                 SystemMessage(content=summary_prompt)
             ])
-
-            print(f"FINAL THOUGHTS: {result.thoughts}")
 
             return {"messages": [AIMessage(content=result.answer)]}
 
@@ -169,7 +175,7 @@ Provide the final answer to the user. Include thought process under "thoughts" f
         self.builder = builder
 
     async def start_task(self, thread_id: str, task: str, plan: str):
-        thread = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
+        thread = {"configurable": {"thread_id": thread_id}}
         initial_state = {
             "task": task,
             "plan": plan,
@@ -193,7 +199,7 @@ Provide the final answer to the user. Include thought process under "thoughts" f
         return results
 
     async def continue_task(self, thread_id: str, tool_result: dict):
-        thread = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
+        thread = {"configurable": {"thread_id": thread_id}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
@@ -225,6 +231,7 @@ Provide the final answer to the user. Include thought process under "thoughts" f
                 try:
                     tool_call_data = json.loads(last_msg)
                 except json.JSONDecodeError:
+                    print("TOOL PARSING ERROR")
                     return
                 
                 asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
