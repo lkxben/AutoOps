@@ -11,10 +11,12 @@ service WorkflowTaskSvc {
 
 message CreateWorkflowTaskModel {
     string inputData = 1;
+    string userId = 2;
 }
 
 message GetWorkflowTaskModel {
     string id = 1;
+    string userId = 2;
 }
 
 message CreateWorkflowTaskResponse {
@@ -30,7 +32,8 @@ enum WorkflowTaskStatus {
 
 message WorkflowTaskModel {
     string id = 1;
-    string inputData = 2;
-    WorkflowTaskStatus status = 3;
-    string results = 4;
+    string userId = 2;
+    string inputData = 3;
+    WorkflowTaskStatus status = 4;
+    string result = 5;
 }

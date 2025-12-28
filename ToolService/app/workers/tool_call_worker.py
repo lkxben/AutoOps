@@ -15,7 +15,7 @@ for name, fn in inspect.getmembers(all_tools, inspect.isfunction):
 
 publisher = AgentQueuePublisher()
 
-async def _run_and_publish(task_id: str, fn, inputs: dict):
+async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict):
     try:
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
@@ -25,6 +25,7 @@ async def _run_and_publish(task_id: str, fn, inputs: dict):
         await publisher.publish({
             "event_type": "tool_result",
             "task_id": task_id,
+            "user_id": user_id,
             "tool_result": {
                 "tool_type": fn.__name__,
                 "inputs": inputs,
@@ -36,11 +37,13 @@ async def _run_and_publish(task_id: str, fn, inputs: dict):
         await publisher.publish({
             "event_type": "error",
             "task_id": task_id,
+            "user_id": user_id,
             "error": str(e)
         })
 
 def handle_tool_call(payload: dict):
     task_id = payload.get("task_id")
+    user_id = payload.get("user_id")
     tool_type = payload.get("tool_type")
     inputs = payload.get("inputs", {})
 
@@ -49,10 +52,11 @@ def handle_tool_call(payload: dict):
             publisher.publish({
                 "event_type": "error",
                 "task_id": task_id,
+                "user_id": user_id,
                 "error": f"Unknown tool: {tool_type}"
             })
         )
         return
 
     fn = available_tools[tool_type]["fn"]
-    asyncio.create_task(_run_and_publish(task_id, fn, inputs))
+    asyncio.create_task(_run_and_publish(task_id, user_id, fn, inputs))

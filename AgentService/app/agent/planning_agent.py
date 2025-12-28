@@ -7,7 +7,6 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from app.agent.agent_tools import add, subtract, multiply, divide
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 class PlanningAgent:
@@ -26,16 +25,23 @@ class PlanningAgent:
         self.State = State
         self.db_uri = db_uri
 
-        self.tools = [multiply, divide, add, subtract]
-        self.tools_description = "\n".join(f"{t.__name__}: {t.__doc__}" for t in self.tools)
+        tool_registry = {
+            "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
+            "subtract": {"inputs": ["a", "b"], "description" : "Subtract a and b"},
+            "divide": {"inputs": ["a", "b"], "description" : "Divide a and b"},
+            "multiply": {"inputs": ["a", "b"], "description" : "Multiply a and b"},
+        }
+
+        self.tool_descriptions = "\n".join(
+            f"{name}({', '.join(info['inputs'])}): {info['description']}"
+            for name, info in tool_registry.items()
+        )
 
         self.llm = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.3,
             max_tokens=100
         )
-
-        self.llm_with_tools = self.llm.bind_tools(self.tools, parallel_tool_calls=False)
 
     async def _async_init(self):
         self.checkpointer_cm = AsyncPostgresSaver.from_conn_string(self.db_uri)
@@ -62,14 +68,14 @@ You MUST take into account the following human feedback (if any) when generating
 {human_feedback}
 
 Available tools:
-{self.tools_description}
+{self.tool_descriptions}
 
 User task:
 {state['messages'][-1].content}
 
 Return ONLY a numbered list.
 """
-            return {"messages": [self.llm_with_tools.invoke([SystemMessage(content=planner_instructions)])]}
+            return {"messages": [self.llm.invoke([SystemMessage(content=planner_instructions)])]}
 
         def should_continue(state: self.State):
             human_feedback=state.get('human_feedback', None)
@@ -81,7 +87,6 @@ Return ONLY a numbered list.
         builder = StateGraph(self.State)
         builder.add_node("planner", create_plan)
         builder.add_node("feedback", human_feedback_node)
-        builder.add_node("tools", ToolNode(self.tools))
 
         builder.add_edge(START, "planner")
         builder.add_edge("planner", "feedback")

@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from app.agent.agent_tools import add, subtract, multiply, divide, tool_call
+from app.agent.agent_helper import tool_call, publish_result
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
 from typing import Any, Dict
@@ -176,7 +176,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
         builder.add_edge("final", END)
         self.builder = builder
 
-    async def start_task(self, thread_id: str, task: str, plan: str):
+    async def start_task(self, thread_id: str, user_id: str, task: str, plan: str):
         thread = {"configurable": {"thread_id": thread_id}}
         initial_state = {
             "task": task,
@@ -197,10 +197,10 @@ If your reasoning is too long, summarise it so it fits within the limit.
         except json.JSONDecodeError:
             return results
         
-        asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
+        asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
         return results
 
-    async def continue_task(self, thread_id: str, tool_result: dict):
+    async def continue_task(self, thread_id: str, user_id: str, tool_result: dict):
         thread = {"configurable": {"thread_id": thread_id}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
@@ -218,6 +218,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
                     {"current_step": current_step, "results_array": new_results}
                 )
                 results = await graph.ainvoke(None, config=thread)
+                asyncio.create_task(publish_result(thread_id, user_id, results["messages"][-1].content))
                 return results
             
             else:
@@ -236,7 +237,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
                     print("TOOL PARSING ERROR")
                     return
                 
-                asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
+                asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
                 return
     
     def get_current_step_text(self, plan: str, current_step: int) -> str:

@@ -17,6 +17,7 @@ async def get_agent():
 async def handle_workflow_task(payload: dict):
     msg_data = payload.get("message", {})
     task_id = msg_data.get("task_id")
+    user_id = msg_data.get("user_id")
     input_data = msg_data.get("input_data")
     print(f"[PlanningWorker] Processing task {task_id}")
 
@@ -26,6 +27,7 @@ async def handle_workflow_task(payload: dict):
     payload_to_send = {
         "event_type": "plan_result",
         "task_id": task_id,
+        "user_id": user_id,
         "task": input_data,
         "plan": results["messages"][-1].content
     }
