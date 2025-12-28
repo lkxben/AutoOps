@@ -30,11 +30,12 @@ namespace WorkflowService.Protos
         {
             var task = new WorkflowTask
             {
-                InputData = request.InputData
+                InputData = request.InputData,
+                UserId = Guid.Parse(request.UserId)
             };
             _db.WorkflowTasks.Add(task);
             await _db.SaveChangesAsync();
-            await _publishEndpoint.Publish(new WorkflowTaskCreated(task.Id, task.InputData));
+            await _publishEndpoint.Publish(new WorkflowTaskCreated(task.Id, task.UserId, task.InputData));
             return new CreateWorkflowTaskResponse { Id = task.Id.ToString() };
         }
 
@@ -45,6 +46,8 @@ namespace WorkflowService.Protos
             var task = await _db.WorkflowTasks.SingleOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 throw new RpcException(new Status(StatusCode.NotFound, "Task not found"));
+            if (task.UserId.ToString() != request.UserId)
+                throw new RpcException(new Status(StatusCode.PermissionDenied, "You are not allowed to access this task"));
             return task.ToModel();
         }
 	}

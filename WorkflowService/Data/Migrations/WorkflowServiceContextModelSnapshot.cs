@@ -33,10 +33,14 @@ namespace WorkflowService.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Results")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 

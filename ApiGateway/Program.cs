@@ -6,6 +6,8 @@ using ApiGateway.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -138,23 +140,35 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
     return Results.Ok(new { token = jwt.Token });
 });
 
-app.MapGet("/tasks/{id}", async (string id, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
+app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
 {
-    var task = await wftClient.GetTaskAsync(new GetWorkflowTaskModel { Id = id });
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var task = await wftClient.GetTaskAsync(new GetWorkflowTaskModel { 
+        Id = id,
+        UserId = userId
+    });
+    
     return task is null ? Results.NotFound() : Results.Ok(new WorkflowTaskDto
     (
         task.Id,
+        task.UserId,
         task.InputData,
         task.Status,
         task.Results
     ));
 }).RequireAuthorization();
 
-app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
+app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
 {
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
     var results = await wftClient.CreateTaskAsync(new CreateWorkflowTaskModel
     {
-        InputData = dto.InputData
+        InputData = dto.InputData,
+        UserId = userId
     });
 
     return Results.Ok(new IdDto(results.Id));

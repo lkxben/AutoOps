@@ -11,6 +11,7 @@ namespace WorkflowService.Extensions
             return new WorkflowTaskModel
             {
                 Id = task.Id.ToString(),
+                UserId = task.UserId.ToString(),
                 InputData = task.InputData,
                 Status = task.Status,
                 Results = task.Results!
