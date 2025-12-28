@@ -1,4 +1,15 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: autoops-rabbitmq
+    ports:
+      - "6000:5672"   # AMQP
+      - "6001:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
   auth-db:
     image: postgres:16
     container_name: autoops-auth-postgres
@@ -7,7 +18,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: AutoOpsAuth
     ports:
-      - "5432:5432"
+      - "6500:5432"
     volumes:
       - auth_db_data:/var/lib/postgresql/data
 
@@ -19,10 +30,24 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: AutoOpsWorkflow
     ports:
-      - "5433:5432"
+      - "6501:5432"
     volumes:
       - workflow_db_data:/var/lib/postgresql/data
+
+  agent-db:
+    image: postgres:16
+    container_name: autoops-agent-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: AutoOpsAgent
+    ports:
+      - "6502:5432"
+    volumes:
+      - agent_db_data:/var/lib/postgresql/data
 
 volumes:
   auth_db_data:
   workflow_db_data:
+  agent_db_data:
+  rabbitmq_data:
