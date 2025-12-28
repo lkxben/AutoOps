@@ -176,7 +176,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
         builder.add_edge("final", END)
         self.builder = builder
 
-    async def start_task(self, thread_id: str, task: str, plan: str):
+    async def start_task(self, thread_id: str, user_id: str, task: str, plan: str):
         thread = {"configurable": {"thread_id": thread_id}}
         initial_state = {
             "task": task,
@@ -197,10 +197,10 @@ If your reasoning is too long, summarise it so it fits within the limit.
         except json.JSONDecodeError:
             return results
         
-        asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
+        asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
         return results
 
-    async def continue_task(self, thread_id: str, tool_result: dict):
+    async def continue_task(self, thread_id: str, user_id: str, tool_result: dict):
         thread = {"configurable": {"thread_id": thread_id}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
@@ -236,7 +236,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
                     print("TOOL PARSING ERROR")
                     return
                 
-                asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
+                asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
                 return
     
     def get_current_step_text(self, plan: str, current_step: int) -> str:

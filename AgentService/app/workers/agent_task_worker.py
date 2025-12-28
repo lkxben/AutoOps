@@ -22,6 +22,7 @@ async def handle_agent_task(payload: dict):
 async def _handle_agent_task(payload: dict):
     event_type = payload.get("event_type")
     thread_id = payload.get("task_id")
+    user_id = payload.get("user_id")
     print(f"[ReactAgentWorker] Processing task {thread_id}")
 
     agent_instance = await get_agent()
@@ -31,13 +32,13 @@ async def _handle_agent_task(payload: dict):
         if event_type == "plan_result":
             task = payload.get("task")
             plan = payload.get("plan")
-            results = await agent_instance.start_task(thread_id, task, plan)
+            results = await agent_instance.start_task(thread_id, user_id, task, plan)
             # for m in results["messages"]:
             #     m.pretty_print()
 
         elif event_type == "tool_result":
             tool_result = payload.get("tool_result")
-            results = await agent_instance.continue_task(thread_id, tool_result)
+            results = await agent_instance.continue_task(thread_id, user_id, tool_result)
             if results:
                 for m in results["messages"]:
                     m.pretty_print()

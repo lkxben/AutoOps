@@ -9,9 +9,10 @@ tool_registry = {
 
 publisher = ToolCallPublisher()
 
-async def tool_call(task_id: str, tool_type: str, **kwargs):
+async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
     payload = {
         "task_id": task_id,
+        "user_id": user_id,
         "tool_type": tool_type,
         "inputs": kwargs
     }
