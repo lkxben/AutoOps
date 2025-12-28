@@ -15,8 +15,8 @@ trap cleanup SIGINT
 (cd ApiGateway && dotnet run) &
 (cd WorkflowService && dotnet run) &
 (cd EventService && dotnet run) &
-(cd AgentService && source venv/bin/activate && uvicorn app.main:app --port 8001 --reload) &
-(cd ToolService && source venv/bin/activate && uvicorn app.main:app --port 8002 --reload) &
+(cd AgentService && source venv/bin/activate && uvicorn app.main:app --port 5005 --reload) &
+(cd ToolService && source venv/bin/activate && uvicorn app.main:app --port 5006 --reload) &
 
 # Wait for all background jobs
 wait
