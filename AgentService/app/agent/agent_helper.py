@@ -17,39 +17,3 @@ async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
         "inputs": kwargs
     }
     await publisher.publish(payload)
-
-def add(a: int, b: int) -> int:
-    """Add a and b.
-
-    Args:
-        a: first int
-        b: second int
-    """
-    return a + b
-
-def subtract(a: int, b: int) -> int:
-    """Subtract a and b.
-
-    Args:
-        a: first int
-        b: second int
-    """
-    return a - b
-
-def multiply(a: int, b: int) -> int:
-    """Multiply a and b.
-
-    Args:
-        a: first int
-        b: second int
-    """
-    return a * b
-
-def divide(a: int, b: int) -> int:
-    """Divide a and b.
-
-    Args:
-        a: first int
-        b: second int
-    """
-    return a / b
