@@ -74,8 +74,6 @@ class ReactAgent:
             task = state["task"]
             current_step = state["current_step"]
             current_step_text = self.get_current_step_text(plan, state["current_step"])
-            print(f"CURRENT_STEP: {current_step}")
-            print(f"Instruction: {current_step_text}")
             executor_instructions = f"""
             You are an execution agent responsible for carrying out a pre-approved plan.
 
@@ -112,7 +110,7 @@ class ReactAgent:
             """
             tool_call_result = self.llm.invoke([SystemMessage(content=executor_instructions)] + state["messages"])
 
-            return {"messages": [AIMessage(content=tool_call_result.json())], "current_step": current_step + 1 } # add more
+            return {"messages": [AIMessage(content=tool_call_result.json())]}
         
         def dummy_node(state: self.State):
             return state
@@ -137,7 +135,7 @@ class ReactAgent:
         self.builder = builder
 
     async def start_task(self, thread_id: str, task: str, plan: str):
-        thread = {"configurable": {"thread_id": thread_id}}
+        thread = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
         initial_state = {
             "task": task,
             "plan": plan,
@@ -161,17 +159,16 @@ class ReactAgent:
         return results
 
     async def continue_task(self, thread_id: str, tool_result: dict):
-        thread = {"configurable": {"thread_id": thread_id}}
+        thread = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
-            graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
-            state = await checkpointer.aget(thread)
-            state = state["channel_values"]
-            if state["current_step"] > state["total_steps"]:
-                return
+            checkpoint = await checkpointer.aget(thread)
+            state = dict(checkpoint["channel_values"])
 
-            current_step = state["current_step"]
+            current_step = state["current_step"] + 1
+            if current_step > state["total_steps"]:
+                return state
             new_results = list(state["results_array"])
             new_results.append(tool_result)
             plan = state["plan"]
@@ -204,24 +201,22 @@ class ReactAgent:
             {self.tool_descriptions}
             """)
 
-            results = await graph.ainvoke(
-                None,
-                updates={
-                    "messages": [sys_msg],
-                    "results_array": new_results,
-                    # "current_step": current_step
-                },
-                config=thread
+            graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
+
+            await graph.aupdate_state(
+                thread,
+                {"current_step": current_step, "results_array": new_results, "messages": sys_msg}
             )
+            results = await graph.ainvoke(None, config=thread)
         
         last_msg = results["messages"][-1].content.strip()
         try:
             tool_call_data = json.loads(last_msg)
         except json.JSONDecodeError:
-            return results
+            return
         
         asyncio.create_task(tool_call(thread_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
-        return results
+        return
     
     def get_current_step_text(self, plan: str, current_step: int) -> str:
         lines = plan.splitlines()

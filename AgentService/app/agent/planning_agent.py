@@ -94,7 +94,7 @@ class PlanningAgent:
 
     async def run(self, task: str, thread_id: str):
         msg = HumanMessage(content=task)
-        thread = {"configurable": {"thread_id": thread_id}}
+        thread = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
         async with self.checkpointer_cm as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)
