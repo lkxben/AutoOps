@@ -1,8 +1,9 @@
 import aio_pika
 import json
 from app.config import settings
+import uuid
 
-class TaskEventPublisher:
+class TaskUpdatedPublisher:
     def __init__(self):
         self.connection = None
         self.channel = None
@@ -16,7 +17,7 @@ class TaskEventPublisher:
         self.channel = await self.connection.channel()
 
         self.exchange = await self.channel.declare_exchange(
-            settings.TASK_EVENT_EXCHANGE,
+            settings.TASK_UPDATED_EXCHANGE,
             aio_pika.ExchangeType.FANOUT,
             durable=True
         )
