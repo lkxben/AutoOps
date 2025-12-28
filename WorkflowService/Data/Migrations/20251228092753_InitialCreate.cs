@@ -19,7 +19,7 @@ namespace WorkflowService.Data.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     InputData = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    Results = table.Column<string>(type: "text", nullable: false)
+                    Result = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

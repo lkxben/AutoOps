@@ -6,5 +6,5 @@ public record class WorkflowTaskDto(
     string UserId,
     string InputData,
     WorkflowTaskStatus Status,
-    string Results = ""
+    string Result = ""
 );

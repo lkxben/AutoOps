@@ -14,7 +14,7 @@ namespace WorkflowService.Extensions
                 UserId = task.UserId.ToString(),
                 InputData = task.InputData,
                 Status = task.Status,
-                Results = task.Results!
+                Result = task.Result!
             };
         }
     }

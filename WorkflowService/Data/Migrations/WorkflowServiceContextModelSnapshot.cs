@@ -32,7 +32,7 @@ namespace WorkflowService.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Results")
+                    b.Property<string>("Result")
                         .IsRequired()
                         .HasColumnType("text");
 

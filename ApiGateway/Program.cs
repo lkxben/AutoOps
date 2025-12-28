@@ -156,7 +156,7 @@ app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc
         task.UserId,
         task.InputData,
         task.Status,
-        task.Results
+        task.Result
     ));
 }).RequireAuthorization();
 
@@ -165,13 +165,13 @@ app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, HttpContext context, Wor
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    var results = await wftClient.CreateTaskAsync(new CreateWorkflowTaskModel
+    var result = await wftClient.CreateTaskAsync(new CreateWorkflowTaskModel
     {
         InputData = dto.InputData,
         UserId = userId
     });
 
-    return Results.Ok(new IdDto(results.Id));
+    return Results.Ok(new IdDto(result.Id));
 }).RequireAuthorization();
 
 app.Run();
