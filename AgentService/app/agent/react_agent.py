@@ -93,10 +93,12 @@ You are currently executing **one step at a time**.
 Rules:
 1. Do NOT modify, reorder, or reinterpret the plan.
 2. Execute ONLY the current step.
-3. Do NOT infer or compute future steps.
-4. Do NOT provide a final answer until all steps are completed.
-5. Output exactly **ONE JSON object** per step.
-6. Each step requires exactly **one tool call**, follow the order given. Output:
+3. Do NOT infer, compute, or simplify future steps.
+4. You may ONLY use:
+   - results from completed steps, and
+   - the tools explicitly listed below.
+5. Each step requires exactly **one tool call**. Do NOT combine multiple tools.
+6. Output exactly **ONE JSON object** per step:
 {{
     "tool_type": "<tool_name>",
     "inputs": {{

@@ -1,7 +1,15 @@
 import json
+import asyncio
 import aio_pika
 from app.workers.tool_call_worker import handle_tool_call
 from app.config import settings
+
+MAX_CONCURRENT_TASKS = 10
+semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
+
+async def _process_message(payload: dict):
+    async with semaphore:
+        handle_tool_call(payload)
 
 async def start_tool_call_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
@@ -25,4 +33,4 @@ async def start_tool_call_consumer():
         async for message in queue_iter:
             async with message.process():
                 payload = json.loads(message.body)
-                await handle_tool_call(payload)
+                asyncio.create_task(_process_message(payload))

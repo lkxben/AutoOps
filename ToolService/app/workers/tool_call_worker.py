@@ -1,10 +1,7 @@
 import asyncio
-import json
-import aio_pika
 import inspect
-from app.config import settings
-import app.tools.all_tools as all_tools
 from app.messaging.agent_queue_publisher import AgentQueuePublisher
+import app.tools.all_tools as all_tools
 
 available_tools = {}
 
@@ -18,35 +15,18 @@ for name, fn in inspect.getmembers(all_tools, inspect.isfunction):
 
 publisher = AgentQueuePublisher()
 
-async def handle_tool_call(payload: dict):
-    task_id = payload.get("task_id")
-    tool_type = payload.get("tool_type")
-    inputs = payload.get("inputs", {})
-
-    if tool_type not in available_tools:
-        await publisher.publish({
-            "event_type": "error",
-            "task_id": task_id,
-            "error": f"Unknown tool: {tool_type}"
-        })
-        return
-
-    print(f"[ToolWorker] Processing tool call for task {task_id}")
-
-    fn = available_tools[tool_type]["fn"]
-
+async def _run_and_publish(task_id: str, fn, inputs: dict):
     try:
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
         else:
             result = fn(**inputs)
 
-        print(f"[ToolWorker] Completed tool call for task {task_id} and sent to Agent queue, RESULT: {result}")
         await publisher.publish({
             "event_type": "tool_result",
             "task_id": task_id,
             "tool_result": {
-                "tool_type": tool_type,
+                "tool_type": fn.__name__,
                 "inputs": inputs,
                 "output": result
             }
@@ -58,3 +38,21 @@ async def handle_tool_call(payload: dict):
             "task_id": task_id,
             "error": str(e)
         })
+
+def handle_tool_call(payload: dict):
+    task_id = payload.get("task_id")
+    tool_type = payload.get("tool_type")
+    inputs = payload.get("inputs", {})
+
+    if tool_type not in available_tools:
+        asyncio.create_task(
+            publisher.publish({
+                "event_type": "error",
+                "task_id": task_id,
+                "error": f"Unknown tool: {tool_type}"
+            })
+        )
+        return
+
+    fn = available_tools[tool_type]["fn"]
+    asyncio.create_task(_run_and_publish(task_id, fn, inputs))
