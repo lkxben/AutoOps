@@ -67,7 +67,7 @@ namespace AuthService.Protos
             return new Empty();
         }
 
-        public override async Task<JwtModel> Login(LoginModel request, ServerCallContext context)
+        public override async Task<LoginResponseModel> Login(LoginModel request, ServerCallContext context)
         {
             var user = await _userManager.FindByNameAsync(request.Username);
             if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
@@ -91,9 +91,10 @@ namespace AuthService.Protos
                 signingCredentials: creds
             );
 
-            return new JwtModel
+            return new LoginResponseModel
             {
-                Token = new JwtSecurityTokenHandler().WriteToken(token)
+                Token = new JwtSecurityTokenHandler().WriteToken(token),
+                User = user.ToModel()
             };
         }
 	}

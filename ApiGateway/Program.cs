@@ -143,13 +143,20 @@ app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authCli
 
 app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
 {
-    var jwt = await authClient.LoginAsync(new LoginModel
+    var response = await authClient.LoginAsync(new LoginModel
     {
         Username = loginDto.Username,
         Password = loginDto.Password
     });
 
-    return Results.Ok(new { token = jwt.Token });
+    return Results.Ok(new LoginResponseDto(
+        response.Token,
+        new UserDto(
+            response.User.Id,
+            response.User.Username,
+            response.User.Name
+        )
+    ));
 });
 
 app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
