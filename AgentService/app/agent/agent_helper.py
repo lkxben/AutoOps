@@ -25,7 +25,16 @@ async def publish_result(task_id: str, user_id: str, result: str):
     payload = {
         "task_id": task_id,
         "user_id": user_id,
-        "status": "completed",
-        "result": result
+        "status": "COMPLETED",
+        "description": result
+    }
+    await event_publisher.publish(payload)
+
+async def publish_plan(task_id: str, user_id: str, plan: str):
+    payload = {
+        "task_id": task_id,
+        "user_id": user_id,
+        "status": "PLANNED",
+        "description": plan
     }
     await event_publisher.publish(payload)

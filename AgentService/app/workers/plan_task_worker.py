@@ -22,7 +22,7 @@ async def handle_workflow_task(payload: dict):
     print(f"[PlanningWorker] Processing task {task_id}")
 
     agent_instance = await get_agent()
-    results = await agent_instance.run(input_data, task_id)
+    results = await agent_instance.run(task_id, user_id, input_data)
 
     payload_to_send = {
         "event_type": "plan_result",

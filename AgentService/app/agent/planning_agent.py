@@ -8,6 +8,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from app.agent.agent_helper import publish_plan
 
 class PlanningAgent:
     _instance = None
@@ -97,11 +98,12 @@ Return ONLY a numbered list.
         )
         self.builder = builder
 
-    async def run(self, task: str, thread_id: str):
+    async def run(self, thread_id: str, user_id: str, task: str):
         msg = HumanMessage(content=task)
         thread = {"configurable": {"thread_id": thread_id}}
         async with self.checkpointer_cm as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)
             results = await asyncio.to_thread(graph.invoke, {"messages": [msg]}, thread)
+            asyncio.create_task(publish_plan(thread_id, user_id, results["messages"][-1].content))
         return results

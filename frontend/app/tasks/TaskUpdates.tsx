@@ -12,9 +12,9 @@ export default function TaskUpdates() {
       )}
       {updates.map((u, i) => (
         <div key={i} className="p-3 border rounded-lg bg-gray-50">
-          <div className="font-medium">Task ID: {u.taskId}</div>
+          <div className="font-medium">Task ID: {u.task_id}</div>
           <div>Status: {u.status}</div>
-          {u.result && <div>Result: {u.result}</div>}
+          {u.description && <div>Desc: {u.description}</div>}
         </div>
       ))}
     </div>

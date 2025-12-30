@@ -12,7 +12,7 @@ namespace EventService.Dtos
         [property: JsonPropertyName("status")]
         string Status,
 
-        [property: JsonPropertyName("result")]
-        string Result
+        [property: JsonPropertyName("description")]
+        string Description
     );
 }
