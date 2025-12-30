@@ -18,11 +18,9 @@
   --color-sky: #8AB1D0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #ededed;
+  --foreground: #0a0a0a;
 }
 
 body {

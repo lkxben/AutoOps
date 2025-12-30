@@ -15,13 +15,13 @@ export default function TaskForm() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t">
+    <div className="fixed bottom-0 left-0 right-0 bg-white">
       <form
         onSubmit={submit}
         className="max-w-3xl mx-auto flex items-center gap-2 p-4"
       >
         <input
-          className="flex-1 border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black"
+          className="flex-1 border rounded-lg px-4 py-3 focus:outline-none"
           placeholder="Type your task..."
           value={inputData}
           onChange={(e) => setInputData(e.target.value)}
@@ -30,7 +30,7 @@ export default function TaskForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="bg-black text-white px-5 py-3 rounded-lg disabled:opacity-50"
+          className="text-white bg-sky-300 px-5 py-3 rounded-lg disabled:opacity-50"
         >
           {isPending ? '...' : 'Send'}
         </button>

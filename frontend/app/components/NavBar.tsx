@@ -14,16 +14,16 @@ export default function NavBar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-6 py-4 bg-sky-300 border-b">
+      <nav className="flex items-center justify-between px-6 py-4 bg-sky-300">
         <Link className="text-xl font-bold text-white" href="/">AutoOps</Link>
 
         {user ? (
-          <div className="flex gap-4">
+          <div className="flex gap-4 text-white">
             <span>{user.name}</span>
             <button onClick={logout}>Logout</button>
           </div>
         ) : (
-          <div className="flex gap-4">
+          <div className="flex gap-4 text-white">
             <button onClick={() => setShowLogin(true)}>Login</button>
             <button onClick={() => setShowRegister(true)}>Register</button>
           </div>
