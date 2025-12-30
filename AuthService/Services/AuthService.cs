@@ -51,7 +51,7 @@ namespace AuthService.Protos
             return user.ToModel();
         }
 
-        public override async Task<Google.Protobuf.WellKnownTypes.Empty> Register(RegisterModel request, ServerCallContext context)
+        public override async Task<ResponseModel> Register(RegisterModel request, ServerCallContext context)
         {
             var user = new User
             {
@@ -64,10 +64,32 @@ namespace AuthService.Protos
                 throw new RpcException(new Status(StatusCode.InvalidArgument, string.Join("; ", result.Errors.Select(e => e.Description))));
             }
 
-            return new Empty();
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
+                new Claim("name", user.Name)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(int.Parse(_configuration["Jwt:ExpiryMinutes"]!)),
+                signingCredentials: creds
+            );
+
+            return new ResponseModel
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(token),
+                User = user.ToModel()
+            };
         }
 
-        public override async Task<LoginResponseModel> Login(LoginModel request, ServerCallContext context)
+        public override async Task<ResponseModel> Login(LoginModel request, ServerCallContext context)
         {
             var user = await _userManager.FindByNameAsync(request.Username);
             if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
@@ -91,7 +113,7 @@ namespace AuthService.Protos
                 signingCredentials: creds
             );
 
-            return new LoginResponseModel
+            return new ResponseModel
             {
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
                 User = user.ToModel()

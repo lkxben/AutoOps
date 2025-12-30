@@ -9,8 +9,8 @@ package Auth;
 service Auth {
     rpc GetAllUsers (google.protobuf.Empty) returns (stream UserModel);
     rpc GetUser (GetUserModel) returns (UserModel);
-    rpc Register (RegisterModel) returns (google.protobuf.Empty);
-    rpc Login (LoginModel) returns (LoginResponseModel);
+    rpc Register (RegisterModel) returns (ResponseModel);
+    rpc Login (LoginModel) returns (ResponseModel);
 }
 
 message GetUserModel {
@@ -34,7 +34,7 @@ message RegisterModel {
     string password = 3;
 }
 
-message LoginResponseModel {
+message ResponseModel {
     string token = 1;
     UserModel user = 2;
 }

@@ -131,14 +131,21 @@ app.MapGet("/users/{id}", async (string id, Auth.AuthClient authClient) =>
 
 app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authClient) =>
 {
-    await authClient.RegisterAsync(new RegisterModel
+    var response = await authClient.RegisterAsync(new RegisterModel
     {
         Username = registerDto.Username,
         Name = registerDto.Name,
         Password = registerDto.Password
     });
 
-    return Results.Ok(new { message = "User registered successfully" });
+    return Results.Ok(new LoginResponseDto(
+        response.Token,
+        new UserDto(
+            response.User.Id,
+            response.User.Username,
+            response.User.Name
+        )
+    ));
 });
 
 app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
