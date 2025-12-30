@@ -1,31 +1,34 @@
-"use client";
-import React from "react";
-import Link from "next/link";
+"use client"
+import Link from "next/link"
+import "../globals.css"
+import { useState } from "react"
+import Modal from "./Modal"
+import { useAuth } from '../contexts/AuthContext'
+import LoginForm from "./LoginForm"
 
-interface NavBarProps {
-  user?: { id: string; name: string } | null;
-}
+export default function NavBar() {
+  const { token, logout } = useAuth()
+  const [showLogin, setShowLogin] = useState(false)
+  // const [showRegister, setShowRegister] = useState(false)
 
-export default function NavBar({ user }: NavBarProps) {
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white shadow">
-      <div className="text-xl font-bold text-gray-800">
-        <Link href="/">AutoOps</Link>
-      </div>
-      {!user && (
-        <div className="space-x-4">
-          <Link href="/login">
-            <button className="px-4 py-2 bg-charcoal-400 hover:bg-gray-500 text-white rounded">
-              Log In
-            </button>
-          </Link>
-          <Link href="/register">
-            <button className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded">
-              Register
-            </button>
-          </Link>
-        </div>
-      )}
-    </nav>
+    <>
+      <nav className="flex items-center justify-between px-6 py-4 bg-sky-300 border-b">
+        <Link className="text-xl font-bold text-white" href="/">AutoOps</Link>
+
+        {token ? (
+          <div className="flex gap-4">
+            <span>Logged</span>
+            <button onClick={logout}>Logout</button>
+          </div>
+        ) : (
+          <button onClick={() => setShowLogin(true)}>Login</button>
+        )}
+      </nav>
+
+      <Modal isOpen={showLogin} onClose={() => setShowLogin(false)}>
+        <LoginForm onSuccess={() => setShowLogin(false)} />
+      </Modal>
+    </>
   );
 }

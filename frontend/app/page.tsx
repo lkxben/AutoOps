@@ -12,7 +12,7 @@ export default function Home() {
         </p>
         <div className="space-x-4">
           <Link href="/register">
-            <button className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg">
+            <button className="px-6 py-3 bg-sky-400 hover:bg-sky-500 text-white font-semibold rounded-lg">
               Get Started
             </button>
           </Link>
