@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from app.agent.agent_helper import tool_call, publish_result
+from app.agent.agent_helper import tool_call, publish_result, parse_plan
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
 from typing import Any, Dict
@@ -27,15 +27,18 @@ class ReactAgent:
         class State(MessagesState):
             task: str
             plan: str
-            results_array: List[Any] = [None]
-            current_step: int = 1
-            total_steps: int
+            completed_steps: {int, Any}
+            previous_node: int
+            execution_history: List[int]
             thoughts: str = ""
+            final: bool = False
+            terminal_nodes: List[int]
             
         self.State = State
         self.db_uri = db_uri
 
         class ReactOutputSchema(BaseModel):
+            node: int = None
             tool_type: str = None
             inputs: Dict[str, Any] = None
             thoughts: Optional[str] = None
@@ -77,8 +80,9 @@ class ReactAgent:
         def react(state: self.State):
             plan = state["plan"]
             task = state["task"]
-            current_step = state["current_step"]
-            current_step_text = self.get_current_step_text(plan, state["current_step"])
+            completed_steps = state["completed_steps"]
+            execution_history = state["execution_history"]
+            previous_node = state["previous_node"]
             sys_msg = SystemMessage(content=f"""
 You are an execution agent responsible for carrying out a pre-approved plan.
 
@@ -88,39 +92,34 @@ Task:
 Plan:
 {plan}
 
-You are currently executing **one step at a time**.
+State:
+Completed steps with results: {completed_steps}
+Execution history (order of nodes executed): {execution_history}
+Previous node executed: {previous_node}
 
 Rules:
-1. Do NOT modify, reorder, or reinterpret the plan.
-2. Execute ONLY the current step.
-3. Do NOT infer, compute, or simplify future steps.
-4. You may ONLY use:
-   - results from completed steps, and
-   - the tools explicitly listed below.
-5. Each step requires exactly **one tool call**. Do NOT combine multiple tools.
-6. Output exactly **ONE JSON object** per step:
-{{
-    "tool_type": "<tool_name>",
-    "inputs": {{
-        "arg1": value1,
-        "arg2": value2
-    }},
-    "thoughts": "optional reasoning or notes"
-}}
-7. If you have no thoughts, omit the "thoughts" field entirely.
-
-You are currently executing:
-Step {current_step}: {current_step_text}
-
-Results so far: {state["results_array"]}  # index corresponds to step numbers; initialize with None at index 0
+1. Execute exactly one node at a time.
+2. Do NOT modify, reorder, or reinterpret the plan.
+3. Resolve all $<node> references in inputs using the results of completed steps.
+4. Decide the next node to execute yourself based on completed steps, execution history, and plan dependencies.
+5. Output EXACTLY ONE JSON object with:
+   {{
+       "node": <node_id>,
+       "tool_type": "<tool_name>",
+       "inputs": {{ ... resolved ... }},
+       "thoughts": "optional reasoning or notes"
+   }}
+6. Output only JSON. No extra text, no comments, no explanations.
+7. Use ONLY the tools listed below.
 
 Available tools:
 {self.tool_descriptions}
 """)
 
             tool_call_result = self.react_llm.invoke([sys_msg])
+            print(f"REACT OUTPUT: {tool_call_result}")
 
-            return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())]}
+            return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())], "previous_node": tool_call_result.node}
         
         def dummy_node(state: self.State):
             return state
@@ -136,7 +135,7 @@ Plan:
 {state['plan']}
 
 Results from each step:
-{state['results_array']}
+{state['completed_steps']}
 
 
 Provide the final answer to the user. Include brief thought process under "thoughts" field.
@@ -153,12 +152,9 @@ If your reasoning is too long, summarise it so it fits within the limit.
             ])
 
             return {"messages": [AIMessage(content=result.answer)]}
-
-        def should_end(state):
-            current_step = state["current_step"]
-            total_steps = state["total_steps"]
-
-            if current_step > total_steps:
+        
+        def should_end(state: self.State):
+            if state["final"]:
                 return "final"
             return "tools"
                 
@@ -168,24 +164,30 @@ If your reasoning is too long, summarise it so it fits within the limit.
         builder.add_node("tools", dummy_node)
         builder.add_node("final", final_answer)
 
+        builder.add_edge(START, "react")
         builder.add_conditional_edges(
             "react", should_end, ["final", "tools"]
         )
-        builder.add_edge(START, "react")
         builder.add_edge("tools", "react")
         builder.add_edge("final", END)
         self.builder = builder
 
     async def start_task(self, thread_id: str, user_id: str, task: str, plan: str):
         thread = {"configurable": {"thread_id": thread_id}}
+
+        nodes, edges = parse_plan(plan)
+        terminal_nodes = [int(edge["from"]) for edge in edges if edge["to"] == "END"]
         initial_state = {
             "task": task,
             "plan": plan,
-            "current_step": 1,
-            "total_steps": self.get_total_steps(plan),
-            "results_array": [None],
-            "thoughts": ""
+            "completed_steps": {},
+            "previous_node": None,
+            "execution_history": [],
+            "thoughts": "",
+            "terminal_nodes": terminal_nodes,
+            "final": False
         }
+
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(interrupt_before=["tools"], checkpointer=checkpointer)
@@ -207,26 +209,30 @@ If your reasoning is too long, summarise it so it fits within the limit.
             await checkpointer.setup()
             checkpoint = await checkpointer.aget(thread)
             state = dict(checkpoint["channel_values"])
-            current_step = state["current_step"] + 1
-            new_results = list(state["results_array"])
-            new_results.append(tool_result)
+            completed_steps = dict(state.get("completed_steps", {}))
+            previous_node = state["previous_node"] 
+            completed_steps[previous_node] = tool_result
+            execution_history = state.get("execution_history", [])
+            execution_history.append(previous_node)
 
-            if current_step > state["total_steps"]:
+            if any(n in execution_history for n in state["terminal_nodes"]):
                 graph = self.builder.compile(checkpointer=checkpointer)
                 await graph.aupdate_state(
                     thread,
-                    {"current_step": current_step, "results_array": new_results}
+                    {"completed_steps": completed_steps, "execution_history": execution_history, "final": True}
                 )
-                results = await graph.ainvoke(None, config=thread)
-                asyncio.create_task(publish_result(thread_id, user_id, results["messages"][-1].content))
-                return results
-            
+                final_results = await graph.ainvoke(None, config=thread)
+                asyncio.create_task(
+                    publish_result(thread_id, user_id, final_results["messages"][-1].content)
+                )
+                return final_results
+        
             else:
                 graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
 
                 await graph.aupdate_state(
                     thread,
-                    {"current_step": current_step, "results_array": new_results}
+                    {"completed_steps": completed_steps, "execution_history": execution_history}
                 )
                 results = await graph.ainvoke(None, config=thread)
             
@@ -236,23 +242,6 @@ If your reasoning is too long, summarise it so it fits within the limit.
                 except json.JSONDecodeError:
                     print("TOOL PARSING ERROR")
                     return
-                
+            
                 asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
                 return
-    
-    def get_current_step_text(self, plan: str, current_step: int) -> str:
-        lines = plan.splitlines()
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            # Match lines starting with "1. ", "2. ", etc.
-            if line.startswith(f"{current_step}."):
-                # Remove the numbering
-                return line[len(f"{current_step}."):].strip()
-        return ""  # fallback if not found
-    
-    def get_total_steps(self, plan: str) -> int:
-        # Match lines that start with a number followed by a dot
-        step_pattern = re.compile(r'^\s*\d+\.\s+', re.MULTILINE)
-        return len(step_pattern.findall(plan))

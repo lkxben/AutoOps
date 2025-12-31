@@ -52,31 +52,32 @@ class PlanningAgent:
 
         def create_plan(state: self.State):
             human_feedback = state.get('human_feedback', '')
-            planner_instructions = f"""
-You are a task planning assistant.
 
-Your job is to produce a clear, human-readable step-by-step plan for solving the user's task.
+            new_sys_msg = f"""
+You are a planning agent.
 
-IMPORTANT RULES:
-1. DO NOT call tools.
-2. DO NOT use JSON, function syntax, or code.
-3. Each step must be written in natural language.
-4. Each step must correspond to exactly ONE tool call later.
-5. Steps must be strictly sequential — no parallel or combined actions.
-6. Do NOT include explanations, reasoning, or commentary.
+Convert the user's task into a structured execution graph in a MINIMAL, compact format.
 
-You MUST take into account the following human feedback (if any) when generating the plan:
-{human_feedback}
+RULES:
+1. Use plain text only. No JSON, no markdown, no commentary.
+2. Node format: step_id|tool|arg1=val,arg2=val|short description
+3. Edge format: from->to [optional: condition/loop]
+4. Only one START and one END; START must only be in the 'from' position, END must only be in the 'to' position.
+5. Do not compute results; use symbolic arguments or $<step_id> references.
+6. Step IDs must be sequential integers starting from 1.
+7. Include all nodes first, then all edges.
+8. For every node that uses the result of another node in its inputs, create an edge from that node to the dependent node.
+9. Identify all “final nodes” (nodes whose results are not used by any other node) and create an edge from each final node to END.
+10. Ensure every node is connected and no dependency edges are omitted.
+11. Minimise unnecessary nodes or edges.
 
-Available tools:
+AVAILABLE TOOLS:
 {self.tool_descriptions}
 
-User task:
-{state['messages'][-1].content}
-
-Return ONLY a numbered list.
+USER TASK:
+{state["messages"][-1].content}
 """
-            return {"messages": [self.llm.invoke([SystemMessage(content=planner_instructions)])]}
+            return {"messages": [self.llm.invoke([SystemMessage(content=new_sys_msg)])]}
 
         def should_continue(state: self.State):
             human_feedback=state.get('human_feedback', None)

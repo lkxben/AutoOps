@@ -47,6 +47,8 @@ def handle_tool_call(payload: dict):
     tool_type = payload.get("tool_type")
     inputs = payload.get("inputs", {})
 
+    print(f"[ToolWorker] Calling tool {tool_type} with inputs {inputs}")
+
     if tool_type not in available_tools:
         asyncio.create_task(
             publisher.publish({
