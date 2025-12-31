@@ -45,8 +45,6 @@ class PlanningAgent:
         )
 
     async def _async_init(self):
-        self.checkpointer_cm = AsyncPostgresSaver.from_conn_string(self.db_uri)
-
         def human_feedback_node(state: self.State):
             pass
 
@@ -104,7 +102,7 @@ USER TASK:
     async def run(self, thread_id: str, user_id: str, task: str):
         msg = HumanMessage(content=task)
         thread = {"configurable": {"thread_id": thread_id}}
-        async with self.checkpointer_cm as checkpointer:
+        async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)
             results = await asyncio.to_thread(graph.invoke, {"messages": [msg]}, thread)
