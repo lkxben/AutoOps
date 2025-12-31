@@ -1,5 +1,6 @@
 from app.messaging.tool_call_publisher import ToolCallPublisher
 from app.messaging.task_updated_publisher import TaskUpdatedPublisher
+from app.messaging.plan_draft_publisher import PlanDraftPublisher
 import re
 from typing import Dict, List, Any, Tuple
 
@@ -11,6 +12,8 @@ tool_registry = {
 }
 
 tool_publisher = ToolCallPublisher()
+event_publisher = TaskUpdatedPublisher()
+plan_publisher = PlanDraftPublisher()
 
 async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
     payload = {
@@ -20,8 +23,6 @@ async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
         "inputs": kwargs
     }
     await tool_publisher.publish(payload)
-
-event_publisher = TaskUpdatedPublisher()
 
 async def publish_result(task_id: str, user_id: str, result: str):
     payload = {
@@ -33,13 +34,13 @@ async def publish_result(task_id: str, user_id: str, result: str):
     await event_publisher.publish(payload)
 
 async def publish_plan(task_id: str, user_id: str, plan: str):
+    print("SENDING OUT PLANNNNNN")
     payload = {
         "task_id": task_id,
         "user_id": user_id,
-        "status": "PLANNED",
-        "description": plan
+        "plan": parse_plan_to_reactflow(plan)
     }
-    await event_publisher.publish(payload)
+    await plan_publisher.publish(payload)
 
 def parse_plan(plan_str: str):
     nodes: Dict[int, Dict[str, Any]] = {}
@@ -115,3 +116,69 @@ def complete_plan(plan_str: str) -> str:
         plan_lines.append(f"{edge['from']}->{edge['to']}")
 
     return "\n".join(plan_lines)
+
+def parse_plan_to_reactflow(text: str):
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    nodes = []
+    edges = []
+    node_ids = set()
+
+    for line in lines:
+        if "->" in line:
+            src, dst = [x.strip() for x in line.split("->")]
+            edges.append({
+                "id": f"{src}-{dst}",
+                "source": src,
+                "target": dst,
+                "type": "default"
+            })
+            continue
+
+        parts = line.split("|")
+        node_id = parts[0]
+        action = parts[1] if len(parts) > 1 else None
+        params_raw = parts[2] if len(parts) > 2 else ""
+        label = parts[3] if len(parts) > 3 else node_id
+
+        params = {}
+        if params_raw:
+            for p in params_raw.split(","):
+                k, v = p.split("=")
+                params[k] = v
+
+        nodes.append({
+            "id": node_id,
+            "type": "default",
+            "position": {"x": 0, "y": 0},
+            "data": {
+                "label": label,
+                "action": action,
+                "params": params
+            }
+        })
+
+        node_ids.add(node_id)
+
+    if "START" not in node_ids:
+        nodes.append({
+            "id": "START",
+            "type": "input",
+            "position": {"x": -200, "y": 0},
+            "data": {"label": "START"}
+        })
+        node_ids.add("START")
+
+    if "END" not in node_ids:
+        nodes.append({
+            "id": "END",
+            "type": "output",
+            "position": {"x": 2000, "y": 0},
+            "data": {"label": "END"}
+        })
+        node_ids.add("END")
+
+    return {
+        "nodes": nodes,
+        "edges": edges
+    }

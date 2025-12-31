@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     AGENT_EXCHANGE: str = "agent-task"
     TOOL_EXCHANGE: str = "tool-call"
     TASK_UPDATED_EXCHANGE: str = "task-updates"
+    PLAN_DRAFT_EXCHANGE: str = "plan-draft"
     AGENT_DB: str = "host=localhost port=6502 dbname=AutoOpsAgent user=postgres password=password"
 
 settings = Settings()
