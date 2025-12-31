@@ -14,7 +14,6 @@ export default function TaskUpdates() {
         <div key={i} className="p-3 border rounded-lg bg-gray-50">
           <div className="font-medium">Task ID: {u.task_id}</div>
           <div>Status: {u.status}</div>
-          {u.plan && <div>Plan: {u.plan}</div>}
           {u.description && <div>Desc: {u.description}</div>}
         </div>
       ))}
