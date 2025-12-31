@@ -8,7 +8,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import publish_plan
+from app.agent.agent_helper import publish_plan, complete_plan
 
 class PlanningAgent:
     _instance = None
@@ -62,14 +62,12 @@ RULES:
 1. Use plain text only. No JSON, no markdown, no commentary.
 2. Node format: step_id|tool|arg1=val,arg2=val|short description
 3. Edge format: from->to [optional: condition/loop]
-4. Only one START and one END; START must only be in the 'from' position, END must only be in the 'to' position.
-5. Do not compute results; use symbolic arguments or $<step_id> references.
-6. Step IDs must be sequential integers starting from 1.
-7. Include all nodes first, then all edges.
-8. For every node that uses the result of another node in its inputs, create an edge from that node to the dependent node.
-9. Identify all “final nodes” (nodes whose results are not used by any other node) and create an edge from each final node to END.
-10. Ensure every node is connected and no dependency edges are omitted.
-11. Minimise unnecessary nodes or edges.
+4. Do not compute results; use symbolic arguments or $<step_id> references.
+5. Step IDs must be sequential integers starting from 1.
+6. Include all nodes first, then all edges.
+7. For every node that uses the result of another node in its inputs, create an edge from that node to the dependent node.
+8. Ensure every node is connected and no dependency edges are omitted.
+9. Minimise unnecessary nodes or edges.
 
 AVAILABLE TOOLS:
 {self.tool_descriptions}
@@ -77,7 +75,11 @@ AVAILABLE TOOLS:
 USER TASK:
 {state["messages"][-1].content}
 """
-            return {"messages": [self.llm.invoke([SystemMessage(content=new_sys_msg)])]}
+            
+            ai_msg = self.llm.invoke([SystemMessage(content=new_sys_msg)])
+            plan_str = ai_msg.content
+            completed_plan = complete_plan(plan_str)
+            return {"messages": [AIMessage(content=completed_plan)]}
 
         def should_continue(state: self.State):
             human_feedback=state.get('human_feedback', None)

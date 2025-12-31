@@ -1,7 +1,7 @@
 from app.messaging.tool_call_publisher import ToolCallPublisher
 from app.messaging.task_updated_publisher import TaskUpdatedPublisher
 import re
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 tool_registry = {
     "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
@@ -72,3 +72,46 @@ def parse_plan(plan_str: str):
             })
 
     return nodes, edges
+
+def complete_plan(plan_str: str) -> str:
+    nodes, edges = parse_plan(plan_str)
+
+    incoming = {nid: set() for nid in nodes}
+    outgoing = {nid: set() for nid in nodes}
+    for edge in edges:
+        src, dst = edge["from"], edge["to"]
+        if src.isdigit() and dst.isdigit():
+            src_id, dst_id = int(src), int(dst)
+            outgoing[src_id].add(dst_id)
+            incoming[dst_id].add(src_id)
+
+    dep_pattern = re.compile(r"\$(\d+)")
+    for nid, node in nodes.items():
+        for val in node["args"].values():
+            for dep_id_str in dep_pattern.findall(str(val)):
+                dep_id = int(dep_id_str)
+                if dep_id not in incoming[nid]:
+                    edges.append({"from": str(dep_id), "to": str(nid), "condition": "true"})
+                    outgoing[dep_id].add(nid)
+                    incoming[nid].add(dep_id)
+
+    # Connect START to nodes with no incoming edges
+    for nid in nodes:
+        if not incoming[nid]:
+            edges.append({"from": "START", "to": str(nid), "condition": "true"})
+
+    # Connect nodes with no outgoing edges to END
+    for nid in nodes:
+        if not outgoing[nid]:
+            edges.append({"from": str(nid), "to": "END", "condition": "true"})
+
+    plan_lines = []
+    for nid in sorted(nodes):
+        node = nodes[nid]
+        args_str = ",".join(f"{k}={v}" for k, v in node["args"].items())
+        plan_lines.append(f"{nid}|{node['tool']}|{args_str}|{node['description']}")
+
+    for edge in edges:
+        plan_lines.append(f"{edge['from']}->{edge['to']}")
+
+    return "\n".join(plan_lines)
