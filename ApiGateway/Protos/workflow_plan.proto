@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option csharp_namespace = "WorkflowService.Protos";
+
+package WorkflowPlanSvc;
+
+service WorkflowPlanSvc {
+    rpc CreatePlan (CreateWorkflowPlanModel) returns (CreateWorkflowPlanResponse);
+}
+
+message CreateWorkflowPlanModel {
+    string taskId = 1;
+    string userId = 2;
+    string plan = 3;
+}
+
+message CreateWorkflowPlanResponse {
+    string id = 1;
+}

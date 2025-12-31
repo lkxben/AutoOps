@@ -24,6 +24,7 @@
   <ItemGroup>
     <Protobuf Include="Protos/auth.proto" GrpcServices="Client" />
     <Protobuf Include="Protos/workflow_task.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos/workflow_plan.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

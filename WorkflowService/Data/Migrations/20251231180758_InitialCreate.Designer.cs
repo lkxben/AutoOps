@@ -12,7 +12,7 @@ using WorkflowService.Data;
 namespace WorkflowService.Data.Migrations
 {
     [DbContext(typeof(WorkflowServiceContext))]
-    [Migration("20251228092753_InitialCreate")]
+    [Migration("20251231180758_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,6 +24,27 @@ namespace WorkflowService.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("WorkflowService.Entities.WorkflowPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WorkflowPlans");
+                });
 
             modelBuilder.Entity("WorkflowService.Entities.WorkflowTask", b =>
                 {

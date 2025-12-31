@@ -12,6 +12,20 @@ namespace WorkflowService.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "WorkflowPlans",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TaskId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Plan = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowPlans", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowTasks",
                 columns: table => new
                 {
@@ -30,6 +44,9 @@ namespace WorkflowService.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "WorkflowPlans");
+
             migrationBuilder.DropTable(
                 name: "WorkflowTasks");
         }

@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using System.Numerics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +63,11 @@ builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 });
 
 builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
+{
+    o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
+});
+
+builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 {
     o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
 });
@@ -195,6 +201,21 @@ app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, HttpContext context, Wor
     {
         InputData = dto.InputData,
         UserId = userId
+    });
+
+    return Results.Ok(new IdDto(result.Id));
+}).RequireAuthorization();
+
+app.MapPost("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var result = await wfpClient.CreatePlanAsync(new CreateWorkflowPlanModel
+    {
+        UserId = userId,
+        TaskId = dto.TaskId,
+        Plan = dto.Plan
     });
 
     return Results.Ok(new IdDto(result.Id));

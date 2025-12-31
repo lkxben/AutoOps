@@ -42,4 +42,5 @@ builder.Services.AddMassTransit(x =>
 var app = builder.Build();
 
 app.MapGrpcService<WorkflowTaskSvcImp>();
+app.MapGrpcService<WorkflowPlanSvcImp>();
 app.Run();
