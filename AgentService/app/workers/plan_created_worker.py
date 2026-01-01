@@ -21,7 +21,7 @@ async def _handle_plan(payload: dict):
     msg_data = payload.get("message", {})
     thread_id = msg_data.get("task_id")
     user_id = msg_data.get("user_id")
-    task = msg_data.get("task")
+    task_description = msg_data.get("task_description")
     plan = msg_data.get("plan")
     print(f"[PlanCreatedWorker] Starting task {thread_id}")
 
@@ -29,4 +29,4 @@ async def _handle_plan(payload: dict):
     lock = thread_locks[thread_id]
 
     async with lock:
-        results = await agent_instance.start_task(thread_id, user_id, task, plan)
+        results = await agent_instance.start_task(thread_id, user_id, task_description, plan)

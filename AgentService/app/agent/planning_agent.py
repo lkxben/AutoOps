@@ -40,7 +40,7 @@ class PlanningAgent:
 
         self.llm = ChatGroq(
             model="llama-3.1-8b-instant",
-            temperature=0.3,
+            temperature=0.0,
             max_tokens=100
         )
 
@@ -77,6 +77,7 @@ USER TASK:
             ai_msg = self.llm.invoke([SystemMessage(content=new_sys_msg)])
             plan_str = ai_msg.content
             completed_plan = complete_plan(plan_str)
+            print(completed_plan)
             return {"messages": [AIMessage(content=completed_plan)]}
 
         def should_continue(state: self.State):

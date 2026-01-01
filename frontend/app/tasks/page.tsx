@@ -3,34 +3,37 @@
 import React, { useState, useEffect } from "react"
 import TaskForm from "./TaskForm"
 import TaskGraph from "./TaskGraph"
+import { CurrentTaskProvider, useCurrentTask } from "../contexts/CurrentTaskContext"
 import { useTaskHubPlan } from "../hooks/useTaskHubPlan"
 import { Node, Edge } from "reactflow"
+import { useCreatePlan } from "../hooks/useCreatePlan"
 
-export default function Page() {
-  const [stage, setStage] = useState<"input" | "loading" | "plan" | "submitting">("input")
-  const [nodes, setNodes] = useState<Node[]>([])
-  const [edges, setEdges] = useState<Edge[]>([])
-
+function PageContent() {
+  const { stage, setStage, setPlan, nodes, edges, taskId } = useCurrentTask()
   const { nodes: planNodes, edges: planEdges } = useTaskHubPlan()
+  const createPlan = useCreatePlan()
 
+  // updates to plan stage when plan is received
   useEffect(() => {
     if (planNodes.length > 0 && planEdges.length > 0) {
-      setNodes(planNodes)
-      setEdges(planEdges)
+      setPlan(planNodes, planEdges)
       setStage("plan")
     }
-  }, [planNodes, planEdges])
+  }, [planNodes, planEdges, setPlan, setStage])
 
-  const handleTaskSubmitted = () => {
-    setStage("loading")
-  }
-
-  const handlePlanSubmit = (updatedNodes: Node[], updatedEdges: Edge[]) => {
+  const handlePlanSubmit = async (updatedNodes: typeof nodes, updatedEdges: typeof edges) => {
     setStage("submitting")
-    // Send updated plan to backend for execution or simulate
-    setTimeout(() => {
-      window.location.href = "/tasks"
-    }, 1000)
+    try {
+      await createPlan.mutateAsync({
+        taskId: taskId,
+        plan: { nodes: updatedNodes, edges: updatedEdges }
+      })
+      window.location.href = "/tasks" // change to dashboard later
+    } catch (err) {
+      console.error(err)
+      alert("Failed to submit plan")
+      setStage("plan")
+    }
   }
 
   return (
@@ -38,7 +41,7 @@ export default function Page() {
       {stage === "input" && (
         <div className="flex flex-col items-center justify-center flex-1 gap-4">
           <h2 className="text-xl font-semibold">Enter your task</h2>
-          <TaskForm onTaskSubmitted={handleTaskSubmitted} />
+          <TaskForm />
         </div>
       )}
 
@@ -50,11 +53,7 @@ export default function Page() {
       )}
 
       {stage === "plan" && (
-        <TaskGraph
-          initialNodes={nodes}
-          initialEdges={edges}
-          onSubmitPlan={handlePlanSubmit}
-        />
+        <TaskGraph onSubmitPlan={handlePlanSubmit} />
       )}
 
       {stage === "submitting" && (
@@ -64,5 +63,13 @@ export default function Page() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <CurrentTaskProvider>
+      <PageContent />
+    </CurrentTaskProvider>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useCallback } from "react"
+import React, { useCallback, useState, useEffect } from "react"
+import { useCurrentTask } from "../contexts/CurrentTaskContext"
 import ReactFlow, {
   addEdge,
   Node,
@@ -20,19 +21,18 @@ import { layoutGraph } from "../lib/layoutGraph"
 import GraphNode from "../components/GraphNode"
 
 type TaskGraphProps = {
-  initialNodes: Node[]
-  initialEdges: Edge[]
   onSubmitPlan: (nodes: Node[], edges: Edge[]) => void
 }
 
-export default function TaskGraph({ initialNodes, initialEdges, onSubmitPlan }: TaskGraphProps) {
-  const [rfNodes, setRfNodes] = React.useState<Node[]>(initialNodes)
-  const [rfEdges, setRfEdges] = React.useState<Edge[]>(initialEdges)
+export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
+  const { nodes, edges, setPlan } = useCurrentTask()
+  const [rfNodes, setRfNodes] = useState<Node[]>(nodes)
+  const [rfEdges, setRfEdges] = useState<Edge[]>(edges)
 
-  React.useEffect(() => {
-    setRfNodes(initialNodes)
-    setRfEdges(initialEdges)
-  }, [initialNodes, initialEdges])
+  useEffect(() => {
+    setRfNodes(nodes)
+    setRfEdges(edges)
+  }, [nodes, edges])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setRfNodes(prev => applyNodeChanges(changes, prev)),
@@ -78,12 +78,17 @@ export default function TaskGraph({ initialNodes, initialEdges, onSubmitPlan }: 
     setRfNodes(laidOut)
   }, [rfNodes, rfEdges])
 
+  const handleSubmit = () => {
+    setPlan(rfNodes, rfEdges)
+    onSubmitPlan(rfNodes, rfEdges)
+  }
+
   return (
     <div style={{ width: '100%', height: "100%" }}>
       <div className="absolute z-10 p-4 flex gap-2">
         <button onClick={addNode} className="bg-sky-300 text-white px-4 py-2 rounded-lg shadow hover:bg-sky-400 transition">Add Node</button>
         <button onClick={layoutCurrentGraph} className="bg-sky-300 text-white px-4 py-2 rounded-lg shadow hover:bg-sky-400 transition">Auto Layout</button>
-        <button onClick={() => onSubmitPlan(rfNodes, rfEdges)} className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition ml-auto">Submit Plan</button>
+        <button onClick={handleSubmit} className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition ml-auto">Submit Plan</button>
       </div>
       <ReactFlow
         nodes={rfNodes.map(n => ({ ...n, type: "custom" }))}

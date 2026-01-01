@@ -30,6 +30,19 @@ namespace WorkflowService.Protos
 
         public override async Task<CreateWorkflowPlanResponse> CreatePlan(CreateWorkflowPlanModel request, ServerCallContext context)
         {
+            if (!Guid.TryParse(request.TaskId, out var taskId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
+
+            if (!Guid.TryParse(request.UserId, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid userId"));
+            
+            var task = await _db.WorkflowTasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
+
+            if (task == null)
+                throw new RpcException(new Status(StatusCode.NotFound, "Task not found"));
+
             var plan = new WorkflowPlan
             {
                 TaskId = Guid.Parse(request.TaskId),
@@ -38,7 +51,8 @@ namespace WorkflowService.Protos
             };
             _db.WorkflowPlans.Add(plan);
             await _db.SaveChangesAsync();
-            await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, plan.Plan));
+
+            await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, task.InputData, plan.Plan));
             return new CreateWorkflowPlanResponse { Id = plan.Id.ToString() };
         }
     }

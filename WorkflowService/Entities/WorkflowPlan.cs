@@ -9,6 +9,6 @@ namespace WorkflowService.Entities
 
         public Guid TaskId { get; set; }
 
-        public string Plan { get; set; } = "";
+        public string Plan { get; set; }
     }
 }

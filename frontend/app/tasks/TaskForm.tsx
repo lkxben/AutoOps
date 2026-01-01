@@ -2,22 +2,28 @@
 
 import { useState } from 'react'
 import { useCreateTask } from '../hooks/useCreateTask'
+import { useCurrentTask } from "../contexts/CurrentTaskContext"
 
-type TaskFormProps = {
-  onTaskSubmitted: () => void
-}
-
-export default function TaskForm({ onTaskSubmitted }: TaskFormProps) {
+export default function TaskForm() {
   const [inputData, setInputData] = useState('')
   const createTask = useCreateTask()
+  const { setStage, setTaskId } = useCurrentTask()
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputData.trim()) return
 
-    createTask.mutate({ inputData })
+    setStage("loading")
+    try {
+      const res = await createTask.mutateAsync({ inputData })
+      console.log(res)
+      setTaskId(res.id)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to create task")
+      setStage("input")
+    }
     setInputData('')
-    onTaskSubmitted()
   }
 
   return (

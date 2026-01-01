@@ -16,13 +16,13 @@ async def start_tool_call_consumer():
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        settings.TOOL_EXCHANGE,
+        settings.TOOL_CALL_EXCHANGE,
         aio_pika.ExchangeType.FANOUT,
         durable=True
     )
 
     queue = await channel.declare_queue(
-        settings.TOOL_QUEUE,
+        settings.TOOL_CALL_QUEUE,
         durable=True,
         passive=False
     )

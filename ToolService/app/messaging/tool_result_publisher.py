@@ -16,7 +16,7 @@ class AgentQueuePublisher:
         self.channel = await self.connection.channel()
 
         self.exchange = await self.channel.declare_exchange(
-            settings.AGENT_EXCHANGE,
+            settings.TOOL_RESULT_EXCHANGE,
             aio_pika.ExchangeType.FANOUT,
             durable=True
         )

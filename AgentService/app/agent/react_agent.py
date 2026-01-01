@@ -69,7 +69,7 @@ class ReactAgent:
 
         self.llm = ChatGroq(
             model="llama-3.1-8b-instant",
-            temperature=0.3,
+            temperature=0.0,
             max_tokens=100
         )
 

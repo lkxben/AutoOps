@@ -215,7 +215,7 @@ app.MapPost("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Wor
     {
         UserId = userId,
         TaskId = dto.TaskId,
-        Plan = dto.Plan
+        Plan = dto.Plan.ToJsonString()
     });
 
     return Results.Ok(new IdDto(result.Id));

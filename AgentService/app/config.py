@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # with tool service
     TOOL_CALL_EXCHANGE: str = "tool-call"
-    TOOL_RESULT_QUEUE: str = "tool-result"
+    TOOL_RESULT_QUEUE: str = "tool-result-queue"
     TOOL_RESULT_EXCHANGE: str = "tool-result"
 
     # with event service

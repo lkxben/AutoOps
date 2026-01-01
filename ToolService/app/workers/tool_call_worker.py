@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from app.messaging.agent_queue_publisher import AgentQueuePublisher
+from app.messaging.tool_result_publisher import AgentQueuePublisher
 import app.tools.all_tools as all_tools
 
 available_tools = {}
