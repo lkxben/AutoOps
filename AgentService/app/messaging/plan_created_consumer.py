@@ -1,20 +1,20 @@
 import json
 import aio_pika
-from app.workers.agent_task_worker import handle_agent_task
+from app.workers.plan_created_worker import handle_plan
 from app.config import settings
 
-async def start_agent_queue_consumer():
+async def start_plan_created_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        settings.AGENT_EXCHANGE,
+        settings.PLAN_CREATED_EXCHANGE,
         aio_pika.ExchangeType.FANOUT,
         durable=True
     )
 
     queue = await channel.declare_queue(
-        settings.AGENT_QUEUE,
+        settings.PLAN_CREATED_QUEUE,
         durable=True,
         passive=False
     )
@@ -25,4 +25,4 @@ async def start_agent_queue_consumer():
         async for message in queue_iter:
             async with message.process():
                 payload = json.loads(message.body)
-                await handle_agent_task(payload)
+                await handle_plan(payload)

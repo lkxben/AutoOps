@@ -13,7 +13,7 @@ tool_registry = {
 
 tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
-plan_publisher = PlanDraftPublisher()
+plan_draft_publisher = PlanDraftPublisher()
 
 async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
     payload = {
@@ -33,14 +33,13 @@ async def publish_result(task_id: str, user_id: str, result: str):
     }
     await event_publisher.publish(payload)
 
-async def publish_plan(task_id: str, user_id: str, plan: str):
-    print("SENDING OUT PLANNNNNN")
+async def publish_plan_draft(task_id: str, user_id: str, plan: str):
     payload = {
         "task_id": task_id,
         "user_id": user_id,
         "plan": parse_plan_to_reactflow(plan)
     }
-    await plan_publisher.publish(payload)
+    await plan_draft_publisher.publish(payload)
 
 def parse_plan(plan_str: str):
     nodes: Dict[int, Dict[str, Any]] = {}

@@ -1,20 +1,20 @@
 import json
 import aio_pika
-from app.workers.task_created_worker import handle_workflow_task
+from app.workers.tool_result_worker import handle_tool_result
 from app.config import settings
 
-async def start_task_created_consumer():
+async def start_tool_result_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        settings.WORKFLOW_EXCHANGE,
+        settings.TOOL_RESULT_EXCHANGE,
         aio_pika.ExchangeType.FANOUT,
         durable=True
     )
 
     queue = await channel.declare_queue(
-        settings.WORKFLOW_QUEUE,
+        settings.TOOL_RESULT_QUEUE,
         durable=True,
         passive=False
     )
@@ -25,4 +25,4 @@ async def start_task_created_consumer():
         async for message in queue_iter:
             async with message.process():
                 payload = json.loads(message.body)
-                await handle_workflow_task(payload)
+                await handle_tool_result(payload)
