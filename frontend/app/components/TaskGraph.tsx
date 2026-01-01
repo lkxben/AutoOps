@@ -10,7 +10,6 @@ import ReactFlow, {
   EdgeChange,
   applyNodeChanges,
   applyEdgeChanges,
-  Elements,
   MiniMap,
   Controls,
   Background
@@ -23,37 +22,47 @@ type TaskGraphProps = {
   onSubmitPlan: (nodes: Node[], edges: Edge[]) => void
 }
 
+const NODE_TYPES = { custom: GraphNode }
+
 export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
-  const { nodes, edges, setPlan } = useCurrentTask()
+  const { nodes, edges, setPlan, resetTask } = useCurrentTask()
 
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    const updated = applyNodeChanges(changes, nodes)
-    setPlan(updated, edges)
-  }, [nodes, edges, setPlan])
+  // If plan is empty, show "task running" screen
+  if (!nodes.length && !edges.length) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+          <p className="text-lg font-medium text-gray-700 text-center">
+            Task is running in the background.<br/>
+            You can check your dashboard for updates.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    const updated = applyEdgeChanges(changes, edges)
-    setPlan(nodes, updated)
-  }, [nodes, edges, setPlan])
+  const updateNodes = useCallback((updatedNodes: Node[]) => {
+    const nodeIds = new Set(updatedNodes.map(n => n.id))
+    const updatedEdges = edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target))
+    setPlan(updatedNodes, updatedEdges)
+  }, [edges, setPlan])
+
+  const updateEdges = useCallback((updatedEdges: Edge[]) => setPlan(nodes, updatedEdges), [nodes, setPlan])
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => updateNodes(applyNodeChanges(changes, nodes)), [nodes, updateNodes])
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => updateEdges(applyEdgeChanges(changes, edges)), [edges, updateEdges])
 
   const onConnect = useCallback((connection: Connection) => {
-    const updated = [...edges, { ...connection, id: `${connection.source}-${connection.target}` }]
-    setPlan(nodes, updated)
-  }, [nodes, edges, setPlan])
+    const newEdge: Edge = { ...connection, id: `${connection.source}-${connection.target}` }
+    updateEdges([...edges, newEdge])
+  }, [edges, updateEdges])
 
   const onNodeDoubleClick = useCallback((_: any, node: Node) => {
     const newLabel = prompt("Edit node label:", node.data.label)
     if (!newLabel) return
-    const updatedNodes = nodes.map(n => n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n)
-    setPlan(updatedNodes, edges)
-  }, [nodes, edges, setPlan])
-
-  const onElementsRemove = useCallback((elements: Elements) => {
-    const removeIds = new Set(elements.map(e => e.id))
-    const updatedNodes = nodes.filter(n => !removeIds.has(n.id))
-    const updatedEdges = edges.filter(e => !removeIds.has(e.id))
-    setPlan(updatedNodes, updatedEdges)
-  }, [nodes, edges, setPlan])
+    updateNodes(nodes.map(n => n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n))
+  }, [nodes, updateNodes])
 
   const addNode = useCallback(() => {
     const newNode: Node = {
@@ -62,17 +71,28 @@ export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: { label: "New Node" }
     }
-    setPlan([...nodes, newNode], edges)
+    updateNodes([...nodes, newNode])
+  }, [nodes, updateNodes])
+
+  const layoutCurrentGraph = useCallback(() => updateNodes(layoutGraph(nodes, edges)), [nodes, edges, updateNodes])
+
+  const handleSubmit = useCallback(async () => {
+    await onSubmitPlan(nodes, edges)
+    resetTask() // clear current task from context & localStorage
+  }, [nodes, edges, onSubmitPlan, resetTask])
+
+  const handleNodesDelete = useCallback((deletedNodes: Node[]) => {
+    const deleteIds = new Set(deletedNodes.map(n => n.id))
+    const newNodes = nodes.filter(n => !deleteIds.has(n.id))
+    const newEdges = edges.filter(e => !deleteIds.has(e.source) && !deleteIds.has(e.target))
+    setPlan(newNodes, newEdges)
   }, [nodes, edges, setPlan])
 
-  const layoutCurrentGraph = useCallback(() => {
-    const laidOut = layoutGraph(nodes, edges)
-    setPlan(laidOut, edges)
+  const handleEdgesDelete = useCallback((deletedEdges: Edge[]) => {
+    const deleteIds = new Set(deletedEdges.map(e => e.id))
+    const newEdges = edges.filter(e => !deleteIds.has(e.id))
+    setPlan(nodes, newEdges)
   }, [nodes, edges, setPlan])
-
-  const handleSubmit = () => {
-    onSubmitPlan(nodes, edges)
-  }
 
   return (
     <div style={{ width: '100%', height: "100%" }}>
@@ -81,22 +101,20 @@ export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
         <button onClick={layoutCurrentGraph} className="bg-sky-300 text-white px-4 py-2 rounded-lg shadow hover:bg-sky-400 transition">Auto Layout</button>
         <button onClick={handleSubmit} className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition ml-auto">Submit Plan</button>
       </div>
+
       <ReactFlow
         nodes={nodes.map(n => ({ ...n, type: "custom" }))}
         edges={edges}
-        nodeTypes={{ custom: GraphNode }}
+        nodeTypes={NODE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
-        onElementsRemove={onElementsRemove}
+        onNodesDelete={handleNodesDelete}
+        onEdgesDelete={handleEdgesDelete}
         fitView
         snapToGrid
         snapGrid={[15, 15]}
-        deleteKeyCode={46}
-        nodesDraggable
-        nodesConnectable
-        nodesSelectable
       >
         <MiniMap />
         <Controls />

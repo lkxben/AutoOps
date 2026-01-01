@@ -9,7 +9,7 @@ export default function Home() {
         Automate your tasks, track your progress, and stay on top of your operations—all in one place.
       </p>
       <div className="space-x-4">
-        <Link href="/tasks">
+        <Link href="/tasks/new">
           <button className="px-6 py-3 bg-sky-400 hover:bg-sky-500 text-white font-semibold rounded-lg">
             Get Started
           </button>
