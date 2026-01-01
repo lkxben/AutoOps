@@ -68,6 +68,10 @@ namespace WorkflowService.Protos
                 Plan = request.Plan
             };
             _db.WorkflowPlans.Add(plan);
+
+            task.Status = WorkflowTaskStatus.FINALIZED;
+            _db.WorkflowTasks.Update(task);
+            
             await _db.SaveChangesAsync();
 
             await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, task.InputData, plan.Plan));
