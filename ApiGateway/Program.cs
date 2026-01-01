@@ -206,6 +206,27 @@ app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, HttpContext context, Wor
     return Results.Ok(new IdDto(result.Id));
 }).RequireAuthorization();
 
+app.MapGet("/plans", async (string taskId, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var plan = await wfpClient.GetPlanByTaskIdAsync(new GetPlanByTaskIdModel
+    {
+        UserId = userId,
+        TaskId = taskId
+    });
+
+    if (plan is null)
+        return Results.NotFound();
+
+    return Results.Ok(new WorkflowPlanDto(
+        plan.Id,
+        plan.TaskId,
+        plan.Plan
+    ));
+}).RequireAuthorization();
+
 app.MapPost("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);

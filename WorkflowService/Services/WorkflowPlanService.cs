@@ -28,6 +28,24 @@ namespace WorkflowService.Protos
             _publishEndpoint = publishEndpoint;
 		}
 
+        public override async Task<WorkflowPlanModel> GetPlanByTaskId(GetPlanByTaskIdModel request, ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.TaskId, out var taskId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
+
+            if (!Guid.TryParse(request.UserId, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid userId"));
+
+            var plan = await _db.WorkflowPlans
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.TaskId == taskId);
+            
+            if (plan == null)
+                throw new RpcException(new Status(StatusCode.NotFound, "Plan not found"));
+
+            return new WorkflowPlanModel { Id = plan.Id.ToString(), TaskId = request.TaskId, Plan = plan.Plan };
+        } 
+
         public override async Task<CreateWorkflowPlanResponse> CreatePlan(CreateWorkflowPlanModel request, ServerCallContext context)
         {
             if (!Guid.TryParse(request.TaskId, out var taskId))

@@ -6,14 +6,26 @@ package WorkflowPlanSvc;
 
 service WorkflowPlanSvc {
     rpc CreatePlan (CreateWorkflowPlanModel) returns (CreateWorkflowPlanResponse);
+    rpc GetPlanByTaskId (GetPlanByTaskIdModel) returns (WorkflowPlanModel);
 }
 
 message CreateWorkflowPlanModel {
-    string taskId = 1;
-    string userId = 2;
+    string userId = 1;
+    string taskId = 2;
     string plan = 3;
 }
 
 message CreateWorkflowPlanResponse {
     string id = 1;
+}
+
+message WorkflowPlanModel {
+    string id = 1;
+    string taskId = 2;
+    string plan = 3;
+}
+
+message GetPlanByTaskIdModel {
+    string userId = 1;
+    string taskId = 2;
 }
