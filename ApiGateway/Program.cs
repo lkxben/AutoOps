@@ -172,6 +172,31 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
     ));
 });
 
+app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var response = await wftClient.GetUserTasksAsync(new GetUserTasksModel 
+    { 
+        UserId = userId
+    });
+
+    if (response == null || response.Tasks.Count == 0)
+        return Results.NotFound();
+
+    var tasksDto = response.Tasks.Select(task => new WorkflowTaskDto
+    (
+        task.Id,
+        task.UserId,
+        task.InputData,
+        task.Status,
+        task.Result
+    ));
+
+    return Results.Ok(tasksDto);
+}).RequireAuthorization();
+
 app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);

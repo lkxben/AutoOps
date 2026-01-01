@@ -42,13 +42,36 @@ namespace WorkflowService.Protos
         public override async Task<WorkflowTaskModel> GetTask(GetWorkflowTaskModel request, ServerCallContext context)
         {
             if (!Guid.TryParse(request.Id, out var taskId))
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid task ID"));
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
             var task = await _db.WorkflowTasks.SingleOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 throw new RpcException(new Status(StatusCode.NotFound, "Task not found"));
             if (task.UserId.ToString() != request.UserId)
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "You are not allowed to access this task"));
             return task.ToModel();
+        }
+
+        public override async Task<UserTasksResponse> GetUserTasks(GetUserTasksModel request, ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.UserId, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid userId"));
+
+            var tasks = await _db.WorkflowTasks
+                .AsNoTracking()
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+
+            var response = new UserTasksResponse();
+            response.Tasks.AddRange(tasks.Select(t => new WorkflowTaskModel
+            {
+                Id = t.Id.ToString(),
+                UserId = t.UserId.ToString(),
+                InputData = t.InputData,
+                Status = t.Status,
+                Result = t.Result
+            }));
+
+            return response;
         }
 	}
 }

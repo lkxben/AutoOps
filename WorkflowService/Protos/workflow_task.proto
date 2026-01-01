@@ -7,6 +7,7 @@ package WorkflowTaskSvc;
 service WorkflowTaskSvc {
     rpc CreateTask (CreateWorkflowTaskModel) returns (CreateWorkflowTaskResponse);
     rpc GetTask (GetWorkflowTaskModel) returns (WorkflowTaskModel);
+    rpc GetUserTasks(GetUserTasksModel) returns (UserTasksResponse);
 }
 
 message CreateWorkflowTaskModel {
@@ -36,4 +37,12 @@ message WorkflowTaskModel {
     string inputData = 3;
     WorkflowTaskStatus status = 4;
     string result = 5;
+}
+
+message GetUserTasksModel {
+    string userId = 1;
+}
+
+message UserTasksResponse {
+    repeated WorkflowTaskModel tasks = 1;
 }
