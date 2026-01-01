@@ -1,8 +1,10 @@
 'use client'
 
+// DASHBOARD
+
 import React, { useState, useEffect } from "react"
-import TaskForm from "./TaskForm"
-import TaskGraph from "./TaskGraph"
+import TaskForm from "../components/TaskForm"
+import TaskGraph from "../components/TaskGraph"
 import { CurrentTaskProvider, useCurrentTask } from "../contexts/CurrentTaskContext"
 import { useTaskHubPlan } from "../hooks/useTaskHubPlan"
 import { Node, Edge } from "reactflow"
@@ -52,7 +54,7 @@ function PageContent() {
         </div>
       )}
 
-      {stage === "plan" && (
+      {stage === "plan" && nodes.length > 0 && edges.length > 0 && (
         <TaskGraph onSubmitPlan={handlePlanSubmit} />
       )}
 

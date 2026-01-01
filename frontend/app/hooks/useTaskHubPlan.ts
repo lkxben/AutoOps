@@ -6,44 +6,25 @@ import { useAuth } from '../contexts/AuthContext'
 import { Node, Edge } from 'reactflow'
 import { layoutGraph } from '../lib/layoutGraph'
 
-const testPayload = {
-  nodes: [
-    { id: "1", type: "custom", position: { x: 0, y: 0 }, data: { label: "Add 5 and 2", action: "add", params: { a: "5", b: "2" } } },
-    { id: "2", type: "custom", position: { x: 0, y: 0 }, data: { label: "Subtract 3 from 9", action: "subtract", params: { a: "9", b: "3" } } },
-    { id: "3", type: "default", position: { x: 0, y: 0 }, data: { label: "Divide result of 1 by result of 2", action: "divide", params: { a: "$1", b: "$2" } } },
-    { id: "START", type: "input", position: { x: -200, y: 0 }, data: { label: "START" } },
-    { id: "END", type: "output", position: { x: 2000, y: 0 }, data: { label: "END" } }
-  ],
-  edges: [
-    { id: "1-3", source: "1", target: "3", type: "default" },
-    { id: "2-3", source: "2", target: "3", type: "default" },
-    { id: "START-1", source: "START", target: "1", type: "default" },
-    { id: "START-2", source: "START", target: "2", type: "default" },
-    { id: "3-END", source: "3", target: "END", type: "default" }
-  ]
-}
-
-export function useTaskHubPlan(mock = true) {
+export function useTaskHubPlan(taskId?: string) {
   const { token } = useAuth()
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
 
   useEffect(() => {
-    // if (mock) {
-    //   const laidOutNodes = layoutGraph(testPayload.nodes, testPayload.edges)
-    //   setNodes(laidOutNodes)
-    //   setEdges(testPayload.edges)
-    //   return
-    // }
-
-    if (!token) return
+    if (!token || !taskId) return
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`https://localhost:5004/ws?access_token=${token}`)
       .withAutomaticReconnect()
       .build()
 
-    connection.on('PlanDraft', (payload: { nodes: Node[]; edges: Edge[] }) => {
+    connection.on('PlanDraft', (payload: {
+      task_id: string
+      plan: { nodes: Node[]; edges: Edge[] }
+    }) => {
+      if (payload.task_id !== taskId) return
+
       const { nodes, edges } = payload.plan
       const laidOutNodes = layoutGraph(nodes, edges)
       setNodes(laidOutNodes)
@@ -58,7 +39,7 @@ export function useTaskHubPlan(mock = true) {
     return () => {
       connection.stop()
     }
-  }, [token])
+  }, [token, taskId])
 
   return { nodes, edges }
 }

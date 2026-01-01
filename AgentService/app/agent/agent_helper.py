@@ -2,14 +2,9 @@ from app.messaging.tool_call_publisher import ToolCallPublisher
 from app.messaging.task_updated_publisher import TaskUpdatedPublisher
 from app.messaging.plan_draft_publisher import PlanDraftPublisher
 import re
-from typing import Dict, List, Any, Tuple
+import json
 
-tool_registry = {
-    "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
-    "subtract": {"inputs": ["a", "b"], "description" : "Subtract a and b"},
-    "divide": {"inputs": ["a", "b"], "description" : "Divide a and b"},
-    "multiply": {"inputs": ["a", "b"], "description" : "Multiply a and b"},
-}
+from typing import Dict, List, Any, Tuple
 
 tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
@@ -37,11 +32,12 @@ async def publish_plan_draft(task_id: str, user_id: str, plan: str):
     payload = {
         "task_id": task_id,
         "user_id": user_id,
-        "plan": parse_plan_to_reactflow(plan)
+        "plan": parse_minimal_plan_to_reactflow(plan)
     }
+    print(f"PUBBING THIS PLAN TO FRONTEND: {payload}")
     await plan_draft_publisher.publish(payload)
 
-def parse_plan(plan_str: str):
+def parse_minimal_plan(plan_str: str):
     nodes: Dict[int, Dict[str, Any]] = {}
     edges: List[Dict[str, Any]] = []
 
@@ -73,8 +69,8 @@ def parse_plan(plan_str: str):
 
     return nodes, edges
 
-def complete_plan(plan_str: str) -> str:
-    nodes, edges = parse_plan(plan_str)
+def complete_minimal_plan(plan_str: str) -> str:
+    nodes, edges = parse_minimal_plan(plan_str)
 
     incoming = {nid: set() for nid in nodes}
     outgoing = {nid: set() for nid in nodes}
@@ -116,7 +112,7 @@ def complete_plan(plan_str: str) -> str:
 
     return "\n".join(plan_lines)
 
-def parse_plan_to_reactflow(text: str):
+def parse_minimal_plan_to_reactflow(text: str):
     lines = [line.strip() for line in text.splitlines() if line.strip()]
 
     nodes = []
@@ -136,24 +132,14 @@ def parse_plan_to_reactflow(text: str):
 
         parts = line.split("|")
         node_id = parts[0]
-        action = parts[1] if len(parts) > 1 else None
-        params_raw = parts[2] if len(parts) > 2 else ""
         label = parts[3] if len(parts) > 3 else node_id
-
-        params = {}
-        if params_raw:
-            for p in params_raw.split(","):
-                k, v = p.split("=")
-                params[k] = v
 
         nodes.append({
             "id": node_id,
             "type": "default",
             "position": {"x": 0, "y": 0},
             "data": {
-                "label": label,
-                "action": action,
-                "params": params
+                "label": label
             }
         })
 
@@ -176,6 +162,27 @@ def parse_plan_to_reactflow(text: str):
             "data": {"label": "END"}
         })
         node_ids.add("END")
+
+    return {
+        "nodes": nodes,
+        "edges": edges
+    }
+
+def strip_reactflow_metadata(plan_json: str) -> Dict[str, Any]:
+    plan = json.loads(plan_json)
+
+    nodes = []
+    for node in plan.get("nodes", []):
+        node_id = node.get("id")
+        label = node.get("data", {}).get("label", node_id)
+        nodes.append({"id": node_id, "label": label})
+
+    edges = []
+    for edge in plan.get("edges", []):
+        source = edge.get("source")
+        target = edge.get("target")
+        if source and target:
+            edges.append({"source": source, "target": target})
 
     return {
         "nodes": nodes,

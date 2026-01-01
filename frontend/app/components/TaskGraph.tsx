@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useCallback, useState, useEffect } from "react"
+import React, { useCallback } from "react"
 import { useCurrentTask } from "../contexts/CurrentTaskContext"
 import ReactFlow, {
-  addEdge,
   Node,
   Edge,
   Connection,
@@ -18,7 +17,7 @@ import ReactFlow, {
 } from "reactflow"
 import 'reactflow/dist/style.css'
 import { layoutGraph } from "../lib/layoutGraph"
-import GraphNode from "../components/GraphNode"
+import GraphNode from "./GraphNode"
 
 type TaskGraphProps = {
   onSubmitPlan: (nodes: Node[], edges: Edge[]) => void
@@ -26,61 +25,53 @@ type TaskGraphProps = {
 
 export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
   const { nodes, edges, setPlan } = useCurrentTask()
-  const [rfNodes, setRfNodes] = useState<Node[]>(nodes)
-  const [rfEdges, setRfEdges] = useState<Edge[]>(edges)
 
-  useEffect(() => {
-    setRfNodes(nodes)
-    setRfEdges(edges)
-  }, [nodes, edges])
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const updated = applyNodeChanges(changes, nodes)
+    setPlan(updated, edges)
+  }, [nodes, edges, setPlan])
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => setRfNodes(prev => applyNodeChanges(changes, prev)),
-    []
-  )
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => setRfEdges(prev => applyEdgeChanges(changes, prev)),
-    []
-  )
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const updated = applyEdgeChanges(changes, edges)
+    setPlan(nodes, updated)
+  }, [nodes, edges, setPlan])
 
-  const onConnect = useCallback(
-    (connection: Connection) => setRfEdges(prev => addEdge(connection, prev)),
-    []
-  )
+  const onConnect = useCallback((connection: Connection) => {
+    const updated = [...edges, { ...connection, id: `${connection.source}-${connection.target}` }]
+    setPlan(nodes, updated)
+  }, [nodes, edges, setPlan])
 
   const onNodeDoubleClick = useCallback((_: any, node: Node) => {
     const newLabel = prompt("Edit node label:", node.data.label)
-    if (newLabel) {
-      setRfNodes(prev =>
-        prev.map(n => n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n)
-      )
-    }
-  }, [])
+    if (!newLabel) return
+    const updatedNodes = nodes.map(n => n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n)
+    setPlan(updatedNodes, edges)
+  }, [nodes, edges, setPlan])
 
   const onElementsRemove = useCallback((elements: Elements) => {
     const removeIds = new Set(elements.map(e => e.id))
-    setRfNodes(prev => prev.filter(n => !removeIds.has(n.id)))
-    setRfEdges(prev => prev.filter(e => !removeIds.has(e.id)))
-  }, [])
+    const updatedNodes = nodes.filter(n => !removeIds.has(n.id))
+    const updatedEdges = edges.filter(e => !removeIds.has(e.id))
+    setPlan(updatedNodes, updatedEdges)
+  }, [nodes, edges, setPlan])
 
   const addNode = useCallback(() => {
     const newNode: Node = {
       id: `${Date.now()}`,
       type: "custom",
       position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { label: "New Node", action: "custom", params: {} }
+      data: { label: "New Node" }
     }
-    setRfNodes(prev => [...prev, newNode])
-  }, [])
+    setPlan([...nodes, newNode], edges)
+  }, [nodes, edges, setPlan])
 
   const layoutCurrentGraph = useCallback(() => {
-    const laidOut = layoutGraph(rfNodes, rfEdges)
-    setRfNodes(laidOut)
-  }, [rfNodes, rfEdges])
+    const laidOut = layoutGraph(nodes, edges)
+    setPlan(laidOut, edges)
+  }, [nodes, edges, setPlan])
 
   const handleSubmit = () => {
-    setPlan(rfNodes, rfEdges)
-    onSubmitPlan(rfNodes, rfEdges)
+    onSubmitPlan(nodes, edges)
   }
 
   return (
@@ -91,8 +82,8 @@ export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
         <button onClick={handleSubmit} className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition ml-auto">Submit Plan</button>
       </div>
       <ReactFlow
-        nodes={rfNodes.map(n => ({ ...n, type: "custom" }))}
-        edges={rfEdges}
+        nodes={nodes.map(n => ({ ...n, type: "custom" }))}
+        edges={edges}
         nodeTypes={{ custom: GraphNode }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

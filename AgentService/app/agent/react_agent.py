@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from app.agent.agent_helper import tool_call, publish_result, parse_plan
+from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
 from typing import Any, Dict
@@ -175,11 +175,15 @@ If your reasoning is too long, summarise it so it fits within the limit.
     async def start_task(self, thread_id: str, user_id: str, task: str, plan: str):
         thread = {"configurable": {"thread_id": thread_id}}
 
-        nodes, edges = parse_plan(plan)
-        terminal_nodes = [int(edge["from"]) for edge in edges if edge["to"] == "END"]
+        stripped = strip_reactflow_metadata(plan)
+        nodes = stripped["nodes"]
+        edges = stripped["edges"]
+
+        terminal_nodes = [int(edge["source"]) for edge in edges if edge["target"] == "END"]
+
         initial_state = {
             "task": task,
-            "plan": plan,
+            "plan": stripped,
             "completed_steps": {},
             "previous_node": None,
             "execution_history": [],
@@ -214,6 +218,13 @@ If your reasoning is too long, summarise it so it fits within the limit.
             completed_steps[previous_node] = tool_result
             execution_history = state.get("execution_history", [])
             execution_history.append(previous_node)
+
+            print(f"""CONTINUING:
+execution_history: {execution_history}
+previous_node: {previous_node}
+completed_steps: {completed_steps}
+terminal_nodes: {state["terminal_nodes"]}
+                  """)
 
             if any(n in execution_history for n in state["terminal_nodes"]):
                 graph = self.builder.compile(checkpointer=checkpointer)

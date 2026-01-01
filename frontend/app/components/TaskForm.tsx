@@ -3,25 +3,25 @@
 import { useState } from 'react'
 import { useCreateTask } from '../hooks/useCreateTask'
 import { useCurrentTask } from "../contexts/CurrentTaskContext"
+import { useRouter } from 'next/navigation'
 
 export default function TaskForm() {
   const [inputData, setInputData] = useState('')
   const createTask = useCreateTask()
-  const { setStage, setTaskId } = useCurrentTask()
+  const { setTaskId } = useCurrentTask()
+  const router = useRouter()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputData.trim()) return
 
-    setStage("loading")
     try {
       const res = await createTask.mutateAsync({ inputData })
-      console.log(res)
       setTaskId(res.id)
+      router.push(`/tasks/plan/${res.id}`)
     } catch (err) {
       console.error(err)
       alert("Failed to create task")
-      setStage("input")
     }
     setInputData('')
   }

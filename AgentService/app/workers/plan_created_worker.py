@@ -24,6 +24,7 @@ async def _handle_plan(payload: dict):
     task_description = msg_data.get("task_description")
     plan = msg_data.get("plan")
     print(f"[PlanCreatedWorker] Starting task {thread_id}")
+    print(f"RECEIVED PLAN: {plan}")
 
     agent_instance = await get_agent()
     lock = thread_locks[thread_id]
