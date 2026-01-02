@@ -1,8 +1,8 @@
-using System.Text.Json.Nodes;
+using System.Text.Json;
 
 namespace ApiGateway.Dtos;
 
 public record class CreateWorkflowPlanDto(
     string TaskId,
-    JsonNode Plan
+    JsonElement Plan
 );

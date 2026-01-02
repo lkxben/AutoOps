@@ -69,7 +69,7 @@ namespace WorkflowService.Protos
             };
             _db.WorkflowPlans.Add(plan);
 
-            task.Status = WorkflowTaskStatus.FINALIZED;
+            task.Status = WorkflowTaskStatus.Finalized;
             _db.WorkflowTasks.Update(task);
             
             await _db.SaveChangesAsync();

@@ -2,21 +2,23 @@ using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using EventService.Dtos;
-using Microsoft.AspNetCore.SignalR;
-using EventService.Hubs;
+using WorkflowService.Protos;
+using WorkflowService.Dtos;
+using WorkflowService.Data;
+using Microsoft.EntityFrameworkCore;
+using WorkflowService.Entities;
 
-namespace EventService.Consumers
+namespace WorkflowService.Consumers
 {
     public class PlanDraftConsumer : BackgroundService
     {
-        private readonly IHubContext<TaskHub> _hub;
         private const string ExchangeName = "plan-draft";
-        private const string QueueName = "plan-draft-consumer";
+        private const string QueueName = "plan-draft-workflow";
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public PlanDraftConsumer(IHubContext<TaskHub> hub)
+        public PlanDraftConsumer(IServiceScopeFactory scopeFactory)
         {
-            _hub = hub;
+            _scopeFactory = scopeFactory;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -57,12 +59,40 @@ namespace EventService.Consumers
                     var json = Encoding.UTF8.GetString(ea.Body.ToArray());
                     var dto = JsonSerializer.Deserialize<PlanDraftDto>(json);
 
-                    if (dto == null)
-                        return;
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<WorkflowServiceContext>();
 
-                    await _hub.Clients
-                        .User(dto.UserId)
-                        .SendAsync("PlanDraft", dto);
+                    var taskId = Guid.Parse(dto.TaskId);
+                    var task = await db.WorkflowTasks
+                        .FirstOrDefaultAsync(t => t.Id == taskId);
+
+                    if (task == null)
+                        throw new Exception("Task not found");
+
+                    task.Status = WorkflowTaskStatus.Drafted;
+                    
+                    var existingPlan = await db.WorkflowPlans
+                        .FirstOrDefaultAsync(p => p.TaskId == taskId);
+
+                    if (existingPlan != null)
+                    {
+                        existingPlan.Plan = dto.Plan.GetRawText();
+                    }
+                    else
+                    {
+                        var plan = new WorkflowPlan
+                        {
+                            UserId = Guid.Parse(dto.UserId),
+                            TaskId = taskId,
+                            Plan = dto.Plan.GetRawText()
+                        };
+
+                        db.WorkflowPlans.Add(plan);
+                    }
+
+                    await db.SaveChangesAsync();
+
+                    channel.BasicAck(ea.DeliveryTag, false);
                 }
                 catch (Exception ex)
                 {

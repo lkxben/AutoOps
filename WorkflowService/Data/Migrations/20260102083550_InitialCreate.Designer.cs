@@ -12,7 +12,7 @@ using WorkflowService.Data;
 namespace WorkflowService.Data.Migrations
 {
     [DbContext(typeof(WorkflowServiceContext))]
-    [Migration("20251231180758_InitialCreate")]
+    [Migration("20260102083550_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkflowService.Protos;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using MassTransit;
+using WorkflowService.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,8 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
+
+builder.Services.AddHostedService<PlanDraftConsumer>();
 
 var app = builder.Build();
 
