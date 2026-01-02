@@ -17,8 +17,6 @@ publisher = AgentQueuePublisher()
 
 async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict):
     try:
-        await asyncio.sleep(20)
-
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
         else:

@@ -77,7 +77,6 @@ USER TASK:
             ai_msg = self.llm.invoke([SystemMessage(content=new_sys_msg)])
             plan_str = ai_msg.content
             completed_plan = complete_minimal_plan(plan_str)
-            print(completed_plan)
             return {"messages": [AIMessage(content=completed_plan)]}
 
         def should_continue(state: self.State):

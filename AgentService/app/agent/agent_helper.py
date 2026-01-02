@@ -28,13 +28,21 @@ async def publish_result(task_id: str, user_id: str, result: str):
     }
     await event_publisher.publish(payload)
 
+async def publish_error(task_id: str, user_id: str):
+    payload = {
+        "task_id": task_id,
+        "user_id": user_id,
+        "status": 5,
+        "description": "LLM failed to call tool"
+    }
+    await event_publisher.publish(payload)
+
 async def publish_plan_draft(task_id: str, user_id: str, plan: str):
     payload = {
         "task_id": task_id,
         "user_id": user_id,
         "plan": parse_minimal_plan_to_reactflow(plan)
     }
-    print(f"PUBBING THIS PLAN TO FRONTEND: {payload}")
     await plan_draft_publisher.publish(payload)
 
 def parse_minimal_plan(plan_str: str):

@@ -22,13 +22,13 @@ async def _handle_tool_result(payload: dict):
     thread_id = payload.get("task_id")
     user_id = payload.get("user_id")
     tool_result = payload.get("tool_result")
-    print(f"[ToolResultWorker] Continuing task {thread_id} after tool call")
+    print(f"[ToolResultWorker] Continuing task {thread_id} after tool call with result {tool_result}")
 
     agent_instance = await get_agent()
     lock = thread_locks[thread_id]
 
     async with lock:
         results = await agent_instance.continue_task(thread_id, user_id, tool_result)
-        if results:
-            for m in results["messages"]:
-                m.pretty_print()
+        # if results:
+        #     for m in results["messages"]:
+        #         m.pretty_print()

@@ -8,9 +8,9 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata
+from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing import Any, Dict
 
 class ReactAgent:
@@ -116,9 +116,12 @@ Available tools:
 {self.tool_descriptions}
 """)
 
-            tool_call_result = self.react_llm.invoke([sys_msg])
-            print(f"REACT OUTPUT: {tool_call_result}")
+            tool_call_result = self.invoke_with_retries(lambda: self.llm.invoke([sys_msg]), self.ReactOutputSchema)
 
+            if not tool_call_result:
+                return {"messages": [sys_msg], "previous_node": None}
+            
+            # print(f"REACT OUTPUT: {tool_call_result}")
             return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())], "previous_node": tool_call_result.node}
         
         def dummy_node(state: self.State):
@@ -147,9 +150,10 @@ Output ONLY JSON conforming to the schema:
 Do NOT include extra text. Make sure the JSON is valid and complete. 
 If your reasoning is too long, summarise it so it fits within the limit.
 """
-            result = self.final_llm.invoke([
-                SystemMessage(content=summary_prompt)
-            ])
+            result = self.invoke_with_retries(lambda: self.llm.invoke([summary_prompt]), self.FinalAnswerSchema)
+
+            if not result:
+                return {"messages": [summary_prompt], "previous_node": None}
 
             return {"messages": [AIMessage(content=result.answer)]}
         
@@ -219,13 +223,14 @@ If your reasoning is too long, summarise it so it fits within the limit.
             execution_history = state.get("execution_history", [])
             execution_history.append(previous_node)
 
-            print(f"""CONTINUING:
-execution_history: {execution_history}
-previous_node: {previous_node}
-completed_steps: {completed_steps}
-terminal_nodes: {state["terminal_nodes"]}
-                  """)
+#             print(f"""CONTINUING:
+# execution_history: {execution_history}
+# previous_node: {previous_node}
+# completed_steps: {completed_steps}
+# terminal_nodes: {state["terminal_nodes"]}
+#                   """)
 
+            # calls final
             if any(n in execution_history for n in state["terminal_nodes"]):
                 graph = self.builder.compile(checkpointer=checkpointer)
                 await graph.aupdate_state(
@@ -233,11 +238,14 @@ terminal_nodes: {state["terminal_nodes"]}
                     {"completed_steps": completed_steps, "execution_history": execution_history, "final": True}
                 )
                 final_results = await graph.ainvoke(None, config=thread)
-                asyncio.create_task(
-                    publish_result(thread_id, user_id, final_results["messages"][-1].content)
-                )
+
+                if not final_results["previous_node"]:
+                    asyncio.create_task(publish_error(thread_id, user_id))
+                else:
+                    asyncio.create_task(publish_result(thread_id, user_id, final_results["messages"][-1].content))
                 return final_results
         
+            # calls react
             else:
                 graph = self.builder.compile(interrupt_after=["react"], checkpointer=checkpointer)
 
@@ -246,6 +254,10 @@ terminal_nodes: {state["terminal_nodes"]}
                     {"completed_steps": completed_steps, "execution_history": execution_history}
                 )
                 results = await graph.ainvoke(None, config=thread)
+
+                if not results["previous_node"]:
+                    asyncio.create_task(publish_error(thread_id, user_id))
+                    return
             
                 last_msg = results["messages"][-1].content.strip()
                 try:
@@ -256,3 +268,17 @@ terminal_nodes: {state["terminal_nodes"]}
             
                 asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
                 return
+            
+    def invoke_with_retries(self, llm_call, schema, max_attempts: int = 3):
+        for attempt in range(1, max_attempts + 1):
+            ai_message = llm_call()
+            result_str = ai_message.content
+            try:
+                result_json = json.loads(result_str)
+                
+                validated = schema(**result_json)
+                return validated
+            except (json.JSONDecodeError, ValidationError) as e:
+                print(f"Attempt {attempt} failed: {e}")
+                if attempt == max_attempts:
+                    return None
