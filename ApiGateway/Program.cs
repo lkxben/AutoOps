@@ -252,12 +252,12 @@ app.MapGet("/plans", async (string taskId, HttpContext context, WorkflowPlanSvc.
     ));
 }).RequireAuthorization();
 
-app.MapPost("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
+app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    var result = await wfpClient.CreatePlanAsync(new CreateWorkflowPlanModel
+    var result = await wfpClient.SavePlanAsync(new CreateWorkflowPlanModel
     {
         UserId = userId,
         TaskId = dto.TaskId,

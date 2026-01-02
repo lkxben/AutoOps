@@ -46,7 +46,7 @@ namespace WorkflowService.Protos
             return new WorkflowPlanModel { Id = plan.Id.ToString(), TaskId = request.TaskId, Plan = plan.Plan };
         } 
 
-        public override async Task<CreateWorkflowPlanResponse> CreatePlan(CreateWorkflowPlanModel request, ServerCallContext context)
+        public override async Task<CreateWorkflowPlanResponse> SavePlan(CreateWorkflowPlanModel request, ServerCallContext context)
         {
             if (!Guid.TryParse(request.TaskId, out var taskId))
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
@@ -61,13 +61,24 @@ namespace WorkflowService.Protos
             if (task == null)
                 throw new RpcException(new Status(StatusCode.NotFound, "Task not found"));
 
-            var plan = new WorkflowPlan
+            var plan = await _db.WorkflowPlans
+                .FirstOrDefaultAsync(p => p.TaskId == taskId && p.UserId == userId);
+
+            if (plan == null)
             {
-                TaskId = Guid.Parse(request.TaskId),
-                UserId = Guid.Parse(request.UserId),
-                Plan = request.Plan
-            };
-            _db.WorkflowPlans.Add(plan);
+                plan = new WorkflowPlan
+                {
+                    TaskId = taskId,
+                    UserId = userId,
+                    Plan = request.Plan
+                };
+                _db.WorkflowPlans.Add(plan);
+            }
+            else
+            {
+                plan.Plan = request.Plan;
+                _db.WorkflowPlans.Update(plan);
+            }
 
             task.Status = WorkflowTaskStatus.Finalized;
             _db.WorkflowTasks.Update(task);

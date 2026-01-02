@@ -5,7 +5,7 @@ option csharp_namespace = "WorkflowService.Protos";
 package WorkflowPlanSvc;
 
 service WorkflowPlanSvc {
-    rpc CreatePlan (CreateWorkflowPlanModel) returns (CreateWorkflowPlanResponse);
+    rpc SavePlan (CreateWorkflowPlanModel) returns (CreateWorkflowPlanResponse);
     rpc GetPlanByTaskId (GetPlanByTaskIdModel) returns (WorkflowPlanModel);
 }
 
