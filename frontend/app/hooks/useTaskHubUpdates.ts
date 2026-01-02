@@ -3,9 +3,16 @@ import { useEffect, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
 import { useAuth } from '@/app/contexts/AuthContext'
 
+export type TaskUpdate = {
+  task_id: string
+  user_id: string
+  status: number
+  description?: string
+}
+
 export function useTaskHubUpdates() {
   const { token } = useAuth()
-  const [updates, setUpdates] = useState<any[]>([])
+  const [updates, setUpdates] = useState<Record<string, TaskUpdate>>({})
 
   useEffect(() => {
     if (!token) return
@@ -19,8 +26,11 @@ export function useTaskHubUpdates() {
       .then(() => console.log('Connected to TaskHub'))
       .catch(console.error)
 
-    connection.on('TaskUpdated', (update: any) => {
-      setUpdates(prev => [...prev, update])
+    connection.on('TaskUpdated', (update: TaskUpdate) => {
+      setUpdates(prev => ({
+        ...prev,
+        [update.task_id]: update
+      }))
     })
 
     return () => {
@@ -28,5 +38,5 @@ export function useTaskHubUpdates() {
     }
   }, [token])
 
-  return { updates }
+  return { updates: Object.values(updates) }
 }
