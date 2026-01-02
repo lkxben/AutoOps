@@ -41,6 +41,7 @@ builder.Services.AddMassTransit(x =>
 });
 
 builder.Services.AddHostedService<PlanDraftConsumer>();
+builder.Services.AddHostedService<TaskUpdatedConsumer>();
 
 var app = builder.Build();
 

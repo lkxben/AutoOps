@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace EventService.Dtos
+namespace WorkflowService.Dtos
 {
     public record TaskUpdatedDto(
         [property: JsonPropertyName("task_id")]

@@ -27,10 +27,10 @@ message CreateWorkflowTaskResponse {
 enum WorkflowTaskStatus {
     PENDING = 0;
     DRAFTED = 1;
-    FINALIZED = 3;
-    RUNNING = 4;
-    COMPLETED = 5;
-    FAILED = 6;
+    FINALIZED = 2;
+    RUNNING = 3;
+    COMPLETED = 4;
+    FAILED = 5;
 }
 
 message WorkflowTaskModel {
