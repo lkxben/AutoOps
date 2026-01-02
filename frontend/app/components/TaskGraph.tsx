@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useCallback } from "react"
-import { useCurrentTask } from "../contexts/CurrentTaskContext"
 import ReactFlow, {
   Node,
   Edge,
@@ -19,29 +18,15 @@ import { layoutGraph } from "../lib/layoutGraph"
 import GraphNode from "./GraphNode"
 
 type TaskGraphProps = {
+  nodes: Node[]
+  edges: Edge[]
+  setPlan: (nodes: Node[], edges: Edge[]) => void
   onSubmitPlan: (nodes: Node[], edges: Edge[]) => void
 }
 
 const NODE_TYPES = { custom: GraphNode }
 
-export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
-  const { nodes, edges, setPlan, resetTask } = useCurrentTask()
-
-  // If plan is empty, show "task running" screen
-  if (!nodes.length && !edges.length) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <p className="text-lg font-medium text-gray-700 text-center">
-            Task is running in the background.<br/>
-            You can check your dashboard for updates.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
+export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskGraphProps) {
   const updateNodes = useCallback((updatedNodes: Node[]) => {
     const nodeIds = new Set(updatedNodes.map(n => n.id))
     const updatedEdges = edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target))
@@ -78,8 +63,7 @@ export default function TaskGraph({ onSubmitPlan }: TaskGraphProps) {
 
   const handleSubmit = useCallback(async () => {
     await onSubmitPlan(nodes, edges)
-    resetTask() // clear current task from context & localStorage
-  }, [nodes, edges, onSubmitPlan, resetTask])
+  }, [nodes, edges, onSubmitPlan])
 
   const handleNodesDelete = useCallback((deletedNodes: Node[]) => {
     const deleteIds = new Set(deletedNodes.map(n => n.id))
