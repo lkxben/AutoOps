@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRegister } from '../hooks/useRegister'
+import { useRegister } from '@/app/hooks/useRegister'
 
 interface RegisterFormProps {
   onSuccess?: () => void

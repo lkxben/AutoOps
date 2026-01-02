@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
-import { apiPost } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
+import { apiPost } from '@/app/lib/api'
+import { useAuth } from '@/app/contexts/AuthContext'
 
 export function useCreatePlan() {
   const { token } = useAuth()

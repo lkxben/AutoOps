@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useCreateTask } from '../hooks/useCreateTask'
+import { useCreateTask } from '@/app/hooks/useCreateTask'
 import { useRouter } from 'next/navigation'
 
 export default function TaskForm() {

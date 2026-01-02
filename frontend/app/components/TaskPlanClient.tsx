@@ -4,68 +4,20 @@ import { useEffect, useState } from 'react'
 import { useTaskHubPlan } from '@/app/hooks/useTaskHubPlan'
 import TaskGraph from '@/app/components/TaskGraph'
 import { useCreatePlan } from "@/app/hooks/useCreatePlan"
-import { apiGet } from '@/app/lib/api'
-import { useAuth } from '@/app/contexts/AuthContext'
-import { TaskStatus, getTaskStatusLabel } from '@/app/lib/taskStatus'
+import { TaskStatus } from '@/app/lib/taskStatus'
 import { useRouter } from 'next/navigation'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
 import CenteredMessage from '@/app/components/CenteredMessage'
+import { useTaskWithPlan } from '@/app/hooks/useTaskWithPlan'
 
 type Props = { taskId: string }
 
-type TaskModel = {
-  id: string
-  userId: string
-  inputData: string
-  status: number
-  result?: string
-}
-
-type PlanModel = {
-  id: string
-  userId: string,
-  taskId: string
-  plan: string
-}
-
 export default function TaskPlanClient({ taskId }: Props) {
-  const [task, setTask] = useState<TaskModel | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const createPlan = useCreatePlan()
   const router = useRouter()
   const { nodes: planNodes, edges: planEdges } = useTaskHubPlan(taskId)
-  const [nodes, setNodes] = useState<any[]>([])
-  const [edges, setEdges] = useState<any[]>([])
-  const { token } = useAuth()
-
-  useEffect(() => {
-    if (!token) return
-    setLoading(true)
-    setError(null)
-
-    Promise.all([
-      apiGet(`/tasks/${taskId}`, token),
-      apiGet(`/plans?taskId=${taskId}`, token).catch(() => null),
-    ])
-      .then(([taskData, planData]: [TaskModel, PlanModel | null]) => {
-        setTask(taskData)
-
-        if (planData?.plan) {
-          try {
-            const parsedPlan = JSON.parse(planData.plan) as { nodes: any[]; edges: any[] }
-            setNodes(parsedPlan.nodes)
-            setEdges(parsedPlan.edges)
-          } catch (err) {
-            console.error('Failed to parse plan JSON', err)
-            setError('Invalid plan format')
-          }
-        }
-      })
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [taskId, token])
+  const { task, nodes, edges, setNodes, setEdges, loading, error, setTask } = useTaskWithPlan(taskId)
 
   useEffect(() => {
     if (!task) return

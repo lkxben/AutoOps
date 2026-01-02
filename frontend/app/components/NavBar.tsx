@@ -1,11 +1,11 @@
 "use client"
 import Link from "next/link"
-import "../globals.css"
+import "@/app/globals.css"
 import { useState } from "react"
-import Modal from "./Modal"
-import { useAuth } from '../contexts/AuthContext'
-import LoginForm from "./LoginForm"
-import RegisterForm from "./RegisterForm"
+import Modal from "@/app/components/Modal"
+import { useAuth } from '@/app/contexts/AuthContext'
+import LoginForm from "@/app/components/LoginForm"
+import RegisterForm from "@/app/components/RegisterForm"
 
 export default function NavBar() {
   const { user, logout } = useAuth()

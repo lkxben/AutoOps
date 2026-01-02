@@ -1,4 +1,4 @@
-import TaskPlanClient from './TaskPlanClient'
+import TaskPlanClient from '@/app/components/TaskPlanClient'
 
 export default async function Page({
   params,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useTaskHubUpdates } from '../hooks/useTaskHubUpdates'
+import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 
 export default function TaskUpdates() {
   const { updates } = useTaskHubUpdates()

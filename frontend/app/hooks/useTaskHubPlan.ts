@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '@/app/contexts/AuthContext'
 import { Node, Edge } from 'reactflow'
-import { layoutGraph } from '../lib/layoutGraph'
+import { layoutGraph } from '@/app/lib/layoutGraph'
 
 export function useTaskHubPlan(taskId?: string) {
   const { token } = useAuth()
