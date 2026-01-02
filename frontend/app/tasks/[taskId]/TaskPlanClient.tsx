@@ -6,6 +6,11 @@ import TaskGraph from '@/app/components/TaskGraph'
 import { useCreatePlan } from "@/app/hooks/useCreatePlan"
 import { apiGet } from '@/app/lib/api'
 import { useAuth } from '@/app/contexts/AuthContext'
+import { TaskStatus, getTaskStatusLabel } from '@/app/lib/taskStatus'
+import { useRouter } from 'next/navigation'
+import LoadingScreen from '@/app/loading'
+import Error from '@/app/error'
+import CenteredMessage from '@/app/components/CenteredMessage'
 
 type Props = { taskId: string }
 
@@ -13,7 +18,7 @@ type TaskModel = {
   id: string
   userId: string
   inputData: string
-  status: string
+  status: number
   result?: string
 }
 
@@ -29,13 +34,14 @@ export default function TaskPlanClient({ taskId }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const createPlan = useCreatePlan()
-
+  const router = useRouter()
   const { nodes: planNodes, edges: planEdges } = useTaskHubPlan(taskId)
   const [nodes, setNodes] = useState<any[]>([])
   const [edges, setEdges] = useState<any[]>([])
   const { token } = useAuth()
 
   useEffect(() => {
+    if (!token) return
     setLoading(true)
     setError(null)
 
@@ -59,14 +65,18 @@ export default function TaskPlanClient({ taskId }: Props) {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-  }, [taskId])
+  }, [taskId, token])
 
   useEffect(() => {
+    if (!task) return
     if (planNodes.length || planEdges.length) {
       setNodes(planNodes)
       setEdges(planEdges)
+      setTask(prev =>
+        prev ? { ...prev, status: TaskStatus.Drafted } : prev
+      )
     }
-  }, [planNodes, planEdges, setNodes, setEdges])
+  }, [planNodes, planEdges])
 
   const handlePlanSubmit = async (updatedNodes: typeof nodes, updatedEdges: typeof edges) => {
     if (!task) return
@@ -75,31 +85,27 @@ export default function TaskPlanClient({ taskId }: Props) {
         taskId: task.id,
         plan: { nodes: updatedNodes, edges: updatedEdges }
       })
-      window.location.href = "/tasks"
+      router.push("/tasks")
     } catch (err) {
       console.error(err)
       alert("Failed to submit plan")
     }
   }
 
-  if (loading) {
+  if (loading) return <LoadingScreen />
+
+  if (error) return <Error error={error} />
+
+  if (task.status === TaskStatus.Pending) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <p className="text-lg font-medium text-gray-700">
+      <CenteredMessage>
             Agent is planning your task…
-          </p>
-        </div>
-      </div>
+      </CenteredMessage>
     )
   }
 
-  if (error) return <div>Error: {error}</div>
-  if (!task) return <div>Task not found</div>
-
-  return (
-    <div className="h-screen w-full">
+  if (task.status === TaskStatus.Drafted) {
+    return (<div className="h-screen w-full">
       <TaskGraph 
         nodes={nodes}
         edges={edges}
@@ -109,6 +115,13 @@ export default function TaskPlanClient({ taskId }: Props) {
         }}
         onSubmitPlan={handlePlanSubmit}
       />
-    </div>
+    </div>)
+  }
+
+  return (
+    <CenteredMessage>
+        Task is currently running in the background.<br/>
+        Visit the summary dashboard to see it's progress.
+    </CenteredMessage>
   )
 }
