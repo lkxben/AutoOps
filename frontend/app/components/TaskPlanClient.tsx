@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTaskHubPlan } from '@/app/hooks/useTaskHubPlan'
 import TaskGraph from '@/app/components/TaskGraph'
-import { useCreatePlan } from "@/app/hooks/useCreatePlan"
+import { useCreatePlan } from "@/app/hooks/useFinalizePlan"
 import { TaskStatus } from '@/app/lib/taskStatus'
 import { useRouter } from 'next/navigation'
 import LoadingScreen from '@/app/loading'

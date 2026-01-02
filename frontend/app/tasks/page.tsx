@@ -37,7 +37,7 @@ export default function TaskSummaryDashboard() {
       .finally(() => setLoading(false))
   }, [token])
 
-  const { taskUpdates } = useTaskHubUpdates()
+  const { updates: taskUpdates } = useTaskHubUpdates()
 
   useEffect(() => {
     if (!taskUpdates || !taskUpdates.length) return
@@ -46,13 +46,12 @@ export default function TaskSummaryDashboard() {
       const updated = [...prev]
       taskUpdates.forEach(payload => {
         const idx = updated.findIndex(t => t.id === payload.task_id)
-        const taskData = {
+        const newData = {
           id: payload.task_id,
           status: payload.status,
-          inputData: payload.description,
         }
-        if (idx !== -1) updated[idx] = { ...updated[idx], ...taskData }
-        else updated.push(taskData)
+        if (idx !== -1) updated[idx] = { ...updated[idx], ...newData }
+        else updated.push({ id: payload.task_id, userId: payload.user_id, ...newData })
       })
       return updated
     })
