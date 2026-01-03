@@ -13,9 +13,12 @@ import TaskCard from '../components/TaskCard'
 type TaskModel = {
   id: string
   userId: string
+  title: string
   inputData: string
   status: number
   result?: string
+  createdAt: string
+  updatedAt?: string
 }
 
 export default function TaskSummaryDashboard() {
@@ -44,15 +47,17 @@ export default function TaskSummaryDashboard() {
 
     setTasks(prev => {
       const updated = [...prev]
+      const taskMap = new Map(prev.map(t => [t.id, t]))
+
       taskUpdates.forEach(payload => {
-        const idx = updated.findIndex(t => t.id === payload.task_id)
-        const newData = {
-          id: payload.task_id,
-          status: payload.status,
-        }
-        if (idx !== -1) updated[idx] = { ...updated[idx], ...newData }
-        else updated.push({ id: payload.task_id, userId: payload.user_id, ...newData })
+        const task = taskMap.get(payload.task_id)
+        if (!task) return
+
+        task.status = payload.status
+        task.result = payload.description
+        task.updatedAt = new Date().toISOString()
       })
+
       return updated
     })
   }, [taskUpdates])

@@ -79,7 +79,7 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
   }, [nodes, edges, setPlan])
 
   return (
-    <div style={{ width: '100%', height: "100%" }}>
+    <div style={{ width: '100%', height: "100%", backgroundColor: '#f3f4f6' }}>
       <div className="absolute z-10 p-4 flex gap-2">
         <button onClick={addNode} className="bg-sky-300 text-white px-4 py-2 rounded-lg shadow hover:bg-sky-400 transition">Add Node</button>
         <button onClick={layoutCurrentGraph} className="bg-sky-300 text-white px-4 py-2 rounded-lg shadow hover:bg-sky-400 transition">Auto Layout</button>
@@ -102,7 +102,7 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
       >
         <MiniMap />
         <Controls />
-        <Background color="#aaa" gap={16} />
+        <Background color="#aaa" gap={24} />
       </ReactFlow>
     </div>
   )

@@ -2,12 +2,15 @@
 
 import { useRouter } from 'next/navigation'
 import { TaskStatus, getTaskStatusLabel } from '@/app/lib/taskStatus'
+import { formatDistanceStrict, parseISO } from 'date-fns'
 
 type TaskCardProps = {
   task: {
     id: string
-    inputData?: string
+    title: string
     status: number
+    createdAt: string
+    updatedAt?: string
     result?: string
   }
 }
@@ -23,7 +26,6 @@ const STATUS_STYLES: Record<number, string> = {
 
 export default function TaskCard({ task }: TaskCardProps) {
   const router = useRouter()
-
   const statusClass = STATUS_STYLES[task.status] || 'bg-gray-100 text-gray-800'
   const showButton = task.status === TaskStatus.Drafted || task.status === TaskStatus.Pending
   const buttonText =
@@ -33,6 +35,20 @@ export default function TaskCard({ task }: TaskCardProps) {
       ? 'Pending'
       : ''
 
+  const created = parseISO(task.createdAt)
+  const updated = task.updatedAt ? parseISO(task.updatedAt) : undefined
+
+  const isCompleted = task.status === TaskStatus.Completed || task.status === TaskStatus.Failed || task.status === TaskStatus.Finalized
+
+  // elapsed time calculation
+  const elapsed = isCompleted && updated
+    ? formatDistanceStrict(created, updated)
+    : formatDistanceStrict(created, new Date())
+
+  // timestamp label
+  const timestampLabel = isCompleted ? 'Completed' : 'Created'
+  const timestampValue = isCompleted && updated ? updated : created
+
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 flex flex-col justify-between hover:shadow-lg transition relative">
       {task.status === TaskStatus.Running && (
@@ -40,8 +56,10 @@ export default function TaskCard({ task }: TaskCardProps) {
       )}
 
       <div className="mb-4">
-        <h2 className="font-semibold text-lg truncate">{task.inputData || task.result || 'Task'}</h2>
-        <p className="text-sm text-gray-500 truncate">ID: {task.id}</p>
+        <h2 className="font-semibold text-lg truncate">{task.title}</h2>
+        <p className="text-sm text-gray-500 truncate">
+          {timestampLabel}: {timestampValue.toLocaleString()} • {elapsed}
+        </p>
       </div>
 
       <div className="flex items-center justify-between mt-auto">

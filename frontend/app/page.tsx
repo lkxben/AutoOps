@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-900 px-4 text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen text-gray-900 px-4 text-center">
       <h1 className="text-5xl font-extrabold mb-6">Welcome to AutoOps</h1>
       <p className="text-lg max-w-xl mb-8">
         Automate your tasks, track your progress, and stay on top of your operations—all in one place.
