@@ -1,7 +1,7 @@
 import aio_pika
 import json
 from app.config import settings
-import uuid
+from datetime import datetime
 
 class PlanDraftPublisher:
     def __init__(self):
@@ -28,7 +28,8 @@ class PlanDraftPublisher:
 
         message = aio_pika.Message(
             body=json.dumps(payload).encode(),
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+            timestamp=datetime.utcnow()
         )
 
         await self.exchange.publish(

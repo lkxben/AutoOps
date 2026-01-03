@@ -104,6 +104,10 @@ namespace WorkflowService.Consumers
                     }
 
                     var newStatus = (WorkflowTaskStatus)dto.Status;
+                    var timestampUnix = ea.BasicProperties?.Timestamp.UnixTime ?? 0;
+                    var dt = timestampUnix != 0
+                        ? DateTimeOffset.FromUnixTimeSeconds((long)timestampUnix).UtcDateTime
+                        : DateTime.UtcNow;
 
                     if (newStatus > task.Status)
                     {
@@ -111,6 +115,7 @@ namespace WorkflowService.Consumers
                         if (task.Status == WorkflowTaskStatus.Completed)
                         {
                             task.Result = dto.Description;
+                            task.UpdatedAt = dt;
                         }
 
                         await db.SaveChangesAsync();

@@ -95,6 +95,10 @@ namespace WorkflowService.Consumers
                     var taskId = Guid.Parse(dto.TaskId);
                     var task = await db.WorkflowTasks
                         .FirstOrDefaultAsync(t => t.Id == taskId);
+                    var timestampUnix = ea.BasicProperties?.Timestamp.UnixTime ?? 0;
+                    var dt = timestampUnix != 0
+                        ? DateTimeOffset.FromUnixTimeSeconds((long)timestampUnix).UtcDateTime
+                        : DateTime.UtcNow;
 
                     if (task == null)
                         throw new Exception("Task not found");
@@ -102,6 +106,7 @@ namespace WorkflowService.Consumers
                     if (task.Status == WorkflowTaskStatus.Pending)
                     {
                         task.Status = WorkflowTaskStatus.Drafted;
+                        task.UpdatedAt = dt;
                     }
                     
                     var existingPlan = await db.WorkflowPlans
@@ -110,6 +115,7 @@ namespace WorkflowService.Consumers
                     if (existingPlan != null)
                     {
                         existingPlan.Graph = dto.Graph.GetRawText();
+                        existingPlan.UpdatedAt = dt;
                     }
                     else
                     {

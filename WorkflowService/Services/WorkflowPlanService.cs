@@ -64,6 +64,8 @@ namespace WorkflowService.Protos
             var plan = await _db.WorkflowPlans
                 .FirstOrDefaultAsync(p => p.TaskId == taskId && p.UserId == userId);
 
+            var dt = DateTime.UtcNow;
+
             if (plan == null)
             {
                 plan = new WorkflowPlan
@@ -77,13 +79,14 @@ namespace WorkflowService.Protos
             else
             {
                 plan.Graph = request.Graph;
-                plan.UpdatedAt = DateTime.UtcNow;
+                plan.UpdatedAt = dt;
                 _db.WorkflowPlans.Update(plan);
             }
 
             if (task.Status < WorkflowTaskStatus.Finalized)
             {
                 task.Status = WorkflowTaskStatus.Finalized;
+                task.UpdatedAt = dt;
                 _db.WorkflowTasks.Update(task);
             }
             
