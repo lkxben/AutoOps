@@ -10,7 +10,7 @@ namespace EventService.Dtos
         [property: JsonPropertyName("user_id")]
         string UserId,
 
-        [property: JsonPropertyName("plan")]
-        JsonElement Plan
+        [property: JsonPropertyName("graph")]
+        JsonElement Graph
     );
 }

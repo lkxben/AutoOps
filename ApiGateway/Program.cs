@@ -270,7 +270,9 @@ app.MapGet("/plans", async (string taskId, HttpContext context, WorkflowPlanSvc.
     return Results.Ok(new WorkflowPlanDto(
         plan.Id,
         plan.TaskId,
-        plan.Plan
+        plan.Graph,
+        plan.CreatedAt.ToDateTime(),
+        plan.UpdatedAt?.ToDateTime()
     ));
 }).RequireAuthorization();
 
@@ -283,7 +285,7 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     {
         UserId = userId,
         TaskId = dto.TaskId,
-        Plan = dto.Plan.GetRawText()
+        Graph = dto.Graph.GetRawText()
     });
 
     return Results.Ok(new IdDto(result.Id));

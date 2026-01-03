@@ -12,7 +12,7 @@ namespace Contracts.Workflow
         [property: JsonPropertyName("plan_id")] Guid PlanId,
         [property: JsonPropertyName("task_id")] Guid TaskId,
         [property: JsonPropertyName("user_id")] Guid UserId,
-        [property: JsonPropertyName("task_description")] string TaskDescription,
-        [property: JsonPropertyName("plan")] string Plan
+        [property: JsonPropertyName("prompt")] string Prompt,
+        [property: JsonPropertyName("graph")] string Graph
     );
 }

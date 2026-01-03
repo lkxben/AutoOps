@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTaskHubPlan } from '@/app/hooks/useTaskHubPlan'
 import TaskGraph from '@/app/components/TaskGraph'
-import { useCreatePlan } from "@/app/hooks/useFinalizePlan"
+import { useFinalizePlan } from "@/app/hooks/useFinalizePlan"
 import { TaskStatus } from '@/app/lib/taskStatus'
 import { useRouter } from 'next/navigation'
 import LoadingScreen from '@/app/loading'
@@ -14,7 +14,7 @@ import { useTaskWithPlan } from '@/app/hooks/useTaskWithPlan'
 type Props = { taskId: string }
 
 export default function TaskPlanClient({ taskId }: Props) {
-  const createPlan = useCreatePlan()
+  const finalizePlan = useFinalizePlan()
   const router = useRouter()
   const { nodes: planNodes, edges: planEdges } = useTaskHubPlan(taskId)
   const { task, nodes, edges, setNodes, setEdges, loading, error, setTask } = useTaskWithPlan(taskId)
@@ -33,9 +33,9 @@ export default function TaskPlanClient({ taskId }: Props) {
   const handlePlanSubmit = async (updatedNodes: typeof nodes, updatedEdges: typeof edges) => {
     if (!task) return
     try {
-      await createPlan.mutateAsync({
+      await finalizePlan.mutateAsync({
         taskId: task.id,
-        plan: { nodes: updatedNodes, edges: updatedEdges }
+        graph: { nodes: updatedNodes, edges: updatedEdges }
       })
       router.push("/tasks")
     } catch (err) {

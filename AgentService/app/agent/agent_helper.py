@@ -41,7 +41,7 @@ async def publish_plan_draft(task_id: str, user_id: str, plan: str):
     payload = {
         "task_id": task_id,
         "user_id": user_id,
-        "plan": parse_minimal_plan_to_reactflow(plan)
+        "graph": parse_minimal_plan_to_reactflow(plan)
     }
     await plan_draft_publisher.publish(payload)
 

@@ -7,7 +7,7 @@ export function useCreateTask() {
 
   return useMutation({
     mutationKey: ['create-task'],
-    mutationFn: (data: { inputData: string; }) =>
+    mutationFn: (data: { title: string, prompt: string; }) =>
       apiPost('/tasks', data, token!)
   })
 }

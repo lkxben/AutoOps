@@ -109,7 +109,7 @@ namespace WorkflowService.Consumers
 
                     if (existingPlan != null)
                     {
-                        existingPlan.Plan = dto.Plan.GetRawText();
+                        existingPlan.Graph = dto.Graph.GetRawText();
                     }
                     else
                     {
@@ -117,7 +117,7 @@ namespace WorkflowService.Consumers
                         {
                             UserId = Guid.Parse(dto.UserId),
                             TaskId = taskId,
-                            Plan = dto.Plan.GetRawText()
+                            Graph = dto.Graph.GetRawText()
                         };
 
                         db.WorkflowPlans.Add(plan);

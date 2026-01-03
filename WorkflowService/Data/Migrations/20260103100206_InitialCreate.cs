@@ -18,7 +18,9 @@ namespace WorkflowService.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     TaskId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Plan = table.Column<string>(type: "text", nullable: false)
+                    Graph = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {

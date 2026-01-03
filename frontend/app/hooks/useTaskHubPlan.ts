@@ -21,11 +21,11 @@ export function useTaskHubPlan(taskId?: string) {
 
     connection.on('PlanDraft', (payload: {
       task_id: string
-      plan: { nodes: Node[]; edges: Edge[] }
+      graph: { nodes: Node[]; edges: Edge[] }
     }) => {
       if (payload.task_id !== taskId) return
 
-      const { nodes, edges } = payload.plan
+      const { nodes, edges } = payload.graph
       const laidOutNodes = layoutGraph(nodes, edges)
       setNodes(laidOutNodes)
       setEdges(edges)

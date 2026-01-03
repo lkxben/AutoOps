@@ -43,7 +43,7 @@ namespace WorkflowService.Protos
             if (plan == null)
                 throw new RpcException(new Status(StatusCode.NotFound, "Plan not found"));
 
-            return new WorkflowPlanModel { Id = plan.Id.ToString(), TaskId = request.TaskId, Plan = plan.Plan };
+            return plan.ToModel();
         } 
 
         public override async Task<CreateWorkflowPlanResponse> SavePlan(CreateWorkflowPlanModel request, ServerCallContext context)
@@ -70,22 +70,26 @@ namespace WorkflowService.Protos
                 {
                     TaskId = taskId,
                     UserId = userId,
-                    Plan = request.Plan
+                    Graph = request.Graph
                 };
                 _db.WorkflowPlans.Add(plan);
             }
             else
             {
-                plan.Plan = request.Plan;
+                plan.Graph = request.Graph;
+                plan.UpdatedAt = DateTime.UtcNow;
                 _db.WorkflowPlans.Update(plan);
             }
 
-            task.Status = WorkflowTaskStatus.Finalized;
-            _db.WorkflowTasks.Update(task);
+            if (task.Status < WorkflowTaskStatus.Finalized)
+            {
+                task.Status = WorkflowTaskStatus.Finalized;
+                _db.WorkflowTasks.Update(task);
+            }
             
             await _db.SaveChangesAsync();
 
-            await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, task.Prompt, plan.Plan));
+            await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, task.Prompt, plan.Graph));
             return new CreateWorkflowPlanResponse { Id = plan.Id.ToString() };
         }
     }

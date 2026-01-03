@@ -9,6 +9,8 @@ namespace WorkflowService.Entities
 
         public Guid TaskId { get; set; }
 
-        public string Plan { get; set; }
+        public string Graph { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
     }
 }

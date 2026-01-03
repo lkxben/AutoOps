@@ -5,22 +5,22 @@ import { useCreateTask } from '@/app/hooks/useCreateTask'
 import { useRouter } from 'next/navigation'
 
 export default function TaskForm() {
-  const [inputData, setInputData] = useState('')
+  const [prompt, setPrompt] = useState('')
   const createTask = useCreateTask()
   const router = useRouter()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputData.trim()) return
+    if (!prompt.trim()) return
 
     try {
-      const res = await createTask.mutateAsync({ inputData })
+      const res = await createTask.mutateAsync({ title: "MOCK", prompt })
       router.push(`/tasks/${res.id}`)
     } catch (err) {
       console.error(err)
       alert("Failed to create task")
     }
-    setInputData('')
+    setPrompt('')
   }
 
   return (
@@ -31,8 +31,8 @@ export default function TaskForm() {
       <input
         className="flex-1 border rounded-lg px-4 py-3 focus:outline-none"
         placeholder="Type your task..."
-        value={inputData}
-        onChange={(e) => setInputData(e.target.value)}
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
         disabled={createTask.isPending}
       />
 
