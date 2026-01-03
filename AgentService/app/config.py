@@ -3,14 +3,11 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:6000"
     # with workflow service
-    WORKFLOW_QUEUE: str = "workflow-task-queue"
-    WORKFLOW_EXCHANGE: str = "Contracts.Workflow:WorkflowTaskCreated"
-    PLAN_CREATED_QUEUE: str = "plan-created-queue"
+    TASK_CREATED_EXCHANGE: str = "Contracts.Workflow:WorkflowTaskCreated"
     PLAN_CREATED_EXCHANGE: str = "Contracts.Workflow:WorkflowPlanCreated"
 
     # with tool service
     TOOL_CALL_EXCHANGE: str = "tool-call"
-    TOOL_RESULT_QUEUE: str = "tool-result-queue"
     TOOL_RESULT_EXCHANGE: str = "tool-result"
 
     # with event service

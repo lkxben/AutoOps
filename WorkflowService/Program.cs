@@ -36,6 +36,9 @@ builder.Services.AddMassTransit(x =>
             h.Password(rabbitMQSettings.Password);
         });
 
+        cfg.Publish<Contracts.Workflow.WorkflowTaskCreated>(p => p.Durable = true);
+        cfg.Publish<Contracts.Workflow.WorkflowPlanCreated>(p => p.Durable = true);
+
         cfg.ConfigureEndpoints(context);
     });
 });

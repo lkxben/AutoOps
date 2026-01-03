@@ -6,29 +6,42 @@ from app.config import settings
 async def start_plan_created_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
+    await channel.set_qos(prefetch_count=10)
+
+    EXCHANGE_NAME = settings.PLAN_CREATED_EXCHANGE
+    QUEUE_NAME = f"agent.{EXCHANGE_NAME}.queue"
+    DLX_NAME = f"{QUEUE_NAME}.dlx"
+    DLQ_NAME = f"{QUEUE_NAME}.dlq"
 
     exchange = await channel.declare_exchange(
-        settings.PLAN_CREATED_EXCHANGE,
+        EXCHANGE_NAME,
         aio_pika.ExchangeType.FANOUT,
         durable=True
     )
 
-    await channel.declare_queue(
-        settings.PLAN_CREATED_QUEUE + "_dlq",
+    dlx = await channel.declare_exchange(
+        DLX_NAME,
+        aio_pika.ExchangeType.FANOUT,
         durable=True
     )
 
+    dlq = await channel.declare_queue(
+        DLQ_NAME,
+        durable=True
+    )
+
+    await dlq.bind(dlx)
+
     queue = await channel.declare_queue(
-        settings.PLAN_CREATED_QUEUE,
+        QUEUE_NAME,
         durable=True,
         passive=False,
         arguments={
-            "x-dead-letter-exchange": settings.PLAN_CREATED_QUEUE + "_dlq",
+            "x-dead-letter-exchange": DLX_NAME,
             "x-message-ttl": 60000
         }
     )
 
-    await channel.set_qos(prefetch_count=10)
     await queue.bind(exchange)
 
     async with queue.iterator() as queue_iter:

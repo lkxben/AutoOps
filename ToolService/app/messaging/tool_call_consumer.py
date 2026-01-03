@@ -14,17 +14,40 @@ async def _process_message(payload: dict):
 async def start_tool_call_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
+    await channel.set_qos(prefetch_count=10)
+
+    EXCHANGE_NAME = settings.TOOL_CALL_EXCHANGE
+    QUEUE_NAME = f"tool.{EXCHANGE_NAME}.queue"
+    DLX_NAME = f"{QUEUE_NAME}.dlx"
+    DLQ_NAME = f"{QUEUE_NAME}.dlq"
 
     exchange = await channel.declare_exchange(
-        settings.TOOL_CALL_EXCHANGE,
+        EXCHANGE_NAME,
         aio_pika.ExchangeType.FANOUT,
         durable=True
     )
 
+    dlx = await channel.declare_exchange(
+        DLX_NAME,
+        aio_pika.ExchangeType.FANOUT,
+        durable=True
+    )
+
+    dlq = await channel.declare_queue(
+        DLQ_NAME,
+        durable=True
+    )
+
+    await dlq.bind(dlx)
+
     queue = await channel.declare_queue(
-        settings.TOOL_CALL_QUEUE,
+        QUEUE_NAME,
         durable=True,
-        passive=False
+        passive=False,
+        arguments={
+            "x-dead-letter-exchange": DLX_NAME,
+            "x-message-ttl": 60000
+        }
     )
 
     await queue.bind(exchange)
