@@ -28,13 +28,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}>
         <AuthProvider>
           <ReactQueryProvider>
-            <NavBar />
-              {children}
+            <div className="flex flex-col h-full">
+              <NavBar />
+              <main className="flex-1 overflow-auto min-h-0">
+                {children}
+              </main>
+            </div>
           </ReactQueryProvider>
         </AuthProvider>
       </body>

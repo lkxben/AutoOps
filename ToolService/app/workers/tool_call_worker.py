@@ -16,6 +16,8 @@ for name, fn in inspect.getmembers(all_tools, inspect.isfunction):
 publisher = AgentQueuePublisher()
 
 async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict):
+
+    await asyncio.sleep(10)
     try:
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)

@@ -18,3 +18,28 @@ export function getTaskStatusLabel(status: number) {
     default: return "Unknown";
   }
 }
+
+export type TaskModel = {
+  id: string
+  userId: string
+  title: string
+  inputData: string
+  status: number
+  result?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export type PlanModel = {
+  id: string
+  userId: string
+  taskId: string
+  graph: string
+}
+
+export type TaskUpdate = {
+  task_id: string
+  user_id: string
+  status: number
+  description?: string
+}

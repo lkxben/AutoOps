@@ -2,13 +2,7 @@
 import { useEffect, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
 import { useAuth } from '@/app/contexts/AuthContext'
-
-export type TaskUpdate = {
-  task_id: string
-  user_id: string
-  status: number
-  description?: string
-}
+import { TaskUpdate } from '@/app/lib/types'
 
 export function useTaskHubUpdates() {
   const { token } = useAuth()

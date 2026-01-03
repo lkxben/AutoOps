@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTaskHubPlan } from '@/app/hooks/useTaskHubPlan'
 import TaskGraph from '@/app/components/TaskGraph'
 import { useFinalizePlan } from "@/app/hooks/useFinalizePlan"
-import { TaskStatus } from '@/app/lib/taskStatus'
+import { TaskStatus } from '@/app/lib/types'
 import { useRouter } from 'next/navigation'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
@@ -48,32 +48,32 @@ export default function TaskPlanClient({ taskId }: Props) {
 
   if (error) return <Error error={error} />
 
-  if (task.status === TaskStatus.Pending) {
-    return (
-      <CenteredMessage>
-            Agent is planning your task…
-      </CenteredMessage>
-    )
-  }
-
-  if (task.status === TaskStatus.Drafted) {
-    return (<div className="h-screen w-full">
-      <TaskGraph 
-        nodes={nodes}
-        edges={edges}
-        setPlan={(newNodes, newEdges) => {
-          setNodes(newNodes)
-          setEdges(newEdges)
-        }}
-        onSubmitPlan={handlePlanSubmit}
-      />
-    </div>)
-  }
-
   return (
-    <CenteredMessage>
-        Task is currently running in the background.<br/>
-        Visit the summary dashboard to see it's progress.
-    </CenteredMessage>
+    <div className="flex flex-col flex-1 w-full min-h-0">
+      {task.status === TaskStatus.Pending && (
+        <CenteredMessage>
+          Agent is planning your task…
+        </CenteredMessage>
+      )}
+
+      {task.status === TaskStatus.Drafted && (
+        <TaskGraph 
+          nodes={nodes}
+          edges={edges}
+          setPlan={(newNodes, newEdges) => {
+            setNodes(newNodes)
+            setEdges(newEdges)
+          }}
+          onSubmitPlan={handlePlanSubmit}
+        />
+      )}
+
+      {task.status !== TaskStatus.Pending && task.status !== TaskStatus.Drafted && (
+        <CenteredMessage>
+          Task is currently running in the background.<br/>
+          Visit the summary dashboard to see its progress.
+        </CenteredMessage>
+      )}
+    </div>
   )
 }

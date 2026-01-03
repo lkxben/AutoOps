@@ -1,29 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { apiGet } from '@/app/lib/api'
-import { TaskStatus, getTaskStatusLabel } from '@/app/lib/taskStatus'
+import { TaskStatus } from '@/app/lib/types'
 import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
-import { useRouter } from 'next/navigation'
-import TaskCard from '../components/TaskCard'
-
-type TaskModel = {
-  id: string
-  userId: string
-  title: string
-  inputData: string
-  status: number
-  result?: string
-  createdAt: string
-  updatedAt?: string
-}
+import TaskSection from '../components/TaskSection'
+import { TaskModel } from '../hooks/useTaskWithPlan'
 
 export default function TaskSummaryDashboard() {
   const { token } = useAuth()
-  const router = useRouter()
   const [tasks, setTasks] = useState<TaskModel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,41 +31,49 @@ export default function TaskSummaryDashboard() {
   const { updates: taskUpdates } = useTaskHubUpdates()
 
   useEffect(() => {
-    if (!taskUpdates || !taskUpdates.length) return
+    if (!taskUpdates?.length) return
 
-    setTasks(prev => {
-      const updated = [...prev]
-      const taskMap = new Map(prev.map(t => [t.id, t]))
+    setTasks(prev =>
+      prev.map(task => {
+        const update = taskUpdates.find(u => u.task_id === task.id)
+        if (!update) return task
 
-      taskUpdates.forEach(payload => {
-        const task = taskMap.get(payload.task_id)
-        if (!task) return
-
-        task.status = payload.status
-        task.result = payload.description
-        task.updatedAt = new Date().toISOString()
+        return {
+          ...task,
+          status: update.status,
+          result: update.description,
+          updatedAt: new Date().toISOString(),
+        }
       })
-
-      return updated
-    })
+    )
   }, [taskUpdates])
+
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      const aTime = a.updatedAt ?? a.createdAt
+      const bTime = b.updatedAt ?? b.createdAt
+      return new Date(bTime).getTime() - new Date(aTime).getTime()
+    })
+  }, [tasks])
+
+  const notStarted = sortedTasks.filter(t =>
+    [TaskStatus.Pending, TaskStatus.Drafted, TaskStatus.Finalized].includes(t.status)
+  )
+
+  const running = sortedTasks.filter(t => t.status === TaskStatus.Running)
+
+  const finished = sortedTasks.filter(t =>
+    [TaskStatus.Completed, TaskStatus.Failed].includes(t.status)
+  )
 
   if (loading) return <LoadingScreen />
   if (error) return <Error error={error} />
 
-  if (!tasks.length) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p className="text-gray-600 text-lg">No tasks found.</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="p-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {tasks.map(task => (
-        <TaskCard key={task.id} task={task} />
-      ))}
+    <div className="flex flex-col flex-1 w-full min-h-0">
+      <TaskSection title="Not started" tasks={notStarted} />
+      <TaskSection title="Running" tasks={running} />
+      <TaskSection title="Finished" tasks={finished} />
     </div>
   )
 }

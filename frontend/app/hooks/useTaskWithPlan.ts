@@ -3,21 +3,8 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '@/app/lib/api'
 import { useAuth } from '@/app/contexts/AuthContext'
-
-export type TaskModel = {
-  id: string
-  userId: string
-  inputData: string
-  status: number
-  result?: string
-}
-
-export type PlanModel = {
-  id: string
-  userId: string
-  taskId: string
-  plan: string
-}
+import { layoutGraph } from "../lib/layoutGraph"
+import { TaskModel, PlanModel } from '@/app/lib/types'
 
 export function useTaskWithPlan(taskId?: string) {
   const { token } = useAuth()
@@ -40,10 +27,11 @@ export function useTaskWithPlan(taskId?: string) {
       .then(([taskData, planData]: [TaskModel, PlanModel | null]) => {
         setTask(taskData)
 
-        if (planData?.plan) {
+        if (planData?.graph) {
           try {
-            const parsedPlan = JSON.parse(planData.plan) as { nodes: any[]; edges: any[] }
-            setNodes(parsedPlan.nodes)
+            const parsedPlan = JSON.parse(planData.graph) as { nodes: any[]; edges: any[] }
+            const laidOutNodes = layoutGraph(parsedPlan.nodes, parsedPlan.edges)
+            setNodes(laidOutNodes)
             setEdges(parsedPlan.edges)
           } catch (err) {
             console.error('Failed to parse plan JSON', err)
