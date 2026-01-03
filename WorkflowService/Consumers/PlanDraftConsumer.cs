@@ -99,7 +99,10 @@ namespace WorkflowService.Consumers
                     if (task == null)
                         throw new Exception("Task not found");
 
-                    task.Status = WorkflowTaskStatus.Drafted;
+                    if (task.Status == WorkflowTaskStatus.Pending)
+                    {
+                        task.Status = WorkflowTaskStatus.Drafted;
+                    }
                     
                     var existingPlan = await db.WorkflowPlans
                         .FirstOrDefaultAsync(p => p.TaskId == taskId);

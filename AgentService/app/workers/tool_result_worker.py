@@ -15,9 +15,6 @@ async def get_agent():
     return agent
 
 async def handle_tool_result(payload: dict):
-    asyncio.create_task(_handle_tool_result(payload))
-
-async def _handle_tool_result(payload: dict):
     event_type = payload.get("event_type")
     thread_id = payload.get("task_id")
     user_id = payload.get("user_id")

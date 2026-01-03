@@ -15,9 +15,6 @@ async def get_agent():
     return agent
 
 async def handle_plan(payload: dict):
-    asyncio.create_task(_handle_plan(payload))
-
-async def _handle_plan(payload: dict):
     msg_data = payload.get("message", {})
     thread_id = msg_data.get("task_id")
     user_id = msg_data.get("user_id")

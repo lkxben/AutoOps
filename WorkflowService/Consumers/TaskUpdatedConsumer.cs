@@ -103,14 +103,18 @@ namespace WorkflowService.Consumers
                         throw new InvalidOperationException($"Invalid task status: {dto.Status}");
                     }
 
-                    task.Status = (WorkflowTaskStatus)dto.Status;
+                    var newStatus = (WorkflowTaskStatus)dto.Status;
 
-                    if (task.Status == WorkflowTaskStatus.Completed)
+                    if (newStatus > task.Status)
                     {
-                        task.Result = dto.Description;
+                        task.Status = newStatus;
+                        if (task.Status == WorkflowTaskStatus.Completed)
+                        {
+                            task.Result = dto.Description;
+                        }
+
+                        await db.SaveChangesAsync();
                     }
-                    
-                    await db.SaveChangesAsync();
 
                     channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }

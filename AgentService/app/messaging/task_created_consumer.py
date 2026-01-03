@@ -6,7 +6,7 @@ from app.config import settings
 async def start_task_created_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
-    await channel.set_qos(prefetch_count=10)
+    await channel.set_qos(prefetch_count=1)
 
     EXCHANGE_NAME = settings.TASK_CREATED_EXCHANGE
     QUEUE_NAME = f"agent.{EXCHANGE_NAME}.queue"

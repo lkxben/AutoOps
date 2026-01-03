@@ -41,7 +41,7 @@ async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict):
             "error": str(e)
         })
 
-def handle_tool_call(payload: dict):
+async def handle_tool_call(payload: dict):
     task_id = payload.get("task_id")
     user_id = payload.get("user_id")
     tool_type = payload.get("tool_type")
@@ -61,4 +61,4 @@ def handle_tool_call(payload: dict):
         return
 
     fn = available_tools[tool_type]["fn"]
-    asyncio.create_task(_run_and_publish(task_id, user_id, fn, inputs))
+    await _run_and_publish(task_id, user_id, fn, inputs)

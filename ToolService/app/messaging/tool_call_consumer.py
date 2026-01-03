@@ -4,17 +4,10 @@ import aio_pika
 from app.workers.tool_call_worker import handle_tool_call
 from app.config import settings
 
-MAX_CONCURRENT_TASKS = 10
-semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
-
-async def _process_message(payload: dict):
-    async with semaphore:
-        handle_tool_call(payload)
-
 async def start_tool_call_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
-    await channel.set_qos(prefetch_count=10)
+    await channel.set_qos(prefetch_count=100)
 
     EXCHANGE_NAME = settings.TOOL_CALL_EXCHANGE
     QUEUE_NAME = f"tool.{EXCHANGE_NAME}.queue"
@@ -56,4 +49,4 @@ async def start_tool_call_consumer():
         async for message in queue_iter:
             async with message.process():
                 payload = json.loads(message.body)
-                asyncio.create_task(_process_message(payload))
+                await handle_tool_call(payload)
