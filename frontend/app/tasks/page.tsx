@@ -8,7 +8,7 @@ import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
 import TaskSection from '../components/TaskSection'
-import { TaskModel } from '../hooks/useTaskWithPlan'
+import { TaskModel } from '@/app/lib/types'
 
 export default function TaskSummaryDashboard() {
   const { token } = useAuth()
@@ -56,7 +56,7 @@ export default function TaskSummaryDashboard() {
     })
   }, [tasks])
 
-  const notStarted = sortedTasks.filter(t =>
+  const upcoming = sortedTasks.filter(t =>
     [TaskStatus.Pending, TaskStatus.Drafted, TaskStatus.Finalized].includes(t.status)
   )
 
@@ -71,7 +71,7 @@ export default function TaskSummaryDashboard() {
 
   return (
     <div className="flex flex-col flex-1 w-full min-h-0">
-      <TaskSection title="Not started" tasks={notStarted} />
+      <TaskSection title="Upcoming" tasks={upcoming} />
       <TaskSection title="Running" tasks={running} />
       <TaskSection title="Finished" tasks={finished} />
     </div>

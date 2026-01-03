@@ -8,15 +8,21 @@ export default function TaskSection({
   title: string
   tasks: TaskModel[]
 }) {
+
+  const displayTitle = title + " (" + tasks.length + ")"
+
   return (
-    <section className="flex flex-col gap-2 h-[calc((100vh-4rem)/3)]">
+    <section className="flex flex-col gap-2 px-4 py-2 h-[calc((100vh-4rem)/3)]">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 px-2">
-        {title}
+        {displayTitle}
       </h2>
 
       <div
-        className="flex gap-4 overflow-x-auto px-2 h-full
-                   scrollbar-thin scrollbar-thumb-gray-300"
+        className="flex gap-4 overflow-x-auto h-full"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
       >
         {tasks.length ? (
           tasks.map(task => (
@@ -27,6 +33,12 @@ export default function TaskSection({
             No tasks {title.toLowerCase()}
           </div>
         )}
+
+        <style jsx>{`
+          div::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
     </section>
   )

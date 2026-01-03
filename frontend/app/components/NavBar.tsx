@@ -1,6 +1,5 @@
 "use client"
 import Link from "next/link"
-import "@/app/globals.css"
 import { useState } from "react"
 import Modal from "@/app/components/Modal"
 import { useAuth } from '@/app/contexts/AuthContext'
@@ -14,18 +13,40 @@ export default function NavBar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-6 py-4 bg-sky-300">
-        <Link className="text-xl font-bold text-white" href="/">AutoOps</Link>
+      <nav className="flex items-center justify-between px-6 py-4 bg-sky-300 shadow-md">
+        <div className="flex items-center gap-6">
+          <Link href="/" className="text-xl font-bold text-white">
+            AutoOps
+          </Link>
+          <Link href="/tasks" className="text-white hover:underline transition">
+            Dashboard
+          </Link>
+        </div>
 
         {user ? (
-          <div className="flex gap-4 text-white">
-            <span>{user.name}</span>
-            <button onClick={logout}>Logout</button>
+          <div className="flex items-center gap-4">
+            <span className="text-white font-medium">{user.name}</span>
+            <button
+              onClick={logout}
+              className="text-white hover:underline transition"
+            >
+              Logout
+            </button>
           </div>
         ) : (
-          <div className="flex gap-4 text-white">
-            <button onClick={() => setShowLogin(true)}>Login</button>
-            <button onClick={() => setShowRegister(true)}>Register</button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowLogin(true)}
+              className="text-white hover:underline transition"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => setShowRegister(true)}
+              className="text-white hover:underline transition"
+            >
+              Register
+            </button>
           </div>
         )}
       </nav>
@@ -38,5 +59,5 @@ export default function NavBar() {
         <RegisterForm onSuccess={() => setShowRegister(false)} />
       </Modal>
     </>
-  );
+  )
 }

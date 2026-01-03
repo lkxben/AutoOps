@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import * as signalR from '@microsoft/signalr'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { TaskUpdate } from '@/app/lib/types'
@@ -32,5 +32,6 @@ export function useTaskHubUpdates() {
     }
   }, [token])
 
-  return { updates: Object.values(updates) }
+  const updatesArray = useMemo(() => Object.values(updates), [Object.keys(updates).join(',')])
+  return { updates: updatesArray }
 }
