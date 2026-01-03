@@ -13,7 +13,9 @@ namespace WorkflowService.Consumers
     public class TaskUpdatedConsumer : BackgroundService
     {
         private const string ExchangeName = "task-updates";
-        private const string QueueName = "task-updates-workflow";
+        private const string QueueName = "workflow.task-updates.queue";
+        private const string DlqExchangeName = "workflow.task-updates.dlx";
+        private const string DlqQueueName = "workflow.task-updates.dlq";
         private readonly IServiceScopeFactory _scopeFactory;
 
         public TaskUpdatedConsumer(IServiceScopeFactory scopeFactory)
@@ -30,6 +32,7 @@ namespace WorkflowService.Consumers
 
             using var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
+            channel.BasicQos(prefetchSize: 0, prefetchCount: 10, global: false);
 
             channel.ExchangeDeclare(
                 exchange: ExchangeName,
@@ -37,11 +40,37 @@ namespace WorkflowService.Consumers
                 durable: true
             );
 
+            channel.ExchangeDeclare(
+                exchange: DlqExchangeName,
+                type: ExchangeType.Fanout,
+                durable: true
+            );
+
+            channel.QueueDeclare(
+                queue: DlqQueueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false
+            );
+
+            channel.QueueBind(
+                queue: DlqQueueName,
+                exchange: DlqExchangeName,
+                routingKey: ""
+            );
+
+            var args = new Dictionary<string, object>
+            {
+                { "x-dead-letter-exchange", DlqExchangeName },
+                { "x-message-ttl", 60000 }
+            };
+
             channel.QueueDeclare(
                 queue: QueueName,
                 durable: true,
                 exclusive: false,
-                autoDelete: false
+                autoDelete: false,
+                arguments: args
             );
 
             channel.QueueBind(
@@ -83,17 +112,18 @@ namespace WorkflowService.Consumers
                     
                     await db.SaveChangesAsync();
 
-                    channel.BasicAck(ea.DeliveryTag, false);
+                    channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[RabbitMQ] Failed: {ex.Message}");
+                    channel.BasicReject(ea.DeliveryTag, requeue: false);
                 }
             };
 
             channel.BasicConsume(
                 queue: QueueName,
-                autoAck: true,
+                autoAck: false,
                 consumer: consumer
             );
 

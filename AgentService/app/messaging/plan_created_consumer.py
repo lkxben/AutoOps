@@ -13,12 +13,22 @@ async def start_plan_created_consumer():
         durable=True
     )
 
+    await channel.declare_queue(
+        settings.PLAN_CREATED_QUEUE + "_dlq",
+        durable=True
+    )
+
     queue = await channel.declare_queue(
         settings.PLAN_CREATED_QUEUE,
         durable=True,
-        passive=False
+        passive=False,
+        arguments={
+            "x-dead-letter-exchange": settings.PLAN_CREATED_QUEUE + "_dlq",
+            "x-message-ttl": 60000
+        }
     )
 
+    await channel.set_qos(prefetch_count=10)
     await queue.bind(exchange)
 
     async with queue.iterator() as queue_iter:

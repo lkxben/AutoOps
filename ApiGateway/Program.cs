@@ -60,17 +60,32 @@ builder.Services.AddAuthorization();
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
     o.Address = new Uri(builder.Configuration.GetConnectionString("AuthService")!);
-});
+})
+.ConfigureChannel(o =>
+{
+    o.MaxRetryAttempts = 0;
+})
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
 
 builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
 {
     o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
-});
+})
+.ConfigureChannel(o =>
+{
+    o.MaxRetryAttempts = 0;
+})
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
 
 builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 {
     o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
-});
+})
+.ConfigureChannel(o =>
+{
+    o.MaxRetryAttempts = 0;
+})
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
 
 var app = builder.Build();
 

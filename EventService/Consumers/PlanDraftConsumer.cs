@@ -12,7 +12,9 @@ namespace EventService.Consumers
     {
         private readonly IHubContext<TaskHub> _hub;
         private const string ExchangeName = "plan-draft";
-        private const string QueueName = "plan-draft-consumer";
+        private const string QueueName = "event.plan-draft.queue";
+        private const string DlqExchangeName = "event.plan-draft.dlx";
+        private const string DlqQueueName = "event.plan-draft.dlq";
 
         public PlanDraftConsumer(IHubContext<TaskHub> hub)
         {
@@ -28,6 +30,7 @@ namespace EventService.Consumers
 
             using var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
+            channel.BasicQos(prefetchSize: 0, prefetchCount: 10, global: false);
 
             channel.ExchangeDeclare(
                 exchange: ExchangeName,
@@ -35,11 +38,37 @@ namespace EventService.Consumers
                 durable: true
             );
 
+            channel.ExchangeDeclare(
+                exchange: DlqExchangeName,
+                type: ExchangeType.Fanout,
+                durable: true
+            );
+
+            channel.QueueDeclare(
+                queue: DlqQueueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false
+            );
+
+            channel.QueueBind(
+                queue: DlqQueueName,
+                exchange: DlqExchangeName,
+                routingKey: ""
+            );
+
+            var args = new Dictionary<string, object>
+            {
+                { "x-dead-letter-exchange", DlqExchangeName },
+                { "x-message-ttl", 60000 }
+            };
+
             channel.QueueDeclare(
                 queue: QueueName,
                 durable: true,
                 exclusive: false,
-                autoDelete: false
+                autoDelete: false,
+                arguments: args
             );
 
             channel.QueueBind(
@@ -63,16 +92,19 @@ namespace EventService.Consumers
                     await _hub.Clients
                         .User(dto.UserId)
                         .SendAsync("PlanDraft", dto);
+
+                    channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[RabbitMQ] Failed: {ex.Message}");
+                    channel.BasicReject(ea.DeliveryTag, requeue: false);
                 }
             };
 
             channel.BasicConsume(
                 queue: QueueName,
-                autoAck: true,
+                autoAck: false,
                 consumer: consumer
             );
 
