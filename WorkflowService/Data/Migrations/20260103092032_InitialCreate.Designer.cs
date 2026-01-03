@@ -12,7 +12,7 @@ using WorkflowService.Data;
 namespace WorkflowService.Data.Migrations
 {
     [DbContext(typeof(WorkflowServiceContext))]
-    [Migration("20260102083550_InitialCreate")]
+    [Migration("20260103092032_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -52,16 +52,25 @@ namespace WorkflowService.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("InputData")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Prompt")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Result")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");

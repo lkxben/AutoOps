@@ -30,12 +30,13 @@ namespace WorkflowService.Protos
         {
             var task = new WorkflowTask
             {
-                InputData = request.InputData,
-                UserId = Guid.Parse(request.UserId)
+                UserId = Guid.Parse(request.UserId),
+                Title = request.Title,
+                Prompt = request.Prompt,
             };
             _db.WorkflowTasks.Add(task);
             await _db.SaveChangesAsync();
-            await _publishEndpoint.Publish(new WorkflowTaskCreated(task.Id, task.UserId, task.InputData));
+            await _publishEndpoint.Publish(new WorkflowTaskCreated(task.Id, task.UserId, task.Prompt));
             return new CreateWorkflowTaskResponse { Id = task.Id.ToString() };
         }
 
@@ -43,11 +44,13 @@ namespace WorkflowService.Protos
         {
             if (!Guid.TryParse(request.Id, out var taskId))
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
-            var task = await _db.WorkflowTasks.SingleOrDefaultAsync(t => t.Id == taskId);
+            var task = await _db.WorkflowTasks
+                .SingleOrDefaultAsync(t =>
+                    t.Id == taskId &&
+                    t.UserId.ToString() == request.UserId);
             if (task == null)
                 throw new RpcException(new Status(StatusCode.NotFound, "Task not found"));
-            if (task.UserId.ToString() != request.UserId)
-                throw new RpcException(new Status(StatusCode.PermissionDenied, "You are not allowed to access this task"));
+            
             return task.ToModel();
         }
 
@@ -62,14 +65,7 @@ namespace WorkflowService.Protos
                 .ToListAsync();
 
             var response = new UserTasksResponse();
-            response.Tasks.AddRange(tasks.Select(t => new WorkflowTaskModel
-            {
-                Id = t.Id.ToString(),
-                UserId = t.UserId.ToString(),
-                InputData = t.InputData,
-                Status = t.Status,
-                Result = t.Result
-            }));
+            response.Tasks.AddRange(tasks.Select(t => t.ToModel()));
 
             return response;
         }

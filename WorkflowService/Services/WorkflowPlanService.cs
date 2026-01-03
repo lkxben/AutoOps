@@ -85,7 +85,7 @@ namespace WorkflowService.Protos
             
             await _db.SaveChangesAsync();
 
-            await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, task.InputData, plan.Plan));
+            await _publishEndpoint.Publish(new WorkflowPlanCreated(plan.Id, plan.TaskId, plan.UserId, task.Prompt, plan.Plan));
             return new CreateWorkflowPlanResponse { Id = plan.Id.ToString() };
         }
     }

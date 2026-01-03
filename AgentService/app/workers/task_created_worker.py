@@ -18,11 +18,11 @@ async def handle_workflow_task(payload: dict):
     msg_data = payload.get("message", {})
     thread_id = msg_data.get("task_id")
     user_id = msg_data.get("user_id")
-    input_data = msg_data.get("input_data")
+    prompt = msg_data.get("prompt")
     print(f"[TaskCreatedWorker] Drafting plan for task {thread_id}")
 
     agent_instance = await get_agent()
     lock = thread_locks[thread_id]
     
     async with lock:
-        results = await agent_instance.run(thread_id, user_id, input_data)
+        results = await agent_instance.run(thread_id, user_id, prompt)

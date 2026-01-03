@@ -4,7 +4,10 @@ using WorkflowService.Protos;
 public record class WorkflowTaskDto(
     string Id,
     string UserId,
-    string InputData,
+    string Title,
+    string Prompt,
     WorkflowTaskStatus Status,
-    string Result = ""
+    string Result,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt
 );

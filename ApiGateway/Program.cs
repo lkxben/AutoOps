@@ -204,9 +204,12 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
     (
         task.Id,
         task.UserId,
-        task.InputData,
+        task.Title,
+        task.Prompt,
         task.Status,
-        task.Result
+        task.Result,
+        task.CreatedAt.ToDateTime(),
+        task.UpdatedAt?.ToDateTime()
     ));
 
     return Results.Ok(tasksDto);
@@ -226,9 +229,12 @@ app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc
     (
         task.Id,
         task.UserId,
-        task.InputData,
+        task.Title,
+        task.Prompt,
         task.Status,
-        task.Result
+        task.Result,
+        task.CreatedAt.ToDateTime(),
+        task.UpdatedAt?.ToDateTime()
     ));
 }).RequireAuthorization();
 
@@ -239,8 +245,9 @@ app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, HttpContext context, Wor
 
     var result = await wftClient.CreateTaskAsync(new CreateWorkflowTaskModel
     {
-        InputData = dto.InputData,
-        UserId = userId
+        UserId = userId,
+        Title = dto.Title,
+        Prompt = dto.Prompt
     });
 
     return Results.Ok(new IdDto(result.Id));
