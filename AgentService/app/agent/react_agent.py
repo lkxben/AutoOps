@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error
+from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error, publish_start
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel, ValidationError
 from typing import Any, Dict
@@ -207,6 +207,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
         except json.JSONDecodeError:
             return results
         
+        asyncio.create_task(publish_start(thread_id, user_id))
         asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
         return results
 

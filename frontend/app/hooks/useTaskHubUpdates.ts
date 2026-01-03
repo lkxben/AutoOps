@@ -32,6 +32,6 @@ export function useTaskHubUpdates() {
     }
   }, [token])
 
-  const updatesArray = useMemo(() => Object.values(updates), [Object.keys(updates).join(',')])
+  const updatesArray = useMemo(() => Object.values(updates), [updates])
   return { updates: updatesArray }
 }

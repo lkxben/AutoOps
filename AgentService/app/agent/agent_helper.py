@@ -37,6 +37,15 @@ async def publish_error(task_id: str, user_id: str):
     }
     await event_publisher.publish(payload)
 
+async def publish_start(task_id: str, user_id: str):
+    payload = {
+        "task_id": task_id,
+        "user_id": user_id,
+        "status": 3,
+        "description": "Run started"
+    }
+    await event_publisher.publish(payload)
+
 async def publish_plan_draft(task_id: str, user_id: str, plan: str):
     payload = {
         "task_id": task_id,
