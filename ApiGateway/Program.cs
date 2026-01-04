@@ -21,7 +21,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -45,6 +46,11 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["auth"];
+            return Task.CompletedTask;
+        },
         OnChallenge = context =>
         {
             context.HandleResponse();
@@ -150,7 +156,7 @@ app.MapGet("/users/{id}", async (string id, Auth.AuthClient authClient) =>
     ));
 }).RequireAuthorization();
 
-app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authClient) =>
+app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authClient, HttpContext context) =>
 {
     var response = await authClient.RegisterAsync(new RegisterModel
     {
@@ -159,17 +165,28 @@ app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authCli
         Password = registerDto.Password
     });
 
-    return Results.Ok(new LoginResponseDto(
+    context.Response.Cookies.Append(
+        "auth",
         response.Token,
+        new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
+        }
+    );
+
+    return Results.Ok(
         new UserDto(
             response.User.Id,
             response.User.Username,
             response.User.Name
         )
-    ));
+    );
 });
 
-app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
+app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient, HttpContext context) =>
 {
     var response = await authClient.LoginAsync(new LoginModel
     {
@@ -177,14 +194,25 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient) =>
         Password = loginDto.Password
     });
 
-    return Results.Ok(new LoginResponseDto(
+    context.Response.Cookies.Append(
+        "auth",
         response.Token,
+        new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
+        }
+    );
+
+    return Results.Ok(
         new UserDto(
             response.User.Id,
             response.User.Username,
             response.User.Name
         )
-    ));
+    );
 });
 
 app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
