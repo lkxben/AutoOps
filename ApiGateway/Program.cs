@@ -19,20 +19,21 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins(builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") 
-             ?? throw new Exception("JWT_KEY environment variable not set");
+var jwtKey = builder.Configuration["Jwt:Key"] 
+             ?? throw new Exception("JWT:Key configuration is missing");
 var key = Encoding.UTF8.GetBytes(jwtKey);
-var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
-                ?? throw new Exception("JWT_ISSUER environment variable not set");
-var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
-                  ?? throw new Exception("JWT_AUDIENCE environment variable not set");
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] 
+                ?? throw new Exception("JWT:Issuer configuration is missing");
+var jwtAudience = builder.Configuration["Jwt:Audience"] 
+                  ?? throw new Exception("JWT:Audience configuration is missing");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -70,11 +71,12 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-var authServiceUrl = Environment.GetEnvironmentVariable("AUTH_SERVICE_URL") 
-                     ?? throw new Exception("AUTH_SERVICE_URL environment variable not set");
+var authServiceUrl = builder.Configuration["Grpc:AuthService"] 
+                     ?? throw new Exception("Grpc:AuthService configuration is missing");
 
-var workflowTaskServiceUrl = Environment.GetEnvironmentVariable("WORKFLOW_TASK_SERVICE_URL") 
-                             ?? throw new Exception("WORKFLOW_TASK_SERVICE_URL environment variable not set");
+var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
+                             ?? throw new Exception("Grpc:WorkflowService configuration is missing");
+
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
     o.Address = new Uri(authServiceUrl);
@@ -84,14 +86,14 @@ builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 
 builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
 {
-    o.Address = new Uri(workflowTaskServiceUrl);
+    o.Address = new Uri(workflowServiceUrl);
 })
 .ConfigureChannel(o => o.MaxRetryAttempts = 0)
 .AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 {
-    o.Address = new Uri(workflowTaskServiceUrl);
+    o.Address = new Uri(workflowServiceUrl);
 })
 .ConfigureChannel(o => o.MaxRetryAttempts = 0)
 .AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
