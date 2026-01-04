@@ -1,8 +1,9 @@
 import aio_pika
 import json
 from app.config import settings
+from datetime import datetime
 
-class AgentQueuePublisher:
+class PlanDraftPublisher:
     def __init__(self):
         self.connection = None
         self.channel = None
@@ -16,7 +17,7 @@ class AgentQueuePublisher:
         self.channel = await self.connection.channel()
 
         self.exchange = await self.channel.declare_exchange(
-            settings.AGENT_EXCHANGE,
+            settings.PLAN_DRAFT_EXCHANGE,
             aio_pika.ExchangeType.FANOUT,
             durable=True
         )
@@ -27,7 +28,8 @@ class AgentQueuePublisher:
 
         message = aio_pika.Message(
             body=json.dumps(payload).encode(),
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+            timestamp=datetime.utcnow()
         )
 
         await self.exchange.publish(

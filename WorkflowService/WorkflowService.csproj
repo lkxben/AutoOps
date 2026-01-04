@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\workflow_task.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\workflow_plan.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>

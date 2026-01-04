@@ -5,8 +5,14 @@ namespace Contracts.Workflow
     public record WorkflowTaskCreated(
         [property: JsonPropertyName("task_id")] Guid TaskId,
         [property: JsonPropertyName("user_id")] Guid UserId,
-        [property: JsonPropertyName("input_data")] string InputData
+        [property: JsonPropertyName("prompt")] string Prompt
     );
 
-    public record WorkflowTaskCompleted(Guid TaskId, string Results);
+    public record WorkflowPlanCreated(
+        [property: JsonPropertyName("plan_id")] Guid PlanId,
+        [property: JsonPropertyName("task_id")] Guid TaskId,
+        [property: JsonPropertyName("user_id")] Guid UserId,
+        [property: JsonPropertyName("prompt")] string Prompt,
+        [property: JsonPropertyName("graph")] string Graph
+    );
 }

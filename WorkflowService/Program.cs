@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkflowService.Protos;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using MassTransit;
+using WorkflowService.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,11 +36,18 @@ builder.Services.AddMassTransit(x =>
             h.Password(rabbitMQSettings.Password);
         });
 
+        cfg.Publish<Contracts.Workflow.WorkflowTaskCreated>(p => p.Durable = true);
+        cfg.Publish<Contracts.Workflow.WorkflowPlanCreated>(p => p.Durable = true);
+
         cfg.ConfigureEndpoints(context);
     });
 });
 
+builder.Services.AddHostedService<PlanDraftConsumer>();
+builder.Services.AddHostedService<TaskUpdatedConsumer>();
+
 var app = builder.Build();
 
 app.MapGrpcService<WorkflowTaskSvcImp>();
+app.MapGrpcService<WorkflowPlanSvcImp>();
 app.Run();

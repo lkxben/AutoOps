@@ -1,5 +1,6 @@
 namespace ApiGateway.Dtos;
 
 public record class CreateWorkflowTaskDto(
-    string InputData
+    string Title,
+    string Prompt
 );

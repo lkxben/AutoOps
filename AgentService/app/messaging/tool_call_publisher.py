@@ -16,7 +16,7 @@ class ToolCallPublisher:
         self.channel = await self.connection.channel()
 
         self.exchange = await self.channel.declare_exchange(
-            settings.TOOL_EXCHANGE,
+            settings.TOOL_CALL_EXCHANGE,
             aio_pika.ExchangeType.FANOUT,
             durable=True
         )

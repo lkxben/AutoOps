@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from app.messaging.agent_queue_publisher import AgentQueuePublisher
+from app.messaging.tool_result_publisher import AgentQueuePublisher
 import app.tools.all_tools as all_tools
 
 available_tools = {}
@@ -16,6 +16,8 @@ for name, fn in inspect.getmembers(all_tools, inspect.isfunction):
 publisher = AgentQueuePublisher()
 
 async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict):
+
+    await asyncio.sleep(10)
     try:
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
@@ -41,11 +43,13 @@ async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict):
             "error": str(e)
         })
 
-def handle_tool_call(payload: dict):
+async def handle_tool_call(payload: dict):
     task_id = payload.get("task_id")
     user_id = payload.get("user_id")
     tool_type = payload.get("tool_type")
     inputs = payload.get("inputs", {})
+
+    print(f"[ToolWorker] Calling tool {tool_type} with inputs {inputs}")
 
     if tool_type not in available_tools:
         asyncio.create_task(
@@ -59,4 +63,4 @@ def handle_tool_call(payload: dict):
         return
 
     fn = available_tools[tool_type]["fn"]
-    asyncio.create_task(_run_and_publish(task_id, user_id, fn, inputs))
+    await _run_and_publish(task_id, user_id, fn, inputs)

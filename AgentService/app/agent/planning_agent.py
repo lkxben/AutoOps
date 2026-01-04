@@ -8,6 +8,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from app.agent.agent_helper import publish_plan_draft, complete_minimal_plan
 
 class PlanningAgent:
     _instance = None
@@ -39,43 +40,44 @@ class PlanningAgent:
 
         self.llm = ChatGroq(
             model="llama-3.1-8b-instant",
-            temperature=0.3,
+            temperature=0.0,
             max_tokens=100
         )
 
     async def _async_init(self):
-        self.checkpointer_cm = AsyncPostgresSaver.from_conn_string(self.db_uri)
-
         def human_feedback_node(state: self.State):
             pass
 
         def create_plan(state: self.State):
             human_feedback = state.get('human_feedback', '')
-            planner_instructions = f"""
-You are a task planning assistant.
 
-Your job is to produce a clear, human-readable step-by-step plan for solving the user's task.
+            new_sys_msg = f"""
+You are a planning agent.
 
-IMPORTANT RULES:
-1. DO NOT call tools.
-2. DO NOT use JSON, function syntax, or code.
-3. Each step must be written in natural language.
-4. Each step must correspond to exactly ONE tool call later.
-5. Steps must be strictly sequential — no parallel or combined actions.
-6. Do NOT include explanations, reasoning, or commentary.
+Convert the user's task into a structured execution graph in a MINIMAL, compact format.
 
-You MUST take into account the following human feedback (if any) when generating the plan:
-{human_feedback}
+RULES:
+1. Use plain text only. No JSON, no markdown, no commentary.
+2. Node format: step_id|tool|arg1=val,arg2=val|short description
+3. Edge format: from->to [optional: condition/loop]
+4. Do not compute results; use symbolic arguments or $<step_id> references.
+5. Step IDs must be sequential integers starting from 1.
+6. Include all nodes first, then all edges.
+7. For every node that uses the result of another node in its inputs, create an edge from that node to the dependent node.
+8. Ensure every node is connected and no dependency edges are omitted.
+9. Minimise unnecessary nodes or edges.
 
-Available tools:
+AVAILABLE TOOLS:
 {self.tool_descriptions}
 
-User task:
-{state['messages'][-1].content}
-
-Return ONLY a numbered list.
+USER TASK:
+{state["messages"][-1].content}
 """
-            return {"messages": [self.llm.invoke([SystemMessage(content=planner_instructions)])]}
+            
+            ai_msg = self.llm.invoke([SystemMessage(content=new_sys_msg)])
+            plan_str = ai_msg.content
+            completed_plan = complete_minimal_plan(plan_str)
+            return {"messages": [AIMessage(content=completed_plan)]}
 
         def should_continue(state: self.State):
             human_feedback=state.get('human_feedback', None)
@@ -97,11 +99,12 @@ Return ONLY a numbered list.
         )
         self.builder = builder
 
-    async def run(self, task: str, thread_id: str):
+    async def run(self, thread_id: str, user_id: str, task: str):
         msg = HumanMessage(content=task)
         thread = {"configurable": {"thread_id": thread_id}}
-        async with self.checkpointer_cm as checkpointer:
+        async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)
             results = await asyncio.to_thread(graph.invoke, {"messages": [msg]}, thread)
+            asyncio.create_task(publish_plan_draft(thread_id, user_id, results["messages"][-1].content))
         return results

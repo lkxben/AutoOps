@@ -11,32 +11,74 @@ namespace EventService.Consumers
     public class TaskUpdatedConsumer : BackgroundService
     {
         private readonly IHubContext<TaskHub> _hub;
-        private readonly IConnection _connection;
-        private readonly IModel _channel;
-        private readonly string _queueName = "task-updates";
+        private const string ExchangeName = "task-updates";
+        private const string QueueName = "event.task-updates.queue";
+        private const string DlqExchangeName = "event.task-updates.dlx";
+        private const string DlqQueueName = "event.task-updates.dlq";
 
         public TaskUpdatedConsumer(IHubContext<TaskHub> hub)
         {
             _hub = hub;
+        }
 
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
             var factory = new ConnectionFactory
             {
                 Uri = new Uri("amqp://guest:guest@localhost:6000")
             };
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
 
-            _channel.QueueDeclare(
-                queue: _queueName,
+            using var connection = factory.CreateConnection();
+            using var channel = connection.CreateModel();
+            channel.BasicQos(prefetchSize: 0, prefetchCount: 10, global: false);
+
+            channel.ExchangeDeclare(
+                exchange: ExchangeName,
+                type: ExchangeType.Fanout,
+                durable: true
+            );
+
+            channel.ExchangeDeclare(
+                exchange: DlqExchangeName,
+                type: ExchangeType.Fanout,
+                durable: true
+            );
+
+            channel.QueueDeclare(
+                queue: DlqQueueName,
                 durable: true,
                 exclusive: false,
                 autoDelete: false
             );
-        }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            var consumer = new EventingBasicConsumer(_channel);
+            channel.QueueBind(
+                queue: DlqQueueName,
+                exchange: DlqExchangeName,
+                routingKey: ""
+            );
+
+            var args = new Dictionary<string, object>
+            {
+                { "x-dead-letter-exchange", DlqExchangeName },
+                { "x-message-ttl", 60000 }
+            };
+
+            channel.QueueDeclare(
+                queue: QueueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: args
+            );
+
+            channel.QueueBind(
+                queue: QueueName,
+                exchange: ExchangeName,
+                routingKey: ""
+            );
+
+            var consumer = new EventingBasicConsumer(channel);
+
             consumer.Received += async (_, ea) =>
             {
                 try
@@ -46,27 +88,27 @@ namespace EventService.Consumers
 
                     if (dto == null)
                         return;
-                    
+
                     await _hub.Clients
                         .User(dto.UserId)
-                        .SendAsync("taskUpdated", dto);
+                        .SendAsync("TaskUpdated", dto);
+
+                    channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[RabbitMQ] Failed: {ex.Message}");
+                    channel.BasicReject(ea.DeliveryTag, requeue: false);
                 }
             };
 
-            _channel.BasicConsume(queue: _queueName, autoAck: true, consumer: consumer);
+            channel.BasicConsume(
+                queue: QueueName,
+                autoAck: false,
+                consumer: consumer
+            );
 
-            return Task.CompletedTask;
-        }
-
-        public override void Dispose()
-        {
-            _channel?.Close();
-            _connection?.Close();
-            base.Dispose();
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
     }
 }

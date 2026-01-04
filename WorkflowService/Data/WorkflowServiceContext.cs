@@ -11,5 +11,6 @@ namespace WorkflowService.Data
         }
 
         public DbSet<WorkflowTask> WorkflowTasks { get; set; } = default!;
+        public DbSet<WorkflowPlan> WorkflowPlans { get; set; } = default;
     }
 }

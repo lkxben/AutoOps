@@ -1,5 +1,6 @@
 using WorkflowService.Entities;
 using WorkflowService.Protos;
+using Google.Protobuf.WellKnownTypes;
 
 namespace WorkflowService.Extensions
 {
@@ -12,9 +13,14 @@ namespace WorkflowService.Extensions
             {
                 Id = task.Id.ToString(),
                 UserId = task.UserId.ToString(),
-                InputData = task.InputData,
+                Title = task.Title,
+                Prompt = task.Prompt,
                 Status = task.Status,
-                Result = task.Result!
+                Result = task.Result ?? "",
+                CreatedAt = Timestamp.FromDateTime(DateTime.SpecifyKind(task.CreatedAt, DateTimeKind.Utc)),
+                UpdatedAt = task.UpdatedAt.HasValue 
+                    ? Timestamp.FromDateTime(DateTime.SpecifyKind(task.UpdatedAt.Value, DateTimeKind.Utc))
+                    : null
             };
         }
     }

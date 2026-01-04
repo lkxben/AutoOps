@@ -10,9 +10,9 @@ namespace EventService.Dtos
         string UserId,
 
         [property: JsonPropertyName("status")]
-        string Status,
+        int Status,
 
-        [property: JsonPropertyName("result")]
-        string Result
+        [property: JsonPropertyName("description")]
+        string Description
     );
 }

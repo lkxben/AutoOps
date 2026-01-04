@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
 option csharp_namespace = "WorkflowService.Protos";
 
 package WorkflowTaskSvc;
@@ -7,11 +8,13 @@ package WorkflowTaskSvc;
 service WorkflowTaskSvc {
     rpc CreateTask (CreateWorkflowTaskModel) returns (CreateWorkflowTaskResponse);
     rpc GetTask (GetWorkflowTaskModel) returns (WorkflowTaskModel);
+    rpc GetUserTasks(GetUserTasksModel) returns (UserTasksResponse);
 }
 
 message CreateWorkflowTaskModel {
-    string inputData = 1;
-    string userId = 2;
+    string userId = 1;
+    string title = 2;
+    string prompt = 3;
 }
 
 message GetWorkflowTaskModel {
@@ -25,15 +28,28 @@ message CreateWorkflowTaskResponse {
 
 enum WorkflowTaskStatus {
     PENDING = 0;
-    IN_PROGRESS = 1;
-    COMPLETED = 2;
-    FAILED = 3;
+    DRAFTED = 1;
+    FINALIZED = 2;
+    RUNNING = 3;
+    COMPLETED = 4;
+    FAILED = 5;
 }
 
 message WorkflowTaskModel {
     string id = 1;
     string userId = 2;
-    string inputData = 3;
-    WorkflowTaskStatus status = 4;
-    string result = 5;
+    string title = 3;
+    string prompt = 4;
+    WorkflowTaskStatus status = 5;
+    string result = 6;
+    google.protobuf.Timestamp createdAt = 7;
+    google.protobuf.Timestamp updatedAt = 8;
+}
+
+message GetUserTasksModel {
+    string userId = 1;
+}
+
+message UserTasksResponse {
+    repeated WorkflowTaskModel tasks = 1;
 }
