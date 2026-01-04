@@ -11,10 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 // services
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(5003, listenOptions =>
+    options.ListenLocalhost(4003, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
-        listenOptions.UseHttps();
     });
 });
 

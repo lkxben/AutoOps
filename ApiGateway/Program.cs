@@ -26,7 +26,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") 
+             ?? throw new Exception("JWT_KEY environment variable not set");
+var key = Encoding.UTF8.GetBytes(jwtKey);
+var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+                ?? throw new Exception("JWT_ISSUER environment variable not set");
+var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+                  ?? throw new Exception("JWT_AUDIENCE environment variable not set");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -40,8 +47,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromMinutes(5),
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
     options.Events = new JwtBearerEvents
@@ -63,35 +70,31 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+var authServiceUrl = Environment.GetEnvironmentVariable("AUTH_SERVICE_URL") 
+                     ?? throw new Exception("AUTH_SERVICE_URL environment variable not set");
+
+var workflowTaskServiceUrl = Environment.GetEnvironmentVariable("WORKFLOW_TASK_SERVICE_URL") 
+                             ?? throw new Exception("WORKFLOW_TASK_SERVICE_URL environment variable not set");
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
-    o.Address = new Uri(builder.Configuration.GetConnectionString("AuthService")!);
+    o.Address = new Uri(authServiceUrl);
 })
-.ConfigureChannel(o =>
-{
-    o.MaxRetryAttempts = 0;
-})
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
 {
-    o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
+    o.Address = new Uri(workflowTaskServiceUrl);
 })
-.ConfigureChannel(o =>
-{
-    o.MaxRetryAttempts = 0;
-})
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 {
-    o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
+    o.Address = new Uri(workflowTaskServiceUrl);
 })
-.ConfigureChannel(o =>
-{
-    o.MaxRetryAttempts = 0;
-})
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 var app = builder.Build();
 
