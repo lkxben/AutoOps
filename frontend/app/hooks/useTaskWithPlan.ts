@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { apiGet } from '@/app/lib/api'
-import { useAuth } from '@/app/contexts/AuthContext'
 import { layoutGraph } from "../lib/layoutGraph"
 import { TaskModel, PlanModel } from '@/app/lib/types'
 
 export function useTaskWithPlan(taskId?: string) {
-  const { token } = useAuth()
   const [task, setTask] = useState<TaskModel | null>(null)
   const [nodes, setNodes] = useState<any[]>([])
   const [edges, setEdges] = useState<any[]>([])
@@ -15,14 +13,14 @@ export function useTaskWithPlan(taskId?: string) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token || !taskId) return
+    if (!taskId) return
 
     setLoading(true)
     setError(null)
 
     Promise.all([
-      apiGet(`/tasks/${taskId}`, token),
-      apiGet(`/plans?taskId=${taskId}`, token).catch(() => null),
+      apiGet(`/tasks/${taskId}`),
+      apiGet(`/plans?taskId=${taskId}`).catch(() => null),
     ])
       .then(([taskData, planData]: [TaskModel, PlanModel | null]) => {
         setTask(taskData)
@@ -41,7 +39,7 @@ export function useTaskWithPlan(taskId?: string) {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-  }, [taskId, token])
+  }, [taskId])
 
   return { task, nodes, edges, setNodes, setEdges, loading, error, setTask }
 }

@@ -1,52 +1,61 @@
 'use client'
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 type AuthContextType = {
-  token: string | null
   user: any
-  login: (token: string, user: any) => void
-  logout: () => void
+  isAuthenticated: boolean
+  loading: boolean
+  refresh: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const LOCAL_STORAGE_KEY = 'auth'
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        setToken(parsed.token)
-        setUser(parsed.user)
-      } catch {}
+  const refresh = async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        credentials: 'include'
+      })
+
+      if (!res.ok) {
+        setUser(null)
+        return
+      }
+
+      const data = await res.json()
+      setUser(data)
+    } finally {
+      setLoading(false)
     }
-  }, [])
-
-  useEffect(() => {
-    if (token && user) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ token, user }))
-    } else {
-      localStorage.removeItem(LOCAL_STORAGE_KEY)
-    }
-  }, [token, user])
-
-  const login = (newToken: string, newUser: any) => {
-    setToken(newToken)
-    setUser(newUser)
   }
 
-  const logout = () => {
-    setToken(null)
+  const logout = async () => {
+    await fetch(`${API_URL}/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    })
     setUser(null)
   }
 
+  useEffect(() => {
+    refresh()
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        loading,
+        refresh,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

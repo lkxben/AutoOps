@@ -41,6 +41,14 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
+            var token = context.Request.Cookies["auth"];
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                context.Token = token;
+                return Task.CompletedTask;
+            }
+
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
 

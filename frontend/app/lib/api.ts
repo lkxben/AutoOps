@@ -1,34 +1,34 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-export async function apiGet(endpoint: string, token?: string) {
+export async function apiGet(endpoint: string) {
   const res = await fetch(`${API_URL}${endpoint}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: 'include'
   })
   if (!res.ok) throw new Error('API request failed')
   return res.json()
 }
 
-export async function apiPost(endpoint: string, data: any, token?: string) {
+export async function apiPost(endpoint: string, data: any) {
   const res = await fetch(`${API_URL}${endpoint}`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
   })
   if (!res.ok) throw new Error('API request failed')
   return res.json()
 }
 
-export async function apiPut(endpoint: string, data: any, token?: string) {
+export async function apiPut(endpoint: string, data: any) {
   const res = await fetch(`${API_URL}${endpoint}`, {
     method: 'PUT',
+    credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
   })
   if (!res.ok) throw new Error('API request failed')
   return res.json()

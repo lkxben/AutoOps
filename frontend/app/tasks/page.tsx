@@ -3,30 +3,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { apiGet } from '@/app/lib/api'
-import { TaskStatus } from '@/app/lib/types'
+import { TaskStatus, TaskModel } from '@/app/lib/types'
 import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
 import TaskSection from '../components/TaskSection'
-import { TaskModel } from '@/app/lib/types'
 
 export default function TaskSummaryDashboard() {
-  const { token } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [tasks, setTasks] = useState<TaskModel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token) return
+    if (!isAuthenticated) return
 
     setLoading(true)
     setError(null)
 
-    apiGet('/tasks', token)
+    apiGet('/tasks')
       .then((data: TaskModel[]) => setTasks(data))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-  }, [token])
+  }, [isAuthenticated])
 
   const { updates: taskUpdates } = useTaskHubUpdates()
 
@@ -66,7 +65,7 @@ export default function TaskSummaryDashboard() {
     [TaskStatus.Completed, TaskStatus.Failed].includes(t.status)
   )
 
-  if (loading) return <LoadingScreen />
+  if (!isAuthenticated || loading) return <LoadingScreen />
   if (error) return <Error error={error} />
 
   return (

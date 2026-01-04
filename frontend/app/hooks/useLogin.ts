@@ -3,15 +3,15 @@ import { apiPost } from '@/app/lib/api'
 import { useAuth } from '@/app/contexts/AuthContext'
 
 export function useLogin() {
-  const { login } = useAuth()
+  const { refresh } = useAuth()
 
   return useMutation({
     mutationKey: ['login'],
     mutationFn: (data: { username: string; password: string }) =>
       apiPost('/login', data),
 
-    onSuccess: (data) => {
-      login(data.token, data.user)
+    onSuccess: async () => {
+      await refresh()
     },
   })
 }

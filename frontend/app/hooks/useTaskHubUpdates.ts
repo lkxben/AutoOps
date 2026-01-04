@@ -1,18 +1,15 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import * as signalR from '@microsoft/signalr'
-import { useAuth } from '@/app/contexts/AuthContext'
 import { TaskUpdate } from '@/app/lib/types'
+const API_URL = process.env.NEXT_PUBLIC_EVENT_API_URL
 
 export function useTaskHubUpdates() {
-  const { token } = useAuth()
   const [updates, setUpdates] = useState<Record<string, TaskUpdate>>({})
 
   useEffect(() => {
-    if (!token) return
-
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`https://localhost:5004/ws?access_token=${token}`)
+      .withUrl(`${API_URL}/ws`)
       .withAutomaticReconnect()
       .build()
 
@@ -30,7 +27,7 @@ export function useTaskHubUpdates() {
     return () => {
       connection.stop()
     }
-  }, [token])
+  }, [])
 
   const updatesArray = useMemo(() => Object.values(updates), [updates])
   return { updates: updatesArray }

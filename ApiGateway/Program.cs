@@ -130,13 +130,13 @@ app.Use(async (context, next) =>
 });
 
 // routes
-app.MapGet("/users", async (HttpContext http, Auth.AuthClient authClient) =>
+app.MapGet("/users", async (HttpContext context, Auth.AuthClient authClient) =>
 {
     var users = new List<UserDto>();
 
     using var call = authClient.GetAllUsers(new Google.Protobuf.WellKnownTypes.Empty());
 
-    while (await call.ResponseStream.MoveNext(http.RequestAborted))
+    while (await call.ResponseStream.MoveNext(context.RequestAborted))
     {
         var curr = call.ResponseStream.Current;
         users.Add(new UserDto(curr.Id, curr.Username, curr.Name));
@@ -145,9 +145,12 @@ app.MapGet("/users", async (HttpContext http, Auth.AuthClient authClient) =>
     return Results.Ok(users);
 }).RequireAuthorization();
 
-app.MapGet("/users/{id}", async (string id, Auth.AuthClient authClient) =>
+app.MapGet("/auth/me", async (HttpContext context, Auth.AuthClient authClient) =>
 {
-    var user = await authClient.GetUserAsync(new GetUserModel { Id = id });
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var user = await authClient.GetUserAsync(new GetUserModel { Id = userId });
     return user is null ? Results.NotFound() : Results.Ok(new UserDto
     (
         user.Id,
@@ -213,6 +216,12 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient, Http
             response.User.Name
         )
     );
+});
+
+app.MapPost("/logout", (HttpContext context) =>
+{
+    context.Response.Cookies.Delete("auth");
+    return Results.Ok();
 });
 
 app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>

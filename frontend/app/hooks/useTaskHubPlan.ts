@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
-import { useAuth } from '@/app/contexts/AuthContext'
 import { Node, Edge } from 'reactflow'
 import { layoutGraph } from '@/app/lib/layoutGraph'
+const API_URL = process.env.NEXT_PUBLIC_EVENT_API_URL
 
 export function useTaskHubPlan(taskId?: string) {
-  const { token } = useAuth()
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
 
   useEffect(() => {
-    if (!token || !taskId) return
+    if (!taskId) return
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`https://localhost:5004/ws?access_token=${token}`)
+      .withUrl(`${API_URL}/ws`)
       .withAutomaticReconnect()
       .build()
 
@@ -39,7 +38,7 @@ export function useTaskHubPlan(taskId?: string) {
     return () => {
       connection.stop()
     }
-  }, [token, taskId])
+  }, [taskId])
 
   return { nodes, edges }
 }
