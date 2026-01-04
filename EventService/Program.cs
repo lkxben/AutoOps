@@ -3,23 +3,36 @@ using EventService.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy
-            .WithOrigins("http://localhost:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        policy.WithOrigins(builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
-// jwt auth
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQSettings"));
+
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value);
+
+var jwtKey = builder.Configuration["Jwt:Key"] 
+             ?? throw new Exception("JWT:Key configuration is missing");
+var key = Encoding.UTF8.GetBytes(jwtKey);
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] 
+                ?? throw new Exception("JWT:Issuer configuration is missing");
+var jwtAudience = builder.Configuration["Jwt:Audience"] 
+                  ?? throw new Exception("JWT:Audience configuration is missing");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -33,8 +46,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromMinutes(5),
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
     options.Events = new JwtBearerEvents
@@ -70,7 +83,7 @@ builder.Services.AddHostedService<PlanDraftConsumer>();
 
 var app = builder.Build();
 
-app.UseCors("CorsPolicy");
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
