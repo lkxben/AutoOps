@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTaskHubPlan } from '@/app/hooks/useTaskHubPlan'
 import TaskGraph from '@/app/components/TaskGraph'
 import { useFinalizePlan } from "@/app/hooks/useFinalizePlan"
-import { TaskStatus } from '@/app/lib/types'
+import { TaskStatus, TaskModel } from '@/app/lib/types'
 import { useRouter } from 'next/navigation'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
@@ -19,6 +19,7 @@ export default function TaskPlanClient({ taskId }: Props) {
   const { nodes: planNodes, edges: planEdges } = useTaskHubPlan(taskId)
   const { task, nodes, edges, setNodes, setEdges, loading, error, setTask } = useTaskWithPlan(taskId)
 
+  // Merge plan updates into task state
   useEffect(() => {
     if (!task) return
     if (planNodes.length || planEdges.length) {
@@ -28,7 +29,7 @@ export default function TaskPlanClient({ taskId }: Props) {
         prev ? { ...prev, status: TaskStatus.Drafted } : prev
       )
     }
-  }, [planNodes, planEdges])
+  }, [planNodes, planEdges, task, setNodes, setEdges, setTask])
 
   const handlePlanSubmit = async (updatedNodes: typeof nodes, updatedEdges: typeof edges) => {
     if (!task) return
@@ -46,6 +47,7 @@ export default function TaskPlanClient({ taskId }: Props) {
 
   if (loading) return <LoadingScreen />
 
+  if (!task) return <CenteredMessage>Task not found</CenteredMessage>
   if (error) return <Error error={error} />
 
   return (
