@@ -5,22 +5,16 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+:root {
+  --background: #f3f4f6;
+  --foreground: #0a0a0a;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-
   --color-charcoal: #5B5D5B;
   --color-cyan: #31999B;
   --color-aqua: #88DFE7;
   --color-offwhite: #F5F5F5;
   --color-sky: #8AB1D0;
-}
-
-:root {
-  --background: #f3f4f6;
-  --foreground: #0a0a0a;
 }
 
 body {

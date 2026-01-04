@@ -39,7 +39,15 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
   const onEdgesChange = useCallback((changes: EdgeChange[]) => updateEdges(applyEdgeChanges(changes, edges)), [edges, updateEdges])
 
   const onConnect = useCallback((connection: Connection) => {
-    const newEdge: Edge = { ...connection, id: `${connection.source}-${connection.target}` }
+    const { source, target, sourceHandle, targetHandle } = connection
+    if (!source || !target) return
+    const newEdge: Edge = {
+      id: `${source}-${target}`,
+      source,
+      target,
+      sourceHandle: sourceHandle ?? undefined,
+      targetHandle: targetHandle ?? undefined,
+    }
     updateEdges([...edges, newEdge])
   }, [edges, updateEdges])
 
