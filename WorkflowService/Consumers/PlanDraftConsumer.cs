@@ -12,6 +12,7 @@ namespace WorkflowService.Consumers
 {
     public class PlanDraftConsumer : BackgroundService
     {
+        private readonly RabbitMQSettings _settings;
         private const string ExchangeName = "plan-draft";
         private const string QueueName = "workflow.plan-draft.queue";
 
@@ -19,16 +20,19 @@ namespace WorkflowService.Consumers
         private const string DlqQueueName = "workflow.plan-draft.dlq";
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public PlanDraftConsumer(IServiceScopeFactory scopeFactory)
+        public PlanDraftConsumer(IServiceScopeFactory scopeFactory, RabbitMQSettings settings)
         {
             _scopeFactory = scopeFactory;
+            _settings = settings;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var uri = $"amqp://{_settings.Username}:{_settings.Password}@{_settings.Host}:{_settings.Port}";
+
             var factory = new ConnectionFactory
             {
-                Uri = new Uri("amqp://guest:guest@localhost:6000")
+                Uri = new Uri(uri)
             };
 
             using var connection = factory.CreateConnection();

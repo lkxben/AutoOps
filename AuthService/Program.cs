@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var grpcPort = builder.Configuration.GetValue<int?>("Grpc:Port") ?? 4002;
+var grpcPort = builder.Configuration.GetValue<int>("Grpc:Port", 4002);
 var dbConnection = builder.Configuration.GetConnectionString("AuthServiceDb") 
                    ?? throw new Exception("AuthServiceDb connection string is missing");
 

@@ -4,9 +4,16 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build 
 WORKDIR /src
-COPY . .
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+
+COPY WorkflowService/WorkflowService.csproj ./WorkflowService/
+COPY Contracts/Contracts.csproj ./Contracts/
+
+RUN dotnet restore ./WorkflowService/WorkflowService.csproj
+
+COPY WorkflowService ./WorkflowService
+COPY Contracts ./Contracts
+
+RUN dotnet publish ./WorkflowService/WorkflowService.csproj -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
