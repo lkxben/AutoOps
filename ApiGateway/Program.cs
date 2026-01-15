@@ -98,6 +98,12 @@ builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 .ConfigureChannel(o => o.MaxRetryAttempts = 0)
 .AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
+var port = builder.Configuration.GetValue("PORT", 8080);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(port);
+});
+
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
@@ -107,8 +113,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization(); 
@@ -333,4 +337,5 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     return Results.Ok(new IdDto(result.Id));
 }).RequireAuthorization();
 
+app.MapGet("/health", () => Results.Ok());
 app.Run();
