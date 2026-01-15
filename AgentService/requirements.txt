@@ -7,12 +7,8 @@ pydantic-settings
 langgraph
 langchain
 langchain_groq
-transformers
-torch
-langchain-openai
 langchain-core
 langchain_experimental
-wikipedia-api
 ddgs
 langgraph-checkpoint-postgres
 psycopg[binary]
