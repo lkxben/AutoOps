@@ -11,8 +11,12 @@ namespace WorkflowService.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "workflow");
+
             migrationBuilder.CreateTable(
                 name: "WorkflowPlans",
+                schema: "workflow",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -29,6 +33,7 @@ namespace WorkflowService.Data.Migrations
 
             migrationBuilder.CreateTable(
                 name: "WorkflowTasks",
+                schema: "workflow",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -50,10 +55,12 @@ namespace WorkflowService.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "WorkflowPlans");
+                name: "WorkflowPlans",
+                schema: "workflow");
 
             migrationBuilder.DropTable(
-                name: "WorkflowTasks");
+                name: "WorkflowTasks",
+                schema: "workflow");
         }
     }
 }

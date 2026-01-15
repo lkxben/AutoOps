@@ -10,13 +10,14 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 // services
-var grpcPort = builder.Configuration.GetValue<int>("Grpc::Port", 4003);
+var grpcPort = builder.Configuration.GetValue<int>("Grpc:Port", 5003);
 var dbConnection = builder.Configuration.GetConnectionString("WorkflowServiceDb") 
                    ?? throw new Exception("WorkflowServiceDb connection string is missing");
+var schema = builder.Configuration["DatabaseSchema"] ?? "workflow";
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(grpcPort, listenOptions =>
+    options.ListenAnyIP(grpcPort, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
     });
@@ -30,7 +31,10 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<WorkflowServiceContext>(options =>
-    options.UseNpgsql(dbConnection));
+{
+    options.UseNpgsql(dbConnection, npgsqlOptions =>
+        npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", schema));
+});
 
 builder.Services.AddGrpc();
 
@@ -66,4 +70,5 @@ var app = builder.Build();
 
 app.MapGrpcService<WorkflowTaskSvcImp>();
 app.MapGrpcService<WorkflowPlanSvcImp>();
+app.MapGet("/health", () => Results.Ok());
 app.Run();
