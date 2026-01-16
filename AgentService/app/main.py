@@ -3,6 +3,20 @@ from fastapi import FastAPI
 from app.messaging.task_created_consumer import start_task_created_consumer
 from app.messaging.tool_result_consumer import start_tool_result_consumer
 from app.messaging.plan_created_consumer import start_plan_created_consumer
+import logging
+import sys
+
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+handler.setFormatter(formatter)
+
+if not root.handlers:
+    root.addHandler(handler)
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 

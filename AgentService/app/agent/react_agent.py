@@ -12,6 +12,9 @@ from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_me
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel, ValidationError
 from typing import Any, Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ReactAgent:
     _instance = None
@@ -264,7 +267,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
                 try:
                     tool_call_data = json.loads(last_msg)
                 except json.JSONDecodeError:
-                    print("TOOL PARSING ERROR")
+                    logger.error("TOOL PARSING ERROR")
                     return
             
                 asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], **tool_call_data["inputs"]))
@@ -280,6 +283,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
                 validated = schema(**result_json)
                 return validated
             except (json.JSONDecodeError, ValidationError) as e:
-                print(f"Attempt {attempt} failed: {e}")
+                logger.info(f"Attempt {attempt} failed: {e}")
                 if attempt == max_attempts:
+                    logger.error("All retries failed")
                     return None

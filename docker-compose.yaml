@@ -40,6 +40,10 @@ services:
       context: ./AuthService
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
+      Jwt__Issuer: "autooops"
+      Jwt__Audience: "autooops"
+      Jwt__ExpiryMinutes: 180
       Grpc__Port: 5002
       ConnectionStrings__AuthServiceDb: "Host=postgres-auto;Port=5432;Database=AutoOps;Username=postgres;Password=password"
     depends_on:
@@ -80,6 +84,7 @@ services:
       TASK_UPDATED_EXCHANGE: "task-updates"
       PLAN_DRAFT_EXCHANGE: "plan-draft"
       AGENT_DB: "host=postgres-auto port=5432 dbname=AutoOps user=postgres password=password"
+      GROQ_API_KEY: "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"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -108,9 +113,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Frontend__Url: "http://localhost:3000"
-      Jwt__Key: "super-secret-key"
+      Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
       Jwt__Issuer: "autooops"
       Jwt__Audience: "autooops"
+      Jwt__ExpiryMinutes: 180
       Grpc__AuthService: "http://auth-service:5002"
       Grpc__WorkflowService: "http://workflow-service:5003"
     ports:
@@ -131,9 +137,10 @@ services:
       RabbitMQSettings__Port: 5672
       RabbitMQSettings__Username: guest
       RabbitMQSettings__Password: guest
-      Jwt__Key: "super-secret-key"
+      Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
       Jwt__Issuer: "autooops"
       Jwt__Audience: "autooops"
+      Jwt__ExpiryMinutes: 180
     ports:
       - "5004:5004"
     depends_on:

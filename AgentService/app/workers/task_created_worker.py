@@ -4,9 +4,11 @@ import aio_pika
 from collections import defaultdict
 from app.agent.planning_agent import PlanningAgent
 from app.config import settings
+import logging
 
 agent = None
 thread_locks = defaultdict(lambda: asyncio.Lock())
+logger = logging.getLogger(__name__)
 
 async def get_agent():
     global agent
@@ -19,7 +21,7 @@ async def handle_workflow_task(payload: dict):
     thread_id = msg_data.get("task_id")
     user_id = msg_data.get("user_id")
     prompt = msg_data.get("prompt")
-    print(f"[TaskCreatedWorker] Drafting plan for task {thread_id}")
+    logger.info(f"[TaskCreatedWorker] Drafting plan for task {thread_id}")
 
     agent_instance = await get_agent()
     lock = thread_locks[thread_id]

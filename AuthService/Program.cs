@@ -39,26 +39,26 @@ builder.Services.AddGrpc();
 
 var app = builder.Build();
 
-// using var scope = app.Services.CreateScope();
-// var db = scope.ServiceProvider.GetRequiredService<AuthServiceContext>();
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService<AuthServiceContext>();
 
-// var retries = 0;
-// var maxRetries = 10;
-// while (true)
-// {
-//     try
-//     {
-//         db.Database.Migrate();
-//         break;
-//     }
-//     catch (Npgsql.NpgsqlException)
-//     {
-//         retries++;
-//         if (retries >= maxRetries) throw;
-//         Console.WriteLine("Postgres not ready yet, retrying in 5s...");
-//         await Task.Delay(5000);
-//     }
-// }
+var retries = 0;
+var maxRetries = 10;
+while (true)
+{
+    try
+    {
+        db.Database.Migrate();
+        break;
+    }
+    catch (Npgsql.NpgsqlException)
+    {
+        retries++;
+        if (retries >= maxRetries) throw;
+        Console.WriteLine("Postgres not ready yet, retrying in 5s...");
+        await Task.Delay(5000);
+    }
+}
 
 app.MapGrpcService<AuthServiceImp>();
 app.MapGet("/health", () => Results.Ok());
