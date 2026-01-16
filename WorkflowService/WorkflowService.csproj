@@ -13,21 +13,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="Google.Protobuf" Version="3.33.2" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.76.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.76.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Protobuf Include="Protos\workflow_task.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\workflow_plan.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>
