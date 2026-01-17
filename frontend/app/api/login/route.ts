@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         value: token,
         httpOnly: true,
         secure: true,
-        sameSite: "Lax",
+        sameSite: "lax",
         path: "/",
         domain: undefined,
         maxAge: 7 * 24 * 60 * 60,
