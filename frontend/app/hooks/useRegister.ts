@@ -8,7 +8,7 @@ export function useRegister() {
   return useMutation({
     mutationKey: ['register'],
     mutationFn: (data: { name: string, username: string; password: string }) =>
-      fetch('/api/register', {
+      fetch('/api/proxySetCookie/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

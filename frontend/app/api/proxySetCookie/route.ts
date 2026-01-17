@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL + "/login";
+  const { pathname } = req.nextUrl;
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL + pathname;
   const body = await req.text();
 
   const backendRes = await fetch(backendUrl, {
@@ -14,8 +15,9 @@ export async function POST(req: NextRequest) {
     body,
   });
 
+  const data = await backendRes.json();
   const setCookieHeader = backendRes.headers.get("set-cookie");
-  const response = NextResponse.json({ success: backendRes.ok });
+  const response = NextResponse.json(data, { status: backendRes.status });
 
   if (setCookieHeader) {
     const match = setCookieHeader.match(/auth=([^;]+);/);

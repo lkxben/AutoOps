@@ -7,7 +7,7 @@ export function useLogin() {
   return useMutation({
     mutationKey: ['login'],
     mutationFn: (data: { username: string; password: string }) =>
-      fetch('/api/login', {
+      fetch('/api/proxySetCookie/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

@@ -18,8 +18,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refresh = async () => {
     try {
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch(`${API_URL}/auth/me`, {
         credentials: 'include',
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        }
       });
 
       if (!res.ok) {
