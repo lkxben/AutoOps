@@ -7,14 +7,31 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var frontendUrls = builder.Configuration["Frontend__Urls"]?
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.WithOrigins(frontendUrls)
+            .SetIsOriginAllowed(origin =>
+            {
+                foreach (var url in frontendUrls)
+                {
+                    if (url.Contains("*"))
+                    {
+                        var regexPattern = "^" + Regex.Escape(url).Replace("\\*", ".*") + "$";
+                        if (Regex.IsMatch(origin, regexPattern, RegexOptions.IgnoreCase))
+                            return true;
+                    }
+                }
+                return false;
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -75,7 +92,7 @@ builder.Services.AddHostedService<PlanDraftConsumer>();
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -112,7 +112,7 @@ services:
       context: ./ApiGateway
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      Frontend__Url: "http://localhost:3000"
+      Frontend__Urls: "http://localhost:3000,https://auto-ops-theta.vercel.app,https://auto-*-benjamins-projects-13b1267f.vercel.app"
       Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
       Jwt__Issuer: "autooops"
       Jwt__Audience: "autooops"
@@ -132,7 +132,7 @@ services:
       context: ./EventService
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      Frontend__Url: "http://localhost:3000"
+      Frontend__Urls: "http://localhost:3000,https://auto-ops-theta.vercel.app,https://auto-*-benjamins-projects-13b1267f.vercel.app"
       RabbitMQSettings__Host: rabbitmq
       RabbitMQSettings__Port: 5672
       RabbitMQSettings__Username: guest
