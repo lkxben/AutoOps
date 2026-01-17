@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL + pathname;
+  const path = req.nextUrl.pathname.replace("/api/proxySetCookie", "");
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL + path;
   const body = await req.text();
 
   const backendRes = await fetch(backendUrl, {

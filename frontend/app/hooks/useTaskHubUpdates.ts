@@ -9,7 +9,11 @@ export function useTaskHubUpdates() {
 
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/ws`)
+      .withUrl(`${API_URL}/ws`, {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        }
+      })
       .withAutomaticReconnect()
       .build()
 

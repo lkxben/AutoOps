@@ -18,11 +18,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refresh = async () => {
     try {
-      const res = await fetch(`${API_URL}/auth/me`, {
+      const res = await fetch('/api/proxyWithCookie/auth/me', {
         credentials: 'include',
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-        }
       });
 
       if (!res.ok) {
@@ -38,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const logout = async () => {
-    await fetch(`${API_URL}/logout`, {
+    await fetch('/api/proxyWithCookie/logout', {
       method: 'POST',
       credentials: 'include'
     })
