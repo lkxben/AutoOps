@@ -4,34 +4,34 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var frontendUrls = builder.Configuration["Frontend__Urls"]?
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    ?? Array.Empty<string>();
+var frontendUrl = builder.Configuration["Frontend__Url"] ?? "";
+
+var regexPattern = builder.Configuration["Frontend__UrlsRegex"] 
+                         ?? @"^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$";
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(frontendUrls)
-            .SetIsOriginAllowed(origin =>
-            {
-                foreach (var url in frontendUrls)
-                {
-                    if (url.Contains("*"))
-                    {
-                        var regexPattern = "^" + Regex.Escape(url).Replace("\\*", ".*") + "$";
-                        if (Regex.IsMatch(origin, regexPattern, RegexOptions.IgnoreCase))
-                            return true;
-                    }
-                }
-                return false;
-            })
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        policy.AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .SetIsOriginAllowed(origin =>
+              {
+                  if (origin.Contains("localhost")) return true;
+
+                  if (Regex.IsMatch(origin, $"^{Regex.Escape(frontendUrl)}$", RegexOptions.IgnoreCase))
+                      return true;
+                      
+                  if (Regex.IsMatch(origin, regexPattern, RegexOptions.IgnoreCase))
+                      return true;
+
+                  return false;
+              });
     });
 });
 
