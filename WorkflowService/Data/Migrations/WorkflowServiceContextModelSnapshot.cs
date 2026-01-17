@@ -17,6 +17,7 @@ namespace WorkflowService.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("workflow")
                 .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -46,7 +47,7 @@ namespace WorkflowService.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkflowPlans");
+                    b.ToTable("WorkflowPlans", "workflow");
                 });
 
             modelBuilder.Entity("WorkflowService.Entities.WorkflowTask", b =>
@@ -80,7 +81,7 @@ namespace WorkflowService.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkflowTasks");
+                    b.ToTable("WorkflowTasks", "workflow");
                 });
 #pragma warning restore 612, 618
         }

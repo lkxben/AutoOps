@@ -11,21 +11,25 @@ namespace EventService.Consumers
     public class PlanDraftConsumer : BackgroundService
     {
         private readonly IHubContext<TaskHub> _hub;
+        private readonly RabbitMQSettings _settings;
         private const string ExchangeName = "plan-draft";
         private const string QueueName = "event.plan-draft.queue";
         private const string DlqExchangeName = "event.plan-draft.dlx";
         private const string DlqQueueName = "event.plan-draft.dlq";
 
-        public PlanDraftConsumer(IHubContext<TaskHub> hub)
+        public PlanDraftConsumer(IHubContext<TaskHub> hub, RabbitMQSettings settings)
         {
             _hub = hub;
+            _settings = settings;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var uri = $"amqp://{_settings.Username}:{_settings.Password}@{_settings.Host}:{_settings.Port}";
+
             var factory = new ConnectionFactory
             {
-                Uri = new Uri("amqp://guest:guest@localhost:6000")
+                Uri = new Uri(uri)
             };
 
             using var connection = factory.CreateConnection();

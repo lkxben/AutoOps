@@ -8,25 +8,39 @@ export function useTaskHubUpdates() {
   const [updates, setUpdates] = useState<Record<string, TaskUpdate>>({})
 
   useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/ws`)
-      .withAutomaticReconnect()
-      .build()
+    const setupConnection = async () => {
+      const res = await fetch("/api/signalr-token")
+      const data = await res.json()
+      const token = data.token
 
-    connection.start()
-      .then(() => console.log('Connected to TaskHub'))
-      .catch(console.error)
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${API_URL}/ws?access_token=${token}`, {
+          transport: signalR.HttpTransportType.WebSockets, 
+          headers: { "ngrok-skip-browser-warning": "true" }
+        })
+        .withAutomaticReconnect()
+        .build()
 
-    connection.on('TaskUpdated', (update: TaskUpdate) => {
-      setUpdates(prev => ({
-        ...prev,
-        [update.task_id]: update
-      }))
-    })
+      connection.on('TaskUpdated', (update: TaskUpdate) => {
+        setUpdates(prev => ({
+          ...prev,
+          [update.task_id]: update
+        }))
+      })
 
-    return () => {
-      connection.stop()
+      try {
+        await connection.start()
+        console.log('Connected to TaskHub')
+      } catch (err) {
+        console.error('SignalR connection error:', err)
+      }
+
+      return () => {
+        connection.stop()
+      }
     }
+
+    setupConnection()
   }, [])
 
   const updatesArray = useMemo(() => Object.values(updates), [updates])

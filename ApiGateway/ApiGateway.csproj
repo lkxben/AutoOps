@@ -10,21 +10,11 @@
     <PackageReference Include="Google.protobuf" Version="3.33.2" />
     <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />
     <PackageReference Include="grpc.net.clientfactory" Version="2.76.0" />
-    <PackageReference Include="grpc.tools" Version="2.76.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.22" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Protobuf Include="Protos/auth.proto" GrpcServices="Client" />
-    <Protobuf Include="Protos/workflow_task.proto" GrpcServices="Client" />
-    <Protobuf Include="Protos/workflow_plan.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

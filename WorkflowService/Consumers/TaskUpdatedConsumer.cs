@@ -12,22 +12,26 @@ namespace WorkflowService.Consumers
 {
     public class TaskUpdatedConsumer : BackgroundService
     {
+        private readonly RabbitMQSettings _settings;
         private const string ExchangeName = "task-updates";
         private const string QueueName = "workflow.task-updates.queue";
         private const string DlqExchangeName = "workflow.task-updates.dlx";
         private const string DlqQueueName = "workflow.task-updates.dlq";
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public TaskUpdatedConsumer(IServiceScopeFactory scopeFactory)
+        public TaskUpdatedConsumer(IServiceScopeFactory scopeFactory, RabbitMQSettings settings)
         {
             _scopeFactory = scopeFactory;
+            _settings = settings;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var uri = $"amqp://{_settings.Username}:{_settings.Password}@{_settings.Host}:{_settings.Port}";
+
             var factory = new ConnectionFactory
             {
-                Uri = new Uri("amqp://guest:guest@localhost:6000")
+                Uri = new Uri(uri)
             };
 
             using var connection = factory.CreateConnection();

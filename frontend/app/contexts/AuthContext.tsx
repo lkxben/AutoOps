@@ -18,9 +18,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refresh = async () => {
     try {
-      const res = await fetch(`${API_URL}/auth/me`, {
-        credentials: 'include'
-      })
+      const res = await fetch('/api/proxyWithCookie/auth/me', {
+        credentials: 'include',
+      });
 
       if (!res.ok) {
         setUser(null)
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const logout = async () => {
-    await fetch(`${API_URL}/logout`, {
+    await fetch('/api/proxyWithCookie/logout', {
       method: 'POST',
       credentials: 'include'
     })

@@ -11,21 +11,25 @@ namespace EventService.Consumers
     public class TaskUpdatedConsumer : BackgroundService
     {
         private readonly IHubContext<TaskHub> _hub;
+        private readonly RabbitMQSettings _settings;
         private const string ExchangeName = "task-updates";
         private const string QueueName = "event.task-updates.queue";
         private const string DlqExchangeName = "event.task-updates.dlx";
         private const string DlqQueueName = "event.task-updates.dlq";
 
-        public TaskUpdatedConsumer(IHubContext<TaskHub> hub)
+        public TaskUpdatedConsumer(IHubContext<TaskHub> hub, RabbitMQSettings settings)
         {
             _hub = hub;
+            _settings = settings;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var uri = $"amqp://{_settings.Username}:{_settings.Password}@{_settings.Host}:{_settings.Port}";
+
             var factory = new ConnectionFactory
             {
-                Uri = new Uri("amqp://guest:guest@localhost:6000")
+                Uri = new Uri(uri)
             };
 
             using var connection = factory.CreateConnection();

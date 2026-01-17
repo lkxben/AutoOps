@@ -7,20 +7,25 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// services
+var grpcPort = builder.Configuration.GetValue<int>("Grpc:Port", 5002);
+var dbConnection = builder.Configuration.GetConnectionString("AuthServiceDb") 
+                   ?? throw new Exception("AuthServiceDb connection string is missing");
+var schema = builder.Configuration["DatabaseSchema"] ?? "auth";
+
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(5002, listenOptions =>
+    options.ListenAnyIP(grpcPort, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
-        listenOptions.UseHttps();
     });
 });
 
-
-builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AuthServiceContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection")));
+{
+    options.UseNpgsql(dbConnection, npgsqlOptions =>
+        npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", schema));
+});
+
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
     options.Password.RequireDigit = true;
@@ -34,5 +39,28 @@ builder.Services.AddGrpc();
 
 var app = builder.Build();
 
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService<AuthServiceContext>();
+
+var retries = 0;
+var maxRetries = 10;
+while (true)
+{
+    try
+    {
+        db.Database.Migrate();
+        break;
+    }
+    catch (Npgsql.NpgsqlException)
+    {
+        retries++;
+        if (retries >= maxRetries) throw;
+        Console.WriteLine("Postgres not ready yet, retrying in 5s...");
+        await Task.Delay(5000);
+    }
+}
+
 app.MapGrpcService<AuthServiceImp>();
+app.MapGet("/health", () => Results.Ok());
+
 app.Run();

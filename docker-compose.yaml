@@ -1,53 +1,161 @@
 services:
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: autoops-rabbitmq
-    ports:
-      - "6000:5672"   # AMQP
-      - "6001:15672" # Management UI
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-  auth-db:
-    image: postgres:16
-    container_name: autoops-auth-postgres
+  # Shared Postgres
+  postgres-auto:
+    image: postgres:15
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: AutoOpsAuth
+      POSTGRES_DB: AutoOps
     ports:
       - "6500:5432"
     volumes:
-      - auth_db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+    networks:
+      - backend
 
-  workflow-db:
-    image: postgres:16
-    container_name: autoops-workflow-postgres
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    platform: linux/arm64 
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: AutoOpsWorkflow
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "6501:5432"
-    volumes:
-      - workflow_db_data:/var/lib/postgresql/data
+      - "5500:5672"   # RabbitMQ AMQP port
+      - "5501:15672"  # RabbitMQ Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 5s
+      retries: 10
+    networks:
+      - backend
 
-  agent-db:
-    image: postgres:16
-    container_name: autoops-agent-postgres
+  # Internal microservices
+  auth-service:
+    build:
+      context: ./AuthService
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: AutoOpsAgent
+      ASPNETCORE_ENVIRONMENT: Production
+      Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
+      Jwt__Issuer: "autooops"
+      Jwt__Audience: "autooops"
+      Jwt__ExpiryMinutes: 180
+      Grpc__Port: 5002
+      ConnectionStrings__AuthServiceDb: "Host=postgres-auto;Port=5432;Database=AutoOps;Username=postgres;Password=password"
+    depends_on:
+      postgres-auto:
+        condition: service_healthy
+    networks:
+      - backend
+
+  workflow-service:
+    build:
+      context: .
+      dockerfile: WorkflowService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Grpc__Port: 5003
+      ConnectionStrings__WorkflowServiceDb: "Host=postgres-auto;Port=5432;Database=AutoOps;Username=postgres;Password=password"
+      RabbitMQSettings__Host: rabbitmq
+      RabbitMQSettings__Port: 5672
+      RabbitMQSettings__Username: guest
+      RabbitMQSettings__Password: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-auto:
+        condition: service_healthy
+    networks:
+      - backend
+
+  agent-service:
+    build:
+      context: ./AgentService
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+      TASK_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowTaskCreated"
+      PLAN_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowPlanCreated"
+      TOOL_CALL_EXCHANGE: "tool-call"
+      TOOL_RESULT_EXCHANGE: "tool-result"
+      TASK_UPDATED_EXCHANGE: "task-updates"
+      PLAN_DRAFT_EXCHANGE: "plan-draft"
+      AGENT_DB: "host=postgres-auto port=5432 dbname=AutoOps user=postgres password=password"
+      GROQ_API_KEY: "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"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-auto:
+        condition: service_healthy
+    networks:
+      - backend
+
+  tool-service:
+    build:
+      context: ./ToolService
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+      TOOL_CALL_EXCHANGE: "tool-call"
+      TOOL_RESULT_EXCHANGE: "tool-result"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # External-facing microservices
+  api-gateway:
+    build:
+      context: ./ApiGateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Frontend__Url: "https://auto-ops-theta.vercel.app"
+      Frontend__UrlsRegex: '^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$'
+      Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
+      Jwt__Issuer: "autooops"
+      Jwt__Audience: "autooops"
+      Jwt__ExpiryMinutes: 180
+      Grpc__AuthService: "http://auth-service:5002"
+      Grpc__WorkflowService: "http://workflow-service:5003"
     ports:
-      - "6502:5432"
-    volumes:
-      - agent_db_data:/var/lib/postgresql/data
+      - "5001:5001"
+    depends_on:
+      - auth-service
+      - workflow-service
+    networks:
+      - backend
+
+  event-service:
+    build:
+      context: ./EventService
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Frontend__Url: "https://auto-ops-theta.vercel.app"
+      Frontend__UrlsRegex: '^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$'
+      RabbitMQSettings__Host: rabbitmq
+      RabbitMQSettings__Port: 5672
+      RabbitMQSettings__Username: guest
+      RabbitMQSettings__Password: guest
+      Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
+      Jwt__Issuer: "autooops"
+      Jwt__Audience: "autooops"
+      Jwt__ExpiryMinutes: 180
+    ports:
+      - "5004:5004"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-auto:
+        condition: service_healthy
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
 
 volumes:
-  auth_db_data:
-  workflow_db_data:
-  agent_db_data:
-  rabbitmq_data:
+  postgres_data:

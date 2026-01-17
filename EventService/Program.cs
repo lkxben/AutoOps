@@ -3,23 +3,53 @@ using EventService.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var frontendUrl = builder.Configuration["Frontend__Url"] ?? "";
+
+var regexPattern = builder.Configuration["Frontend__UrlsRegex"] 
+                         ?? @"^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$";
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        policy
-            .WithOrigins("http://localhost:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        policy.AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .SetIsOriginAllowed(origin =>
+              {
+                  if (origin.Contains("localhost")) return true;
+
+                  if (Regex.IsMatch(origin, $"^{Regex.Escape(frontendUrl)}$", RegexOptions.IgnoreCase))
+                      return true;
+                      
+                  if (Regex.IsMatch(origin, regexPattern, RegexOptions.IgnoreCase))
+                      return true;
+
+                  return false;
+              });
     });
 });
 
-// jwt auth
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQSettings"));
+
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value);
+
+var jwtKey = builder.Configuration["Jwt:Key"] 
+             ?? throw new Exception("JWT:Key configuration is missing");
+var key = Encoding.UTF8.GetBytes(jwtKey);
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] 
+                ?? throw new Exception("JWT:Issuer configuration is missing");
+var jwtAudience = builder.Configuration["Jwt:Audience"] 
+                  ?? throw new Exception("JWT:Audience configuration is missing");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -33,22 +63,14 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromMinutes(5),
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            var token = context.Request.Cookies["auth"];
-
-            if (!string.IsNullOrEmpty(token))
-            {
-                context.Token = token;
-                return Task.CompletedTask;
-            }
-
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
 
@@ -70,7 +92,7 @@ builder.Services.AddHostedService<PlanDraftConsumer>();
 
 var app = builder.Build();
 
-app.UseCors("CorsPolicy");
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -8,7 +8,12 @@ export function useRegister() {
   return useMutation({
     mutationKey: ['register'],
     mutationFn: (data: { name: string, username: string; password: string }) =>
-      apiPost('/register', data),
+      fetch('/api/proxySetCookie/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      }).then(res => res.json()),
 
     onSuccess: async () => {
       await refresh()

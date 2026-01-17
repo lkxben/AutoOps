@@ -9,24 +9,49 @@ using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System.Numerics;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var frontendUrl = builder.Configuration["Frontend__Url"] ?? "";
+
+var regexPattern = builder.Configuration["Frontend__UrlsRegex"] 
+                         ?? @"^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$";
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
+        policy.AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+              .SetIsOriginAllowed(origin =>
+              {
+                  if (origin.Contains("localhost")) return true;
+
+                  if (Regex.IsMatch(origin, $"^{Regex.Escape(frontendUrl)}$", RegexOptions.IgnoreCase))
+                      return true;
+                      
+                  if (Regex.IsMatch(origin, regexPattern, RegexOptions.IgnoreCase))
+                      return true;
+
+                  return false;
+              });
     });
 });
 
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+var jwtKey = builder.Configuration["Jwt:Key"] 
+             ?? throw new Exception("JWT:Key configuration is missing");
+var key = Encoding.UTF8.GetBytes(jwtKey);
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] 
+                ?? throw new Exception("JWT:Issuer configuration is missing");
+var jwtAudience = builder.Configuration["Jwt:Audience"] 
+                  ?? throw new Exception("JWT:Audience configuration is missing");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -40,8 +65,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromMinutes(5),
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
     options.Events = new JwtBearerEvents
@@ -63,47 +88,42 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+var authServiceUrl = builder.Configuration["Grpc:AuthService"] 
+                     ?? throw new Exception("Grpc:AuthService configuration is missing");
+
+var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
+                             ?? throw new Exception("Grpc:WorkflowService configuration is missing");
+
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
-    o.Address = new Uri(builder.Configuration.GetConnectionString("AuthService")!);
+    o.Address = new Uri(authServiceUrl);
 })
-.ConfigureChannel(o =>
-{
-    o.MaxRetryAttempts = 0;
-})
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
 {
-    o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
+    o.Address = new Uri(workflowServiceUrl);
 })
-.ConfigureChannel(o =>
-{
-    o.MaxRetryAttempts = 0;
-})
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 {
-    o.Address = new Uri(builder.Configuration.GetConnectionString("WorkflowTaskService")!);
+    o.Address = new Uri(workflowServiceUrl);
 })
-.ConfigureChannel(o =>
-{
-    o.MaxRetryAttempts = 0;
-})
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1)));
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization(); 
@@ -174,8 +194,8 @@ app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authCli
         new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         }
     );
@@ -203,8 +223,8 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient, Http
         new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         }
     );
@@ -328,4 +348,5 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     return Results.Ok(new IdDto(result.Id));
 }).RequireAuthorization();
 
+app.MapGet("/health", () => Results.Ok());
 app.Run();
