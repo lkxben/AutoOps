@@ -177,8 +177,8 @@ app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authCli
         new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         }
     );
@@ -206,8 +206,8 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient, Http
         new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         }
     );
