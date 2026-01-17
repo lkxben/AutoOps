@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query'
-import { apiPost } from '@/app/lib/api'
 import { useAuth } from '@/app/contexts/AuthContext'
 
 export function useLogin() {
@@ -8,7 +7,12 @@ export function useLogin() {
   return useMutation({
     mutationKey: ['login'],
     mutationFn: (data: { username: string; password: string }) =>
-      apiPost('/login', data),
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      }).then(res => res.json()),
 
     onSuccess: async () => {
       await refresh()
