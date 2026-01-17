@@ -16,7 +16,7 @@ type Props = { taskId: string }
 export default function TaskPlanClient({ taskId }: Props) {
   const finalizePlan = useFinalizePlan()
   const router = useRouter()
-  const { nodes: planNodes, edges: planEdges } = useTaskHubPlan(taskId)
+  const { nodes: planNodes, edges: planEdges, error: hubError } = useTaskHubPlan(taskId)
   const { task, nodes, edges, setNodes, setEdges, loading, error, setTask } = useTaskWithPlan(taskId)
 
   // Merge plan updates into task state
@@ -29,7 +29,7 @@ export default function TaskPlanClient({ taskId }: Props) {
         prev ? { ...prev, status: TaskStatus.Drafted } : prev
       )
     }
-  }, [planNodes, planEdges, task, setNodes, setEdges, setTask])
+  }, [planNodes, planEdges])
 
   const handlePlanSubmit = async (updatedNodes: typeof nodes, updatedEdges: typeof edges) => {
     if (!task) return
@@ -48,7 +48,9 @@ export default function TaskPlanClient({ taskId }: Props) {
   if (loading) return <LoadingScreen />
 
   if (!task) return <CenteredMessage>Task not found</CenteredMessage>
-  if (error) return <Error error={error} />
+  if (hubError || error) {
+    return <Error error={(hubError || error)!} />
+  }
 
   return (
     <div className="flex flex-col flex-1 w-full min-h-0">
