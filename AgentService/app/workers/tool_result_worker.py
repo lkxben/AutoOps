@@ -1,10 +1,11 @@
 import asyncio
 import json
 import aio_pika
+import logging
 from collections import defaultdict
 from app.agent.react_agent import ReactAgent
 from app.config import settings
-import logging
+from app.agent.mcp import MCPResponse
 
 agent = None
 thread_locks = defaultdict(lambda: asyncio.Lock())
@@ -20,7 +21,21 @@ async def handle_tool_result(payload: dict):
     event_type = payload.get("event_type")
     thread_id = payload.get("task_id")
     user_id = payload.get("user_id")
-    tool_result = payload.get("tool_result")
+    response_data = payload.get("response")
+
+    if not response_data:
+        logger.error(f"[ToolResultWorker] No response in payload for thread {thread_id}")
+        return
+
+    try:
+        mcp_response = MCPResponse(**response_data)
+    except Exception as e:
+        logger.error(f"[ToolResultWorker] Invalid MCPResponse for thread {thread_id}: {e}")
+        return
+
+    tool_result = mcp_response.output
+    context = mcp_response.context
+
     logger.info(f"[ToolResultWorker] Continuing task {thread_id} after tool call with result {tool_result}")
 
     agent_instance = await get_agent()

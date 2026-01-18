@@ -1,6 +1,7 @@
 from app.messaging.tool_call_publisher import ToolCallPublisher
 from app.messaging.task_updated_publisher import TaskUpdatedPublisher
 from app.messaging.plan_draft_publisher import PlanDraftPublisher
+from app.agent.mcp import MCPRequest
 import re
 import json
 
@@ -10,12 +11,17 @@ tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
 plan_draft_publisher = PlanDraftPublisher()
 
-async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
+async def tool_call(task_id: str, user_id: str, tool_type: str, inputs):
+    request = MCPRequest(
+        tool_name=tool_type,
+        inputs=inputs,
+        context={
+            "task_id": task_id,
+            "user_id": user_id,
+        }
+    )
     payload = {
-        "task_id": task_id,
-        "user_id": user_id,
-        "tool_type": tool_type,
-        "inputs": kwargs
+        "request": request.dict()
     }
     await tool_publisher.publish(payload)
 
