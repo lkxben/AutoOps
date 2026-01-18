@@ -4,3 +4,5 @@ aio-pika
 pydantic
 python-dotenv
 pydantic-settings
+httpx
+ddgs

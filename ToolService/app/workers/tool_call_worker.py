@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 from app.messaging.tool_result_publisher import AgentQueuePublisher
-import app.tools.all_tools as all_tools
+import app.tools.tools as tools
 import logging
 from app.workers.mcp import MCPResponse, MCPRequest
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 available_tools = {}
 
-for name, fn in inspect.getmembers(all_tools, inspect.isfunction):
+for name, fn in inspect.getmembers(tools, inspect.isfunction):
     sig = inspect.signature(fn)
     available_tools[name] = {
         "fn": fn,

@@ -11,6 +11,41 @@ tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
 plan_draft_publisher = PlanDraftPublisher()
 
+tool_registry = {
+    "add": {
+        "description": "Add two integers and return the result.",
+        "inputs": ["a", "b"]
+    },
+    "subtract": {
+        "description": "Subtract the second integer from the first integer.",
+        "inputs": ["a", "b"]
+    },
+    "multiply": {
+        "description": "Multiply two integers and return the product.",
+        "inputs": ["a", "b"]
+    },
+    "divide": {
+        "description": "Divide the first integer by the second integer and return the result. The second integer must not be zero.",
+        "inputs": ["a", "b"]
+    },
+    "modulo": {
+        "description": "Return the remainder when the first integer is divided by the second integer.",
+        "inputs": ["a", "b"]
+    },
+    "power": {
+        "description": "Raise the first integer to the power of the second integer.",
+        "inputs": ["base", "exponent"]
+    },
+    "absolute": {
+        "description": "Return the absolute value of an integer.",
+        "inputs": ["a"]
+    },
+    "search_web": {
+        "description": "Search the web for the given query and return a list of results.",
+        "inputs": ["query", "max_results"]
+    }
+}
+
 async def tool_call(task_id: str, user_id: str, tool_type: str, inputs):
     request = MCPRequest(
         tool_name=tool_type,

@@ -8,7 +8,10 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import publish_plan_draft, complete_minimal_plan
+from app.agent.agent_helper import publish_plan_draft, complete_minimal_plan, tool_registry
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PlanningAgent:
     _instance = None
@@ -25,13 +28,6 @@ class PlanningAgent:
             human_feedback: str
         self.State = State
         self.db_uri = db_uri
-
-        tool_registry = {
-            "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
-            "subtract": {"inputs": ["a", "b"], "description" : "Subtract a and b"},
-            "divide": {"inputs": ["a", "b"], "description" : "Divide a and b"},
-            "multiply": {"inputs": ["a", "b"], "description" : "Multiply a and b"},
-        }
 
         self.tool_descriptions = "\n".join(
             f"{name}({', '.join(info['inputs'])}): {info['description']}"
@@ -76,6 +72,7 @@ USER TASK:
             
             ai_msg = self.llm.invoke([SystemMessage(content=new_sys_msg)])
             plan_str = ai_msg.content
+            logger.info(plan_str)
             completed_plan = complete_minimal_plan(plan_str)
             return {"messages": [AIMessage(content=completed_plan)]}
 

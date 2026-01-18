@@ -11,7 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error, publish_start
+from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error, publish_start, tool_registry
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +51,6 @@ class ReactAgent:
         
         self.ReactOutputSchema = ReactOutputSchema
         self.FinalAnswerSchema = FinalAnswerSchema
-
-        tool_registry = {
-            "add": {"inputs": ["a", "b"], "description" : "Add a and b"},
-            "subtract": {"inputs": ["a", "b"], "description" : "Subtract a and b"},
-            "divide": {"inputs": ["a", "b"], "description" : "Divide a and b"},
-            "multiply": {"inputs": ["a", "b"], "description" : "Multiply a and b"},
-        }
 
         self.tool_descriptions = "\n".join(
             f"{name}({', '.join(info['inputs'])}): {info['description']}"
