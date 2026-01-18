@@ -2,6 +2,9 @@ import asyncio
 import inspect
 from app.messaging.tool_result_publisher import AgentQueuePublisher
 import app.tools.all_tools as all_tools
+import logging
+
+logger = logging.getLogger(__name__)
 
 available_tools = {}
 
@@ -49,7 +52,7 @@ async def handle_tool_call(payload: dict):
     tool_type = payload.get("tool_type")
     inputs = payload.get("inputs", {})
 
-    print(f"[ToolWorker] Calling tool {tool_type} with inputs {inputs}")
+    logger.info(f"[ToolWorker] Calling tool {tool_type} with inputs {inputs}")
 
     if tool_type not in available_tools:
         asyncio.create_task(

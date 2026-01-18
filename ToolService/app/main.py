@@ -1,6 +1,20 @@
 import asyncio
 from fastapi import FastAPI
 from app.messaging.tool_call_consumer import start_tool_call_consumer
+import logging
+import sys
+
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+handler.setFormatter(formatter)
+
+if not root.handlers:
+    root.addHandler(handler)
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
