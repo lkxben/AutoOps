@@ -112,7 +112,7 @@ services:
       context: ./ApiGateway
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      Frontend__Url: "https://auto-ops-theta.vercel.app"
+      Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'
       Frontend__UrlsRegex: '^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$'
       Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
       Jwt__Issuer: "autooops"
@@ -133,7 +133,7 @@ services:
       context: ./EventService
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      Frontend__Url: "https://auto-ops-theta.vercel.app"
+      Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'
       Frontend__UrlsRegex: '^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$'
       RabbitMQSettings__Host: rabbitmq
       RabbitMQSettings__Port: 5672
