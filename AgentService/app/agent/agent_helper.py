@@ -41,9 +41,16 @@ tool_registry = {
         "inputs": ["a"]
     },
     "search_web": {
-        "description": "Search the web for the given query and return a list of results.",
+        "description": "Search the web for the given query and return a list of urls.",
         "inputs": ["query", "max_results"]
-    }
+    },
+    "web_scrape_text": {
+        "description": """
+Fetch a webpage and extract its main readable text (no JS, no interaction).
+Use after web_search when a relevant URL is known.
+Returns cleaned plain text.""",
+        "inputs": ["url", "max_chars"]
+    },
 }
 
 async def tool_call(task_id: str, user_id: str, tool_type: str, inputs):

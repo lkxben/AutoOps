@@ -1,4 +1,8 @@
 import httpx
+from ddgs import DDGS
+from bs4 import BeautifulSoup
+from readability import Document
+import re
 
 # arithmetic
 def add(a: int, b: int) -> int:
@@ -35,46 +39,9 @@ def absolute(a: int) -> int:
     """Return the absolute value of an integer."""
     return abs(a)
 
-# http client
-# async def http_get(
-#     url: str,
-#     headers: dict | None = None,
-#     query_params: dict | None = None,
-#     timeout_seconds: int = 10,
-# ) -> dict:
-#     """Send an HTTP GET request and return status code, headers, and response body."""
-#     async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-#         response = await client.get(url, headers=headers, params=query_params)
-
-#     return {
-#         "status_code": response.status_code,
-#         "headers": dict(response.headers),
-#         "body": response.text,
-#     }
-
-
-# async def http_post(
-#     url: str,
-#     json_body: dict,
-#     headers: dict | None = None,
-#     timeout_seconds: int = 10,
-# ) -> dict:
-#     """Send an HTTP POST request with a JSON body and return status code, headers, and response body."""
-#     async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-#         response = await client.post(url, json=json_body, headers=headers)
-
-#     return {
-#         "status_code": response.status_code,
-#         "headers": dict(response.headers),
-#         "body": response.text,
-#     }
-
-from ddgs import DDGS
-
+# web search
 def search_web(query: str, max_results: int = 5):
-    """
-    Perform a DuckDuckGo search and return top results.
-    """
+    """Search the web for the given query and return a list of urls."""
     results = []
     with DDGS() as ddg:
         for result in ddg.text(query, max_results=max_results):
@@ -83,3 +50,57 @@ def search_web(query: str, max_results: int = 5):
                 "url": result.get("href")
             })
     return results
+
+# web scrap
+def web_scrape_text(url: str, max_chars: int = 8000) -> str:
+    """
+Fetch a webpage and extract its main readable text (no JS, no interaction).
+Use after web_search when a relevant URL is known.
+Returns cleaned plain text.
+    """
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; AgenticAI/1.0)"
+    }
+
+    with httpx.Client(follow_redirects=True, timeout=10) as client:
+        resp = client.get(url, headers=headers)
+        resp.raise_for_status()
+
+    html = resp.text
+
+    doc = Document(html)
+    main_html = doc.summary(html_partial=True)
+
+    soup = BeautifulSoup(main_html, "html.parser")
+
+    for tag in soup(["script", "style", "noscript", "svg"]):
+        tag.decompose()
+
+    for img in soup.find_all("img"):
+        if img.get("alt"):
+            img.replace_with(f"[Image: {img['alt']}]")
+        else:
+            img.decompose()
+
+    lines = []
+    for elem in soup.find_all(["h1", "h2", "h3", "p", "li"]):
+        text = elem.get_text(strip=True)
+        if text:
+            lines.append(text)
+
+    text = "\n".join(lines)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    title = doc.title()
+    if not title:
+        raw_soup = BeautifulSoup(html, "html.parser")
+        if raw_soup.title:
+            title = raw_soup.title.get_text(strip=True)
+
+    output = f"Title: {title}\n\n{text}".strip()
+
+    if len(text.strip()) < 200:
+        return "ERROR: Failed to extract meaningful main content."
+
+    return output[:max_chars]

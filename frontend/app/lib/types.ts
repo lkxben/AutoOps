@@ -23,7 +23,7 @@ export type TaskModel = {
   id: string
   userId: string
   title: string
-  inputData: string
+  prompt: string
   status: number
   result?: string
   createdAt: string

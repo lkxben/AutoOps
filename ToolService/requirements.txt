@@ -6,3 +6,6 @@ python-dotenv
 pydantic-settings
 httpx
 ddgs
+beautifulsoup4
+readability-lxml
+lxml
