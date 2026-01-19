@@ -25,7 +25,11 @@ class PlanningAgent:
     
     def __init__(self, db_uri: str):
         class State(MessagesState):
-            human_feedback: str
+            previous_plan: Optional[str] = None
+            task: Optional[str] = None
+            validation_error: Optional[str] = None
+            attempt: int = 0
+
         self.State = State
         self.db_uri = db_uri
 
@@ -34,74 +38,167 @@ class PlanningAgent:
             for name, info in tool_registry.items()
         )
 
-        self.llm = ChatGroq(
+        self.planner_llm = ChatGroq(
+            model="llama-3.1-8b-instant",
+            temperature=0.4,
+            max_tokens=200
+        )
+
+        self.validator_llm = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.0,
             max_tokens=100
         )
 
     async def _async_init(self):
-        def human_feedback_node(state: self.State):
-            pass
+        def validate_plan(state: self.State):
+            validator_prompt = f"""
+You are an execution-graph validator. Your job is to check whether the proposed PLAN can achieve the USER TASK.
 
-        def create_plan(state: self.State):
-            human_feedback = state.get('human_feedback', '')
+Focus only on **whether the steps and dependencies can accomplish the task**. Do not output reasoning or repeat instructions—return only:
 
-            new_sys_msg = f"""
-You are a planning agent.
+- VALID
+or
+- INVALID
+    <one short reason, including the step IDs of any extra or unnecessary nodes>
 
-Convert the user's task into a structured execution graph in a MINIMAL, compact format.
+Validation rules:
+- Each node represents exactly one tool call.
+- Every node referenced by an edge must exist.
+- Only AVAILABLE TOOLS are used with correct inputs.
+- Do not compute results; only use symbolic $<step_id> references.
+- Identify any extra/unneeded steps beyond what is necessary to accomplish the USER TASK.
+- Ignore duplicate or non-sequential step IDs.
+- Ignore formatting issues like nodes before edges.
 
-RULES:
-1. Use plain text only. No JSON, no markdown, no commentary.
-2. Node format: step_id|tool|arg1=val,arg2=val|short description
-3. Edge format: from->to [optional: condition/loop]
-4. Do not compute results; use symbolic arguments or $<step_id> references.
-5. Step IDs must be sequential integers starting from 1.
-6. Include all nodes first, then all edges.
-7. For every node that uses the result of another node in its inputs, create an edge from that node to the dependent node.
-8. Ensure every node is connected and no dependency edges are omitted.
-9. Minimise unnecessary nodes or edges.
+PLAN FORMAT EXAMPLE:
+1|multiply|a=6,b=7|Multiply 6 and 7
+2|add|a=5,b=$1|Add 5 to the result of step 1
+1->2
 
 AVAILABLE TOOLS:
 {self.tool_descriptions}
 
 USER TASK:
-{state["messages"][-1].content}
-"""
-            
-            ai_msg = self.llm.invoke([SystemMessage(content=new_sys_msg)])
-            plan_str = ai_msg.content
-            logger.info(plan_str)
-            completed_plan = complete_minimal_plan(plan_str)
-            return {"messages": [AIMessage(content=completed_plan)]}
+{state["task"]}
 
-        def should_continue(state: self.State):
-            human_feedback=state.get('human_feedback', None)
-            if human_feedback is not None and human_feedback.strip() != "":
+PLAN:
+{state["previous_plan"]}
+"""
+
+            ai_msg = self.validator_llm.invoke([SystemMessage(content=validator_prompt)])
+            verdict = ai_msg.content.strip()
+            logger.info(f"Validator verdict: {verdict}")
+
+            return {
+                "validation_error": None if verdict.startswith("VALID") else verdict,
+                "messages": [
+                    AIMessage(content=f"Validator feedback:\n{verdict}")
+                ],
+                "task": state["task"],
+                "previous_plan": state["previous_plan"],
+                "attempt": state["attempt"],
+            }
+
+        def create_plan(state: self.State):
+            feedback_block = ""
+            if state["validation_error"]:
+                feedback_block = f"""
+PREVIOUS PLAN: 
+{state["previous_plan"]}
+
+PREVIOUS PLAN WAS INVALID:
+{state["validation_error"]}
+
+You MUST produce a valid, minimal plan using ONLY the AVAILABLE TOOLS.
+Do NOT add steps unrelated to the USER TASK.
+Do NOT search for “fixing” anything outside the available tools.
+        """
+
+            new_sys_msg = f"""
+You are a planning agent.
+
+Your goal is to produce a **minimal execution graph** that completes the USER TASK using only the AVAILABLE TOOLS.
+Ignore all tools that are not needed for this task. Simplicity and correctness are more important than using all available tools.
+
+If there is previous validation feedback, **remove extra/unnecessary steps**; do not just repeat them.
+
+{feedback_block}
+
+GUIDELINES:
+1. Use **only the tools strictly necessary** to accomplish the USER TASK.
+2. Each tool call must correspond to **exactly one node**.
+3. Produce **minimal steps**; avoid duplication or unnecessary computation.
+4. Step IDs must be **unique**. Gaps are allowed. Order of IDs does not matter.
+5. List **all nodes first**, then all edges.
+6. Node format: step_id|tool|arg1=val,arg2=val|short description
+7. Edge format: from->to, connecting nodes that depend on each other.
+8. Do **not compute results**; use symbolic $<step_id> references.
+9. Avoid filler, extra searches, or unrelated tool calls.
+10. Plain text only. No JSON, no markdown, no commentary.
+
+EXAMPLE USER TASK: 5 + 6 * 7
+EXAMPLE PLAN:
+1|multiply|a=6,b=7|Multiply 6 and 7
+2|add|a=5,b=$1|Add 5 to the result of step 1
+1->2
+
+AVAILABLE TOOLS:
+{self.tool_descriptions}
+
+USER TASK:
+{state["task"]}
+"""
+
+            try:
+                ai_msg = self.planner_llm.invoke([SystemMessage(content=new_sys_msg)])
+            except Exception as e:
+                logger.exception("Planner LLM failed")
+                raise
+
+            completed_plan = complete_minimal_plan(ai_msg.content)
+
+            return {
+                "previous_plan": completed_plan,
+                "task": state["task"],
+                "validation_error": None,
+                "messages": [AIMessage(content=completed_plan)],
+                "attempt": state["attempt"] + 1
+            }
+        
+        def validation_decision(state: self.State):
+            if state["validation_error"] and state["attempt"] < 3:
                 return "planner"
             return END
 
         # Compiling
         builder = StateGraph(self.State)
         builder.add_node("planner", create_plan)
-        builder.add_node("feedback", human_feedback_node)
+        builder.add_node("validator", validate_plan)
 
         builder.add_edge(START, "planner")
-        builder.add_edge("planner", "feedback")
+        builder.add_edge("planner", "validator")
         builder.add_conditional_edges(
-            "feedback",
-            should_continue,
-            [END, "planner"]
+            "validator",
+            validation_decision,
+            ["planner", END]
         )
         self.builder = builder
 
     async def run(self, thread_id: str, user_id: str, task: str):
-        msg = HumanMessage(content=task)
         thread = {"configurable": {"thread_id": thread_id}}
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(checkpointer=checkpointer)
-            results = await asyncio.to_thread(graph.invoke, {"messages": [msg]}, thread)
-            asyncio.create_task(publish_plan_draft(thread_id, user_id, results["messages"][-1].content))
+            state = self.State(
+                task=task,
+                previous_plan=None,
+                validation_error=None,
+                attempt=0
+            )
+            try:
+                results = await asyncio.to_thread(graph.invoke, state, thread)
+            except Exception as e:
+                logger.exception("Error invoking graph")
+            asyncio.create_task(publish_plan_draft(thread_id, user_id, results["previous_plan"]))
         return results

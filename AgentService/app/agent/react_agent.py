@@ -204,7 +204,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
         
         asyncio.create_task(publish_start(thread_id, user_id))
         asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], tool_call_data["inputs"]))
-        return results
+        return
 
     async def continue_task(self, thread_id: str, user_id: str, tool_result: dict):
         thread = {"configurable": {"thread_id": thread_id}}
