@@ -95,7 +95,6 @@ PLAN:
                 "messages": [
                     AIMessage(content=f"Validator feedback:\n{verdict}")
                 ],
-                "task": state["task"],
                 "previous_plan": state["previous_plan"],
                 "attempt": state["attempt"],
             }
@@ -160,7 +159,6 @@ USER TASK:
 
             return {
                 "previous_plan": completed_plan,
-                "task": state["task"],
                 "validation_error": None,
                 "messages": [AIMessage(content=completed_plan)],
                 "attempt": state["attempt"] + 1
