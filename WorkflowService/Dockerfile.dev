@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS dev
+WORKDIR /app
+EXPOSE 5003
+
+RUN mkdir -p /app/WorkflowService /app/Contracts
+
+COPY WorkflowService/WorkflowService.csproj ./WorkflowService/
+COPY Contracts/Contracts.csproj ./Contracts/
+
+RUN dotnet restore ./WorkflowService/WorkflowService.csproj
+
+COPY WorkflowService ./WorkflowService
+COPY Contracts ./Contracts
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "WorkflowService/WorkflowService.csproj", "--urls", "http://0.0.0.0:5003"]

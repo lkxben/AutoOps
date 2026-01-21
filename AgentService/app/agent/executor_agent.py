@@ -15,13 +15,13 @@ from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_me
 
 logger = logging.getLogger(__name__)
 
-class ReactAgent:
+class ExecutorAgent:
     _instance = None
 
     @classmethod
     async def get_instance(cls, db_uri: str):
         if cls._instance is None:
-            cls._instance = ReactAgent(db_uri)
+            cls._instance = ExecutorAgent(db_uri)
             await cls._instance._async_init()
         return cls._instance
 
@@ -32,8 +32,10 @@ class ReactAgent:
             nodes: List[dict] = []
             edges: List[dict] = []
             dependencies: dict[int, List[int]] = {}
+            thread_id: str
+            user_id: str
             completed_steps: dict[int, Any]
-            previous_node: Optional[int] = None
+            current_node: Optional[int] = None
             execution_history: List[int] = []
             thoughts: str = ""
             final: bool = False
@@ -41,8 +43,7 @@ class ReactAgent:
         self.State = State
         self.db_uri = db_uri
 
-        class ReactOutputSchema(BaseModel):
-            node: int = None
+        class ToolCallSchema(BaseModel):
             tool_type: str = None
             inputs: Dict[str, Any] = None
             thoughts: Optional[str] = None
@@ -51,7 +52,7 @@ class ReactAgent:
             answer: str
             thoughts: str
         
-        self.ReactOutputSchema = ReactOutputSchema
+        self.ToolCallSchema = ToolCallSchema
         self.FinalAnswerSchema = FinalAnswerSchema
 
         self.tool_descriptions = "\n".join(
@@ -70,18 +71,23 @@ class ReactAgent:
             max_tokens=100
         )
 
-        self.react_llm = self.llm.with_structured_output(ReactOutputSchema)
+        self.react_llm = self.llm.with_structured_output(ToolCallSchema)
         self.final_llm = self.llm.with_structured_output(FinalAnswerSchema)
 
     async def _async_init(self):
-        def generate_tool_call(state: self.State):
+        async def generate_tool_call(state: self.State):
+            logger.info("Generating tool call...")
             plan = state["plan"]
             task = state["task"]
+            nodes = state["nodes"]
             completed_steps = state["completed_steps"]
             execution_history = state["execution_history"]
-            previous_node = state["previous_node"]
+            current_node = state["current_node"]
+
+            node = next(n for n in nodes if n["id"] == current_node)
+
             sys_msg = SystemMessage(content=f"""
-You are an execution agent responsible for carrying out a pre-approved plan.
+You are an execution agent responsible for executing a single, pre-selected plan node.
 
 Task:
 {task}
@@ -89,19 +95,20 @@ Task:
 Plan:
 {plan}
 
+Current node to execute (JSON):
+{json.dumps(node, indent=2)}
+
 State:
 Completed steps with results: {completed_steps}
-Execution history (order of nodes executed): {execution_history}
-Previous node executed: {previous_node}
+Execution history: {execution_history}
 
 Rules:
-1. Execute exactly one node at a time.
-2. Do NOT modify, reorder, or reinterpret the plan.
-3. Resolve all $<node> references in inputs using the results of completed steps.
-4. Decide the next node to execute yourself based on completed steps, execution history, and plan dependencies.
+1. Execute ONLY the provided current node.
+2. Do NOT choose, change, or suggest another node.
+3. Do NOT modify, reorder, or reinterpret the plan.
+4. Resolve all $<node> references in inputs using the results of completed steps.
 5. Output EXACTLY ONE JSON object with:
    {{
-       "node": <node_id>,
        "tool_type": "<tool_name>",
        "inputs": {{ ... resolved ... }},
        "thoughts": "optional reasoning or notes"
@@ -113,15 +120,17 @@ Available tools:
 {self.tool_descriptions}
 """)
 
-            tool_call_result = self.invoke_with_retries(lambda: self.llm.invoke([sys_msg]), self.ReactOutputSchema)
+            tool_call_result = self.invoke_with_retries(lambda: self.llm.invoke([sys_msg]), self.ToolCallSchema)
 
+            logger.info(f"Generated Tool Call: {tool_call_result.json()}")
             if not tool_call_result:
-                return {"messages": [sys_msg], "previous_node": None}
-            
-            # print(f"REACT OUTPUT: {tool_call_result}")
-            return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())], "previous_node": tool_call_result.node}
+                asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
+                return {}
+                
+            return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())]}
 
-        def get_next_node(state: ReactAgent.State):
+        def get_next_node(state: self.State):
+            logger.info("Getting next node...")
             nodes = state["nodes"]
             dependencies = state["dependencies"]
             completed_steps = state["completed_steps"]
@@ -130,34 +139,46 @@ Available tools:
 
             for node in nodes:
                 node_id = node["id"]
+
+                if node_id in ("START", "END"):
+                    continue
+
                 if node_id in completed_steps:
                     continue
 
-                node_deps = dependencies.get(node_id, [])
+                node_deps = [
+                    dep for dep in dependencies.get(node_id, [])
+                    if dep not in ("START", "END")
+                ]
+
                 if all(dep in completed_steps for dep in node_deps):
                     ready_nodes.append(node)
 
             if not ready_nodes:
+                logger.info("Get next node: none")
                 return { "final": True }
 
             next_node = min(ready_nodes, key=lambda n: n["id"])
 
+            logger.info(f"Get next node: {next_node}")
             return {
-                "previous_node": next_node["id"]
+                "current_node": next_node["id"],
             }
 
-        def call_tools(state: self.State):
-            pass
-            # last_msg = results["messages"][-1].content.strip()
-            # try:
-            #     tool_call_data = json.loads(last_msg)
-            # except json.JSONDecodeError:
-            #     return results
-            
-            # asyncio.create_task(publish_start(thread_id, user_id))
-            # asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], tool_call_data["inputs"]))
+        async def call_tools(state: self.State):
+            last_msg = state["messages"][-1].content.strip()
+            try:
+                tool_call_data = json.loads(last_msg)
+            except json.JSONDecodeError as e:
+                logger.exception(e)
+
+            thread_id = state["thread_id"]
+            user_id = state["user_id"]
+            asyncio.create_task(publish_start(thread_id, user_id))
+            asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], tool_call_data["inputs"]))
+            return {}
         
-        def final_answer(state: self.State):
+        async def final_answer(state: self.State):
             summary_prompt = f"""
 You have completed all steps of the task.
 
@@ -183,8 +204,9 @@ If your reasoning is too long, summarise it so it fits within the limit.
             result = self.invoke_with_retries(lambda: self.llm.invoke([summary_prompt]), self.FinalAnswerSchema)
 
             if not result:
-                return {"messages": [summary_prompt], "previous_node": None}
+                asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
 
+            asyncio.create_task(publish_result(state["thread_id"], state["user_id"], result.answer))
             return {"messages": [AIMessage(content=result.answer)]}
         
         def should_end(state: self.State):
@@ -204,7 +226,7 @@ If your reasoning is too long, summarise it so it fits within the limit.
             "get_next_node", should_end, ["final", "generate_tool_call"]
         )
 
-        builder.add_edge("generate_tool_call", "tool")
+        builder.add_edge("generate_tool_call", "tools")
         builder.add_edge("tools", "get_next_node")
 
         builder.add_edge("final", END)
@@ -226,20 +248,25 @@ If your reasoning is too long, summarise it so it fits within the limit.
         initial_state = {
             "task": task,
             "plan": stripped,
+            "nodes": nodes,
+            "edges": edges,
+            "dependencies": dependencies,
+            "thread_id": thread_id,
+            "user_id": user_id,
             "completed_steps": {},
-            "previous_node": None,
+            "current_node": None,
             "execution_history": [],
             "thoughts": "",
             "final": False, 
-            "nodes": nodes,
-            "edges": edges,
-            "dependencies": dependencies
         }
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
             graph = self.builder.compile(interrupt_after=["tools"], checkpointer=checkpointer)
-            await graph.ainvoke(initial_state, thread)
+            try:
+                await graph.ainvoke(initial_state, thread)
+            except Exception as e:
+                logger.exception("Error starting graph")
 
     async def continue_task(self, thread_id: str, user_id: str, tool_result: dict):
         thread = {"configurable": {"thread_id": thread_id}}
@@ -249,19 +276,22 @@ If your reasoning is too long, summarise it so it fits within the limit.
             checkpoint = await checkpointer.aget(thread)
             state = dict(checkpoint["channel_values"])
 
-            previous_node = state["previous_node"] 
+            current_node = state["current_node"] 
             completed_steps = dict(state.get("completed_steps", {}))
-            completed_steps[previous_node] = tool_result
+            completed_steps[current_node] = tool_result
             execution_history = state.get("execution_history", [])
-            execution_history.append(previous_node)
+            execution_history.append(current_node)
         
-            graph = self.builder.compile(interrupt_before=["get_next_node"], checkpointer=checkpointer) ### CHECK IF THIS WORKS
+            graph = self.builder.compile(interrupt_after=["tools"], checkpointer=checkpointer)
 
             await graph.aupdate_state(
                 thread,
                 {"completed_steps": completed_steps, "execution_history": execution_history}
             )
-            await graph.ainvoke(None, config=thread)
+            try:
+                await graph.ainvoke(None, config=thread)
+            except Exception as e:
+                logger.exception("Error continuing graph")
             
     def invoke_with_retries(self, llm_call, schema, max_attempts: int = 3):
         for attempt in range(1, max_attempts + 1):
