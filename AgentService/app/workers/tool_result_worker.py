@@ -4,6 +4,7 @@ import aio_pika
 import logging
 from collections import defaultdict
 from app.agent.react_agent import ReactAgent
+from app.agent.executor_agent import ExecutorAgent
 from app.config import settings
 from app.agent.mcp import MCPResponse
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def get_agent():
     global agent
     if agent is None:
-        agent = await ReactAgent.get_instance(settings.AGENT_DB)
+        agent = await ExecutorAgent.get_instance(settings.AGENT_DB)
     return agent
 
 async def handle_tool_result(payload: dict):
