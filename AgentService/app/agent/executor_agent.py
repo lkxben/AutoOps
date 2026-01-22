@@ -86,7 +86,22 @@ class ExecutorAgent:
 
             node = next(n for n in nodes if n["id"] == current_node)
 
-            sys_msg = SystemMessage(content=f"""
+            
+            def build_sys_msg(previous_output, validation_error):
+                feedback_block = ""
+                if validation_error:
+                    feedback_block = f"""
+PREVIOUS OUTPUT WAS INVALID:
+{previous_output}
+
+VALIDATION ERROR:
+{validation_error}
+
+You MUST fix the error and produce a VALID JSON object that matches the schema exactly.
+Do NOT repeat the same mistake.
+"""
+
+                return SystemMessage(content=f"""
 You are an execution agent responsible for executing a single, pre-selected plan node.
 
 Task:
@@ -102,17 +117,19 @@ State:
 Completed steps with results: {completed_steps}
 Execution history: {execution_history}
 
+{feedback_block}
+
 Rules:
 1. Execute ONLY the provided current node.
 2. Do NOT choose, change, or suggest another node.
 3. Do NOT modify, reorder, or reinterpret the plan.
 4. Resolve all $<node> references in inputs using the results of completed steps.
 5. Output EXACTLY ONE JSON object with:
-   {{
-       "tool_type": "<tool_name>",
-       "inputs": {{ ... resolved ... }},
-       "thoughts": "optional reasoning or notes"
-   }}
+{{
+"tool_type": "<tool_name>",
+"inputs": {{ ... resolved ... }},
+"thoughts": "optional reasoning or notes"
+}}
 6. Output only JSON. No extra text, no comments, no explanations.
 7. Use ONLY the tools listed below.
 
@@ -120,14 +137,17 @@ Available tools:
 {self.tool_descriptions}
 """)
 
-            tool_call_result = self.invoke_with_retries(lambda: self.llm.invoke([sys_msg]), self.ToolCallSchema)
+            tool_call_result = self.invoke_with_retries(
+                build_sys_msg=build_sys_msg,
+                schema=self.ToolCallSchema
+            )
 
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
             if not tool_call_result:
                 asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
                 return {}
                 
-            return {"messages": [sys_msg, AIMessage(content=tool_call_result.json())]}
+            return {"messages": [AIMessage(content=tool_call_result.json())]}
 
         def get_next_node(state: self.State):
             logger.info("Getting next node...")
@@ -179,7 +199,21 @@ Available tools:
             return {}
         
         async def final_answer(state: self.State):
-            summary_prompt = f"""
+            def build_sys_msg(previous_output, validation_error):
+                feedback_block = ""
+                if validation_error:
+                    feedback_block = f"""
+PREVIOUS OUTPUT WAS INVALID:
+{previous_output}
+
+VALIDATION ERROR:
+{validation_error}
+
+You MUST fix the error and produce a VALID JSON object that strictly conforms to the schema.
+Do NOT repeat the same mistake.
+"""
+
+                return SystemMessage(content=f"""
 You have completed all steps of the task.
 
 Task:
@@ -191,17 +225,26 @@ Plan:
 Results from each step:
 {state['completed_steps']}
 
+{feedback_block}
 
-Provide the final answer to the user. Include brief thought process under "thoughts" field.
-Output ONLY JSON conforming to the schema:
+Provide the final answer to the user.
+
+Rules:
+1. Output ONLY ONE JSON object.
+2. JSON must conform EXACTLY to the schema below.
+3. "thoughts" must be concise (maximum 300 characters).
+4. Do NOT include explanations, markdown, or extra text.
+
+Schema:
 {{
   "answer": "<final answer>",
-  "thoughts": "<reasoning, maximum 300 characters>"
+  "thoughts": "<reasoning, max 300 chars>"
 }}
-Do NOT include extra text. Make sure the JSON is valid and complete. 
-If your reasoning is too long, summarise it so it fits within the limit.
-"""
-            result = self.invoke_with_retries(lambda: self.llm.invoke([summary_prompt]), self.FinalAnswerSchema)
+""")
+            result = self.invoke_with_retries(
+                build_sys_msg=build_sys_msg,
+                schema=self.FinalAnswerSchema
+            )
 
             if not result:
                 asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
@@ -293,17 +336,25 @@ If your reasoning is too long, summarise it so it fits within the limit.
             except Exception as e:
                 logger.exception("Error continuing graph")
             
-    def invoke_with_retries(self, llm_call, schema, max_attempts: int = 3):
+    def invoke_with_retries(self, build_sys_msg, schema, max_attempts: int = 3):
+        last_output = None
+        last_error = None
+
         for attempt in range(1, max_attempts + 1):
-            ai_message = llm_call()
-            result_str = ai_message.content
+            sys_msg = build_sys_msg(last_output, last_error)
+
+            ai_message = self.llm.invoke([sys_msg])
+            raw = ai_message.content
+
             try:
-                result_json = json.loads(result_str)
-                
-                validated = schema(**result_json)
+                parsed = json.loads(raw)
+                validated = schema(**parsed)
                 return validated
+
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.info(f"Attempt {attempt} failed: {e}")
-                if attempt == max_attempts:
-                    logger.error("All retries failed")
-                    return None
+                last_output = raw
+                last_error = str(e)
+                logger.info(f"Attempt {attempt} failed: {last_error}")
+
+        logger.error("All retries failed")
+        return None

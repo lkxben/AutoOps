@@ -2,7 +2,6 @@ import asyncio
 import json
 import aio_pika
 from collections import defaultdict
-from app.agent.react_agent import ReactAgent
 from app.agent.executor_agent import ExecutorAgent
 from app.config import settings
 import logging
