@@ -51,6 +51,10 @@ Use after web_search when a relevant URL is known.
 Returns cleaned plain text.""",
         "inputs": ["url"]
     },
+    "send_notification": {
+        "description": "Send a notification to the user via a specified channel such as telegram or email.",
+        "inputs": ["channel", "message", "user_id"]
+    },
 }
 
 async def tool_call(task_id: str, user_id: str, tool_type: str, inputs):

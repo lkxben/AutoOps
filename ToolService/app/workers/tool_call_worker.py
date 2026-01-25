@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from app.messaging.tool_result_publisher import AgentQueuePublisher
+from app.messaging.tool_result_publisher import ToolResultPublisher
 import app.tools.tools as tools
 import logging
 from app.workers.mcp import MCPResponse, MCPRequest
@@ -17,7 +17,7 @@ for name, fn in inspect.getmembers(tools, inspect.isfunction):
         "description": fn.__doc__ or ""
     }
 
-publisher = AgentQueuePublisher()
+publisher = ToolResultPublisher()
 
 async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict, context):
     try:
