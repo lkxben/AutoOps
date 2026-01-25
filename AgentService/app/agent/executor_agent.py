@@ -77,15 +77,13 @@ class ExecutorAgent:
     async def _async_init(self):
         async def generate_tool_call(state: self.State):
             logger.info("Generating tool call...")
-            plan = state["plan"]
-            task = state["task"]
             nodes = state["nodes"]
             completed_steps = state["completed_steps"]
-            execution_history = state["execution_history"]
             current_node = state["current_node"]
 
             node = next(n for n in nodes if n["id"] == current_node)
-
+            deps = state["dependencies"].get(current_node, [])
+            raw_dep_results = {dep_id: completed_steps[dep_id] for dep_id in deps if dep_id in completed_steps}
             
             def build_sys_msg(previous_output, validation_error):
                 feedback_block = ""
@@ -104,34 +102,24 @@ Do NOT repeat the same mistake.
                 return SystemMessage(content=f"""
 You are an execution agent responsible for executing a single, pre-selected plan node.
 
-Task:
-{task}
-
-Plan:
-{plan}
-
 Current node to execute (JSON):
 {json.dumps(node, indent=2)}
 
-State:
-Completed steps with results: {completed_steps}
-Execution history: {execution_history}
+Dependency results:
+{json.dumps(raw_dep_results, indent=2)}
 
 {feedback_block}
 
 Rules:
 1. Execute ONLY the provided current node.
-2. Do NOT choose, change, or suggest another node.
-3. Do NOT modify, reorder, or reinterpret the plan.
-4. Resolve all $<node> references in inputs using the results of completed steps.
-5. Output EXACTLY ONE JSON object with:
+2. Output EXACTLY ONE JSON object with:
 {{
 "tool_type": "<tool_name>",
 "inputs": {{ ... resolved ... }},
 "thoughts": "optional reasoning or notes"
 }}
-6. Output only JSON. No extra text, no comments, no explanations.
-7. Use ONLY the tools listed below.
+3. Output only JSON. No extra text, no comments, no explanations.
+4. Use ONLY the tools listed below.
 
 Available tools:
 {self.tool_descriptions}
@@ -248,6 +236,7 @@ Schema:
 
             if not result:
                 asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
+                return {}
 
             asyncio.create_task(publish_result(state["thread_id"], state["user_id"], result.answer))
             return {"messages": [AIMessage(content=result.answer)]}

@@ -49,7 +49,7 @@ tool_registry = {
 Fetch a webpage and extract its main readable text (no JS, no interaction).
 Use after web_search when a relevant URL is known.
 Returns cleaned plain text.""",
-        "inputs": ["url", "max_chars"]
+        "inputs": ["url"]
     },
 }
 
