@@ -15,6 +15,7 @@ COPY Contracts ./Contracts
 RUN dotnet publish ./WorkflowService/WorkflowService.csproj -c Release -o /app/publish
 
 FROM base AS final
+ENV ASPNETCORE_URLS=http://+:5003
 WORKDIR /app
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "WorkflowService.dll"]

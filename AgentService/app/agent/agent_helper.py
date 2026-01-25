@@ -1,6 +1,7 @@
 from app.messaging.tool_call_publisher import ToolCallPublisher
 from app.messaging.task_updated_publisher import TaskUpdatedPublisher
 from app.messaging.plan_draft_publisher import PlanDraftPublisher
+from app.agent.mcp import MCPRequest
 import re
 import json
 
@@ -10,12 +11,59 @@ tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
 plan_draft_publisher = PlanDraftPublisher()
 
-async def tool_call(task_id: str, user_id: str, tool_type: str, **kwargs):
+tool_registry = {
+    "add": {
+        "description": "Add two integers and return the result.",
+        "inputs": ["a", "b"]
+    },
+    "subtract": {
+        "description": "Subtract the second integer from the first integer.",
+        "inputs": ["a", "b"]
+    },
+    "multiply": {
+        "description": "Multiply two integers and return the product.",
+        "inputs": ["a", "b"]
+    },
+    "divide": {
+        "description": "Divide the first integer by the second integer and return the result. The second integer must not be zero.",
+        "inputs": ["a", "b"]
+    },
+    "modulo": {
+        "description": "Return the remainder when the first integer is divided by the second integer.",
+        "inputs": ["a", "b"]
+    },
+    "power": {
+        "description": "Raise the first integer to the power of the second integer.",
+        "inputs": ["base", "exponent"]
+    },
+    "absolute": {
+        "description": "Return the absolute value of an integer.",
+        "inputs": ["a"]
+    },
+    "search_web": {
+        "description": "Search the web for the given query and return a list of urls.",
+        "inputs": ["query", "max_results"]
+    },
+    "web_scrape_text": {
+        "description": """
+Fetch a webpage and extract its main readable text (no JS, no interaction).
+Use after web_search when a relevant URL is known.
+Returns cleaned plain text.""",
+        "inputs": ["url", "max_chars"]
+    },
+}
+
+async def tool_call(task_id: str, user_id: str, tool_type: str, inputs):
+    request = MCPRequest(
+        tool_name=tool_type,
+        inputs=inputs,
+        context={
+            "task_id": task_id,
+            "user_id": user_id,
+        }
+    )
     payload = {
-        "task_id": task_id,
-        "user_id": user_id,
-        "tool_type": tool_type,
-        "inputs": kwargs
+        "request": request.dict()
     }
     await tool_publisher.publish(payload)
 

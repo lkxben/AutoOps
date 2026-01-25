@@ -22,10 +22,21 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
-    asyncio.create_task(start_task_created_consumer())
-    asyncio.create_task(start_tool_result_consumer())
-    asyncio.create_task(start_plan_created_consumer())
+    app.state.consumers = {
+        "task_created": asyncio.create_task(start_task_created_consumer()),
+        "tool_result": asyncio.create_task(start_tool_result_consumer()),
+        "plan_created": asyncio.create_task(start_plan_created_consumer()),
+    }
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    for t in app.state.consumers.values():
+        t.cancel()
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass

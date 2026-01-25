@@ -1,0 +1,19 @@
+# /etc/systemd/system/autoops-ngrok.service
+
+[Unit]
+Description=AutoOps ngrok Tunnel
+After=network.target autoops-docker.service
+Requires=autoops-docker.service nginx.service
+
+[Service]
+Type=simple
+User=lkxben
+WorkingDirectory=/home/lkxben
+ExecStart=/snap/bin/ngrok start autoops
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -38,6 +38,9 @@ services:
   auth-service:
     build:
       context: ./AuthService
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./AuthService:/app:cached
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Jwt__Key: "b8bee16fff126230d8623b1064b9e44af805d5210a9eb8b3634a51b6966df4e2"
@@ -55,7 +58,10 @@ services:
   workflow-service:
     build:
       context: .
-      dockerfile: WorkflowService/Dockerfile
+      dockerfile: WorkflowService/Dockerfile.dev
+    volumes:
+      - ./WorkflowService:/app/WorkflowService:cached
+      - ./Contracts:/app/Contracts:cached
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Grpc__Port: 5003
@@ -75,6 +81,9 @@ services:
   agent-service:
     build:
       context: ./AgentService
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./AgentService:/app
     environment:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TASK_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowTaskCreated"
@@ -96,6 +105,9 @@ services:
   tool-service:
     build:
       context: ./ToolService
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./ToolService:/app
     environment:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TOOL_CALL_EXCHANGE: "tool-call"
@@ -110,6 +122,9 @@ services:
   api-gateway:
     build:
       context: ./ApiGateway
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./ApiGateway:/app:cached
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'
@@ -131,6 +146,9 @@ services:
   event-service:
     build:
       context: ./EventService
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./EventService:/app:cached
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'

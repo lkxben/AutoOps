@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var frontendUrl = builder.Configuration["Frontend__Url"] ?? "";
+var prodUrl = builder.Configuration["Frontend__Prod"] ?? "";
 
 var regexPattern = builder.Configuration["Frontend__UrlsRegex"] 
                          ?? @"^https://auto-[a-z0-9]+-benjamins-projects-[a-z0-9]+\.vercel\.app$";
@@ -24,7 +24,7 @@ builder.Services.AddCors(options =>
               {
                   if (origin.Contains("localhost")) return true;
 
-                  if (Regex.IsMatch(origin, $"^{Regex.Escape(frontendUrl)}$", RegexOptions.IgnoreCase))
+                  if (Regex.IsMatch(origin, prodUrl, RegexOptions.IgnoreCase))
                       return true;
                       
                   if (Regex.IsMatch(origin, regexPattern, RegexOptions.IgnoreCase))
