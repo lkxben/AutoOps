@@ -117,6 +117,22 @@ services:
         condition: service_healthy
     networks:
       - backend
+  
+  notification-service:
+    build:
+      context: ./NotificationService
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./NotificationService:/app
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
 
   # External-facing microservices
   api-gateway:

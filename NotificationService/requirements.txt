@@ -4,3 +4,4 @@ aio-pika
 pydantic
 python-dotenv
 pydantic-settings
+aiohttp
