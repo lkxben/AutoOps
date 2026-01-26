@@ -5,9 +5,10 @@ import Modal from "@/app/components/Modal"
 import { useAuth } from '@/app/contexts/AuthContext'
 import LoginForm from "@/app/components/LoginForm"
 import RegisterForm from "@/app/components/RegisterForm"
+import ProfileDropdown from "@/app/components/ProfileDropdown"
 
 export default function NavBar() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [showLogin, setShowLogin] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
 
@@ -24,15 +25,7 @@ export default function NavBar() {
         </div>
 
         {user ? (
-          <div className="flex items-center gap-4">
-            <span className="text-white font-medium">{user.name}</span>
-            <button
-              onClick={logout}
-              className="text-white hover:underline transition"
-            >
-              Logout
-            </button>
-          </div>
+          <ProfileDropdown />
         ) : (
           <div className="flex gap-4">
             <button

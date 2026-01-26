@@ -28,6 +28,10 @@ export async function handler(req: NextRequest) {
     body,
   });
 
+  if (backendRes.status === 204 || backendRes.status === 205) {
+    return new NextResponse(null, { status: backendRes.status });
+  }
+
   if (path === "/logout") {
     const response = NextResponse.json({ success: backendRes.ok }, { status: backendRes.status });
     response.headers.set(
