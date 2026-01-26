@@ -18,13 +18,14 @@ for name, fn in inspect.getmembers(tools, inspect.isfunction):
     }
 
 publisher = ToolResultPublisher()
+tools_with_context = {"send_notification"}
 
 async def _run_and_publish(fn, inputs: dict, context):
     try:
         sig = inspect.signature(fn)
 
-        if "user_id" in sig.parameters and "user_id" not in inputs:
-            inputs = {**inputs, "user_id": context["user_id"]}
+        if fn.__name__ in tools_with_context and "context" in sig.parameters:
+            inputs = {**inputs, "context": context}
 
         logger.info(f"[ToolWorker] Running tool {fn.__name__} with inputs {inputs}")
 

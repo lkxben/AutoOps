@@ -110,9 +110,9 @@ Returns cleaned plain text.
 
 # Notification
 notif_pub = NotifCallPublisher()
-async def send_notification(channel: str, message: str, user_id: str):
+async def send_notification(channel: str, message: str, context: dict):
     await notif_pub.publish({
-        "user_id": user_id,
+        "context": context,
         "channel": channel,
         "message": message
     })
