@@ -257,9 +257,6 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
         UserId = userId
     });
 
-    if (response == null || response.Tasks.Count == 0)
-        return Results.NotFound();
-
     var tasksDto = response.Tasks.Select(task => new WorkflowTaskDto
     (
         task.Id,
