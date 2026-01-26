@@ -57,42 +57,39 @@ Returns cleaned plain text.""",
     },
 }
 
-async def tool_call(task_id: str, user_id: str, tool_type: str, inputs):
+async def tool_call(task: dict, tool_type: str, inputs):
     request = MCPRequest(
         tool_name=tool_type,
         inputs=inputs,
-        context={
-            "task_id": task_id,
-            "user_id": user_id,
-        }
+        context=task,
     )
     payload = {
         "request": request.dict()
     }
     await tool_publisher.publish(payload)
 
-async def publish_result(task_id: str, user_id: str, result: str):
+async def publish_result(task: dict, result: str):
     payload = {
-        "task_id": task_id,
-        "user_id": user_id,
+        "task_id": task["task_id"],
+        "user_id": task["user_id"],
         "status": 4,
         "description": result
     }
     await event_publisher.publish(payload)
 
-async def publish_error(task_id: str, user_id: str):
+async def publish_error(task: dict):
     payload = {
-        "task_id": task_id,
-        "user_id": user_id,
+        "task_id": task["task_id"],
+        "user_id": task["user_id"],
         "status": 5,
         "description": "LLM failed to call tool"
     }
     await event_publisher.publish(payload)
 
-async def publish_start(task_id: str, user_id: str):
+async def publish_start(task: dict):
     payload = {
-        "task_id": task_id,
-        "user_id": user_id,
+        "task_id": task["task_id"],
+        "user_id": task["user_id"],
         "status": 3,
         "description": "Run started"
     }

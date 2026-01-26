@@ -26,14 +26,18 @@ class ExecutorAgent:
         return cls._instance
 
     def __init__(self, db_uri: str):
+        class TaskContext(BaseModel):
+            task_id: str
+            user_id: str
+            prompt: str
+            title: str
+
         class State(MessagesState):
-            task: str
+            task: TaskContext
             plan: str
             nodes: List[dict] = []
             edges: List[dict] = []
             dependencies: dict[int, List[int]] = {}
-            thread_id: str
-            user_id: str
             completed_steps: dict[int, Any]
             current_node: Optional[int] = None
             execution_history: List[int] = []
@@ -76,7 +80,7 @@ class ExecutorAgent:
 
     async def _async_init(self):
         async def generate_tool_call(state: self.State):
-            logger.info("Generating tool call...")
+            # logger.info("Generating tool call...")
             nodes = state["nodes"]
             completed_steps = state["completed_steps"]
             current_node = state["current_node"]
@@ -132,7 +136,7 @@ Available tools:
 
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
             if not tool_call_result:
-                asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
+                asyncio.create_task(publish_error(state["task"]))
                 return {}
                 
             return {"messages": [AIMessage(content=tool_call_result.json())]}
@@ -180,10 +184,8 @@ Available tools:
             except json.JSONDecodeError as e:
                 logger.exception(e)
 
-            thread_id = state["thread_id"]
-            user_id = state["user_id"]
-            asyncio.create_task(publish_start(thread_id, user_id))
-            asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], tool_call_data["inputs"]))
+            asyncio.create_task(publish_start(state["task"]))
+            asyncio.create_task(tool_call(state["task"], tool_call_data["tool_type"], tool_call_data["inputs"]))
             return {}
         
         async def final_answer(state: self.State):
@@ -205,7 +207,7 @@ Do NOT repeat the same mistake.
 You have completed all steps of the task.
 
 Task:
-{state['task']}
+{state['task']['prompt']}
 
 Plan:
 {state['plan']}
@@ -235,10 +237,10 @@ Schema:
             )
 
             if not result:
-                asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
+                asyncio.create_task(publish_error(state["task"]))
                 return {}
 
-            asyncio.create_task(publish_result(state["thread_id"], state["user_id"], result.answer))
+            asyncio.create_task(publish_result(state["task"], result.answer))
             return {"messages": [AIMessage(content=result.answer)]}
         
         def should_end(state: self.State):
@@ -264,8 +266,8 @@ Schema:
         builder.add_edge("final", END)
         self.builder = builder
 
-    async def start_task(self, thread_id: str, user_id: str, task: str, plan: str):
-        thread = {"configurable": {"thread_id": thread_id}}
+    async def start_task(self, task: dict, plan: str):
+        thread = {"configurable": {"thread_id": task["task_id"]}}
 
         stripped = strip_reactflow_metadata(plan)
         nodes = stripped["nodes"]
@@ -283,8 +285,6 @@ Schema:
             "nodes": nodes,
             "edges": edges,
             "dependencies": dependencies,
-            "thread_id": thread_id,
-            "user_id": user_id,
             "completed_steps": {},
             "current_node": None,
             "execution_history": [],
@@ -300,8 +300,8 @@ Schema:
             except Exception as e:
                 logger.exception("Error starting graph")
 
-    async def continue_task(self, thread_id: str, user_id: str, tool_result: dict):
-        thread = {"configurable": {"thread_id": thread_id}}
+    async def continue_task(self, task: dict, tool_result: dict):
+        thread = {"configurable": {"thread_id": task["task_id"]}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()

@@ -13,6 +13,7 @@ namespace Contracts.Workflow
         [property: JsonPropertyName("task_id")] Guid TaskId,
         [property: JsonPropertyName("user_id")] Guid UserId,
         [property: JsonPropertyName("prompt")] string Prompt,
+        [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("graph")] string Graph
     );
 }
