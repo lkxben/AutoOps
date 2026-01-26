@@ -68,28 +68,28 @@ async def tool_call(task: dict, tool_type: str, inputs):
     }
     await tool_publisher.publish(payload)
 
-async def publish_result(task: dict, result: str):
+async def publish_result(context: dict, result: str):
     payload = {
-        "task_id": task["task_id"],
-        "user_id": task["user_id"],
+        "task_id": context["task"]["task_id"],
+        "user_id": context["task"]["user_id"],
         "status": 4,
         "description": result
     }
     await event_publisher.publish(payload)
 
-async def publish_error(task: dict):
+async def publish_error(context: dict):
     payload = {
-        "task_id": task["task_id"],
-        "user_id": task["user_id"],
+        "task_id": context["task"]["task_id"],
+        "user_id": context["task"]["user_id"],
         "status": 5,
         "description": "LLM failed to call tool"
     }
     await event_publisher.publish(payload)
 
-async def publish_start(task: dict):
+async def publish_start(context: dict):
     payload = {
-        "task_id": task["task_id"],
-        "user_id": task["user_id"],
+        "task_id": context["task"]["task_id"],
+        "user_id": context["task"]["user_id"],
         "status": 3,
         "description": "Run started"
     }

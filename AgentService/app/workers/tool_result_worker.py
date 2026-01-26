@@ -32,12 +32,12 @@ async def handle_tool_result(payload: dict):
         return
 
     tool_result = mcp_response.output
-    task = mcp_response.context
+    context = mcp_response.context
 
-    logger.info(f"[ToolResultWorker] Continuing task {task['task_id']} after tool call with result {tool_result}")
+    logger.info(f"[ToolResultWorker] Continuing run {context['run_id']} after tool call with result {tool_result}")
 
     agent_instance = await get_agent()
-    lock = thread_locks[task["task_id"]]
+    lock = thread_locks[context["run_id"]]
 
     async with lock:
-        results = await agent_instance.continue_task(task, tool_result)
+        results = await agent_instance.continue_task(context, tool_result)

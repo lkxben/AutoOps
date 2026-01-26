@@ -8,8 +8,10 @@ logger = logging.getLogger(__name__)
 TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 async def send_telegram_message(result: str, context: dict):
-    user_id = context.get("user_id")
-    title = context.get("title")
+    task = context.get("task")
+    run_id = context.get("run_id")
+    user_id = task.get("user_id")
+    title = task.get("title")
 
     if not user_id:
         logger.warning("No user_id found in context, skipping Telegram message")
@@ -28,9 +30,9 @@ async def send_telegram_message(result: str, context: dict):
     chat_id = row["address"]
 
     text = (
-        f"Task Completed\n\n"
+        f"Run {run_id} of Task Completed\n\n"
         f"Title: {title}\n"
-        f"Result:\n{result}"
+        f"\nResult:\n{result}"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"

@@ -11,7 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error, publish_start, tool_registry
+from app.agent.agent_helper import tool_call, strip_reactflow_metadata, publish_error, publish_start, publish_result, tool_registry
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,9 @@ class ExecutorAgent:
         return cls._instance
 
     def __init__(self, db_uri: str):
-        class TaskContext(BaseModel):
-            task_id: str
-            user_id: str
-            prompt: str
-            title: str
-
         class State(MessagesState):
-            task: TaskContext
+            context: dict
+            run_id: str
             plan: str
             nodes: List[dict] = []
             edges: List[dict] = []
@@ -136,7 +131,7 @@ Available tools:
 
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
             if not tool_call_result:
-                asyncio.create_task(publish_error(state["task"]))
+                asyncio.create_task(publish_error(state["context"]))
                 return {}
                 
             return {"messages": [AIMessage(content=tool_call_result.json())]}
@@ -184,8 +179,8 @@ Available tools:
             except json.JSONDecodeError as e:
                 logger.exception(e)
 
-            asyncio.create_task(publish_start(state["task"]))
-            asyncio.create_task(tool_call(state["task"], tool_call_data["tool_type"], tool_call_data["inputs"]))
+            asyncio.create_task(publish_start(state["context"]))
+            asyncio.create_task(tool_call(state["context"], tool_call_data["tool_type"], tool_call_data["inputs"]))
             return {}
         
         async def final_answer(state: self.State):
@@ -207,7 +202,7 @@ Do NOT repeat the same mistake.
 You have completed all steps of the task.
 
 Task:
-{state['task']['prompt']}
+{state['context']['task']['prompt']}
 
 Plan:
 {state['plan']}
@@ -237,10 +232,10 @@ Schema:
             )
 
             if not result:
-                asyncio.create_task(publish_error(state["task"]))
+                asyncio.create_task(publish_error(state["context"]))
                 return {}
 
-            asyncio.create_task(publish_result(state["task"], result.answer))
+            asyncio.create_task(publish_result(state["context"], result.answer))
             return {"messages": [AIMessage(content=result.answer)]}
         
         def should_end(state: self.State):
@@ -266,8 +261,8 @@ Schema:
         builder.add_edge("final", END)
         self.builder = builder
 
-    async def start_task(self, task: dict, plan: str):
-        thread = {"configurable": {"thread_id": task["task_id"]}}
+    async def start_task(self, context: dict, plan: str):
+        thread = {"configurable": {"thread_id": context["run_id"]}}
 
         stripped = strip_reactflow_metadata(plan)
         nodes = stripped["nodes"]
@@ -280,7 +275,7 @@ Schema:
             dependencies[target].append(source)
 
         initial_state = {
-            "task": task,
+            "context": context,
             "plan": stripped,
             "nodes": nodes,
             "edges": edges,
@@ -300,8 +295,8 @@ Schema:
             except Exception as e:
                 logger.exception("Error starting graph")
 
-    async def continue_task(self, task: dict, tool_result: dict):
-        thread = {"configurable": {"thread_id": task["task_id"]}}
+    async def continue_task(self, context: dict, tool_result: dict):
+        thread = {"configurable": {"thread_id": context["run_id"]}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
