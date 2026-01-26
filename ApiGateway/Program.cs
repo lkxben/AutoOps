@@ -94,6 +94,9 @@ var authServiceUrl = builder.Configuration["Grpc:AuthService"]
 var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
                              ?? throw new Exception("Grpc:WorkflowService configuration is missing");
 
+var notifServiceUrl = builder.Configuration["NotifServiceUrl"] 
+                      ?? throw new Exception("NotifServiceUrl configuration is missing");
+
 builder.Services.AddGrpcClient<Auth.AuthClient>(o =>
 {
     o.Address = new Uri(authServiceUrl);
@@ -346,6 +349,64 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     });
 
     return Results.Ok(new IdDto(result.Id));
+}).RequireAuthorization();
+
+app.MapPost("/notifications/channels", async (AddChannelDto dto, HttpContext context, IHttpClientFactory httpFactory) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var client = httpFactory.CreateClient();
+    var payload = new
+    {
+        user_id = userId,
+        channel = dto.Channel,
+        address = dto.Address
+    };
+    var resp = await client.PostAsJsonAsync($"{notifServiceUrl}/notifications/channels", payload);
+    return resp.IsSuccessStatusCode ? Results.Created("", null) : Results.StatusCode((int)resp.StatusCode);
+}).RequireAuthorization();
+
+app.MapPut("/notifications/channels/{channel}", async (string channel, UpdateChannelDto dto, HttpContext context, IHttpClientFactory httpFactory) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var client = httpFactory.CreateClient();
+    var payload = new { user_id = userId, address = dto.Address };
+    var resp = await client.PutAsJsonAsync($"{notifServiceUrl}/notifications/channels/{channel}", payload);
+    return resp.IsSuccessStatusCode ? Results.Ok() : Results.StatusCode((int)resp.StatusCode);
+}).RequireAuthorization();
+
+app.MapDelete("/notifications/channels/{channel}", async (string channel, HttpContext context, IHttpClientFactory httpFactory) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var client = httpFactory.CreateClient();
+    var req = new HttpRequestMessage(HttpMethod.Delete, $"{notifServiceUrl}/notifications/channels/{channel}")
+    {
+        Content = JsonContent.Create(new { user_id = userId })
+    };
+    var resp = await client.SendAsync(req);
+    return resp.IsSuccessStatusCode ? Results.NoContent() : Results.StatusCode((int)resp.StatusCode);
+}).RequireAuthorization();
+
+app.MapGet("/notifications/channels", async (HttpContext context, IHttpClientFactory httpFactory) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var client = httpFactory.CreateClient();
+    var req = new HttpRequestMessage(HttpMethod.Get, $"{notifServiceUrl}/notifications/channels")
+    {
+        Content = JsonContent.Create(new { user_id = userId })
+    };
+    var resp = await client.SendAsync(req);
+    if (!resp.IsSuccessStatusCode) return Results.StatusCode((int)resp.StatusCode);
+
+    var channels = await resp.Content.ReadFromJsonAsync<List<ChannelResponseDto>>();
+    return Results.Ok(channels);
 }).RequireAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
