@@ -24,12 +24,16 @@ async def _run_and_publish(fn, inputs: dict, context):
         sig = inspect.signature(fn)
 
         if "user_id" in sig.parameters and "user_id" not in inputs:
-            inputs = {**inputs, "user_id": context.user_id}
+            inputs = {**inputs, "user_id": context["user_id"]}
+
+        logger.info(f"[ToolWorker] Running tool {fn.__name__} with inputs {inputs}")
 
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
         else:
             result = fn(**inputs)
+
+        logger.info(f"[ToolWorker] Tool {fn.__name__} finished successfully")
         
         mcp_response = MCPResponse(
             output={
@@ -46,6 +50,7 @@ async def _run_and_publish(fn, inputs: dict, context):
         })
 
     except Exception as e:
+        logger.exception(f"[ToolWorker] Error running tool {fn.__name__}")
         mcp_response = MCPResponse(
             output={
                 "error": str(e)
@@ -72,9 +77,7 @@ async def handle_tool_call(payload: dict):
     tool_type = mcp_request.tool_name
     inputs = mcp_request.inputs
     context = mcp_request.context
-
-    logger.info(f"[ToolWorker] Calling tool {tool_type} with inputs {inputs}")
-
+    
     if tool_type not in available_tools:
         mcp_response = MCPResponse(
             output={
