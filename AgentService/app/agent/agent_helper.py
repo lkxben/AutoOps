@@ -53,7 +53,7 @@ Returns cleaned plain text.""",
     },
     "send_notification": {
         "description": "Send a notification to the user via a specified channel such as telegram or email.",
-        "inputs": ["channel", "message", "user_id"]
+        "inputs": ["channel", "message"]
     },
 }
 

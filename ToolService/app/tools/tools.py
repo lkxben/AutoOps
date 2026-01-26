@@ -111,8 +111,6 @@ Returns cleaned plain text.
 # Notification
 notif_pub = NotifCallPublisher()
 async def send_notification(channel: str, message: str, user_id: str):
-    # db lookup
-
     await notif_pub.publish({
         "user_id": user_id,
         "channel": channel,

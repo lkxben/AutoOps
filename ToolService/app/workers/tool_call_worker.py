@@ -21,6 +21,11 @@ publisher = ToolResultPublisher()
 
 async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict, context):
     try:
+        sig = inspect.signature(fn)
+
+        if "user_id" in sig.parameters and "user_id" not in inputs:
+            inputs = {**inputs, "user_id": user_id}
+
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
         else:
