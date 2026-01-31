@@ -44,7 +44,12 @@ async def send_telegram_message(result: str, context: dict):
                 "text": text,
                 "parse_mode": "Markdown"
             }
-        ):
-            pass
-
-    logger.info(f"Telegram message sent to user {user_id} for task '{title}'")
+        ) as resp:
+            if resp.status != 200:
+                try:
+                    body = await resp.text()
+                except Exception:
+                    body = "<could not read response body>"
+                logger.error(f"Failed to send Telegram message: {resp.status} {body}")
+            else:
+                logger.info(f"Telegram message sent to user {user_id} for task '{title}'")

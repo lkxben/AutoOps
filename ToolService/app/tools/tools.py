@@ -3,7 +3,7 @@ from ddgs import DDGS
 from bs4 import BeautifulSoup
 from readability import Document
 import re
-from app.messaging.notif_call_publisher import NotifCallPublisher
+# from app.messaging.notif_call_publisher import NotifCallPublisher
 
 # arithmetic
 def add(a: int, b: int) -> int:
@@ -107,12 +107,3 @@ Returns cleaned plain text.
         return "ERROR: Failed to extract meaningful main content."
 
     return output[:max_chars]
-
-# Notification
-notif_pub = NotifCallPublisher()
-async def send_notification(channel: str, message: str, context: dict):
-    await notif_pub.publish({
-        "context": context,
-        "channel": channel,
-        "message": message
-    })

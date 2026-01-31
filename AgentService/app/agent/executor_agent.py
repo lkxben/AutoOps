@@ -3,7 +3,7 @@ import re
 import asyncio
 import logging
 from pydantic import BaseModel, ValidationError
-from typing import TypedDict, Annotated, Optional, List, Any, Dict
+from typing import TypedDict, Annotated, Optional, List, Any, Dict, Literal
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanMessage, ToolMessage
@@ -11,7 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import tool_call, strip_reactflow_metadata, publish_error, publish_start, publish_result, tool_registry
+from app.agent.agent_helper import tool_call, strip_reactflow_metadata, publish_error, publish_start, publish_result, publish_notification, tool_registry
 
 logger = logging.getLogger(__name__)
 
@@ -40,21 +40,25 @@ class ExecutorAgent:
             call_final_ans: bool = False
             terminate: bool = False
             answer: str = ""
+            notify: bool = False
             
         self.State = State
         self.db_uri = db_uri
 
+        class NotificationSchema(BaseModel):
+            channel: Literal["telegram"]
+            message: str
+
         class ToolCallSchema(BaseModel):
             tool_type: str = None
             inputs: Dict[str, Any] = None
-            thoughts: Optional[str] = None
             
         class FinalAnswerSchema(BaseModel):
             answer: str
-            thoughts: str
         
         self.ToolCallSchema = ToolCallSchema
         self.FinalAnswerSchema = FinalAnswerSchema
+        self.NotificationSchema = NotificationSchema
 
         self.tool_descriptions = "\n".join(
             f"{name}({', '.join(info['inputs'])}): {info['description']}"
@@ -117,7 +121,6 @@ Rules:
 {{
 "tool_type": "<tool_name>",
 "inputs": {{ ... resolved ... }},
-"thoughts": "optional reasoning or notes"
 }}
 3. Output only JSON. No extra text, no comments, no explanations.
 4. Use ONLY the tools listed below.
@@ -134,6 +137,9 @@ Available tools:
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
             if tool_call_result.tool_type == "generate_final_answer":
                 return {"messages": [AIMessage(content=tool_call_result.json())], "call_final_ans": True }
+            
+            if tool_call_result.tool_type == "send_notification":
+                return {"messages": [AIMessage(content=tool_call_result.json())], "notify": True }
 
             if not tool_call_result:
                 asyncio.create_task(publish_error(state["context"]))
@@ -223,13 +229,11 @@ Provide the final answer to the user.
 Rules:
 1. Output ONLY ONE JSON object.
 2. JSON must conform EXACTLY to the schema below.
-3. "thoughts" must be concise (maximum 300 characters).
-4. Do NOT include explanations, markdown, or extra text.
+3. Do NOT include explanations, markdown, or extra text.
 
 Schema:
 {{
   "answer": "<final answer>",
-  "thoughts": "<reasoning, max 300 chars>"
 }}
 """)
             result = self.invoke_with_retries(
@@ -255,7 +259,66 @@ Schema:
                 "answer": result.answer,
                 "messages": [AIMessage(content=result.answer)]
             }
-        
+
+        async def notify(state: self.State):
+            logger.info("NOTIFYING")
+            node = state["current_node"]
+            answer = state["answer"]
+            task_info = state["context"]["task"]["prompt"]
+            last_results = {nid: state["completed_steps"][nid] for nid in state["execution_history"][-3:]}
+            def build_sys_msg(previous_output, validation_error):
+                feedback_block = ""
+                if validation_error:
+                    feedback_block = f"""
+PREVIOUS OUTPUT INVALID:
+{previous_output}
+
+ERROR:
+{validation_error}
+"""
+
+                return SystemMessage(content=f"""
+You are a notification generator LLM.
+
+Task info:
+{json.dumps(task_info, indent=2)}
+
+Notification node:
+{json.dumps(node, indent=2)}
+
+Previous completed steps (recent 3):
+{json.dumps(last_results, indent=2)}
+
+Final answer so far (may be blank):
+{json.dumps(answer, indent=2)}
+
+Based on the above, generate a **relevant, concise, and friendly notification** for the user.
+- You may reason over past results to decide what to notify.
+- Do NOT hallucinate information unrelated to the task.
+- Format your output as EXACTLY ONE JSON object like:
+{{ "channel": "<channel_name>", "message": "<notification message>" }}
+
+{feedback_block}
+        """)
+
+            result = self.invoke_with_retries(build_sys_msg, self.NotificationSchema)
+            if not result:
+                asyncio.create_task(publish_error(state["context"]))
+                return {}
+            asyncio.create_task(publish_notification(state["context"], result.channel, result.message))
+
+            current_node = state["current_node"] 
+            return {
+                "completed_steps": {
+                    **state["completed_steps"],
+                    current_node: {
+                        "done": True
+                    }
+                },
+                "execution_history": state["execution_history"] + [current_node],
+                "notify": False
+            }
+
         async def publish_end(state: self.State):
             message = state.get("answer") or "Task completed successfully"
             await publish_result(state["context"], message)
@@ -267,9 +330,11 @@ Schema:
                 return "publish_end"
             return "generate_tool_call"
         
-        def is_final_ans_call(state: self.State):
+        def next_step(state: self.State):
             if state["call_final_ans"]:
                 return "generate_final_answer"
+            if state["notify"]:
+                return "notify"
             return "tools"
                 
         # Compiling
@@ -279,14 +344,16 @@ Schema:
         builder.add_node("tools", call_tools)
         builder.add_node("generate_final_answer", generate_final_answer)
         builder.add_node("publish_end", publish_end)
+        builder.add_node("notify", notify)
 
         builder.add_edge(START, "get_next_node")
         builder.add_conditional_edges(
             "get_next_node", should_end, ["publish_end", "generate_tool_call"]
         )
 
-        builder.add_conditional_edges("generate_tool_call", is_final_ans_call, ["generate_final_answer", "tools"])
+        builder.add_conditional_edges("generate_tool_call", next_step, ["generate_final_answer", "tools", "notify"])
         builder.add_edge("tools", "get_next_node")
+        builder.add_edge("notify", "get_next_node")
         builder.add_edge("generate_final_answer", "get_next_node")
         builder.add_edge("publish_end", END)
         self.builder = builder
@@ -316,7 +383,8 @@ Schema:
             "thoughts": "",
             "call_final_ans": False, 
             "terminate": False,
-            "answer": ""
+            "answer": "",
+            "notify": False
         }
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:

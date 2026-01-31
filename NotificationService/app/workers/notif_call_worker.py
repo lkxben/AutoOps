@@ -10,5 +10,5 @@ async def handle_tool_call(payload):
 
     logger.info(f"[Notif worker] Received notif call for channel {channel} with message {message} and context {context}")
 
-    if channel == "telegram":
+    if channel.lower() == "telegram":
         await send_telegram_message(message, context)

@@ -1,6 +1,7 @@
 from app.messaging.tool_call_publisher import ToolCallPublisher
 from app.messaging.task_updated_publisher import TaskUpdatedPublisher
 from app.messaging.plan_draft_publisher import PlanDraftPublisher
+from app.messaging.notif_call_publisher import NotifCallPublisher
 from app.agent.mcp import MCPRequest
 import re
 import json
@@ -10,6 +11,7 @@ from typing import Dict, List, Any, Tuple
 tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
 plan_draft_publisher = PlanDraftPublisher()
+notif_pub = NotifCallPublisher()
 
 tool_registry = {
     "add": {
@@ -53,7 +55,7 @@ Returns cleaned plain text.""",
     },
     "send_notification": {
         "description": "Send a notification to the user via a specified channel such as telegram or email.",
-        "inputs": ["channel", "message"]
+        "inputs": []
     },
     "generate_final_answer": {
         "description": """
@@ -62,6 +64,13 @@ This tool does not perform external actions or fetch new data; it only synthesis
         "inputs": []
     }
 }
+
+async def publish_notification(context: dict, channel: str, message: str):
+    await notif_pub.publish({
+        "context": context,
+        "channel": channel,
+        "message": message
+    })
 
 async def tool_call(task: dict, tool_type: str, inputs):
     request = MCPRequest(
