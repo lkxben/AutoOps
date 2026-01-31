@@ -55,6 +55,12 @@ Returns cleaned plain text.""",
         "description": "Send a notification to the user via a specified channel such as telegram or email.",
         "inputs": ["channel", "message"]
     },
+    "generate_final_answer": {
+        "description": """
+Transform the accumulated execution results into a final user-facing answer.
+This tool does not perform external actions or fetch new data; it only synthesises existing results.""",
+        "inputs": []
+    }
 }
 
 async def tool_call(task: dict, tool_type: str, inputs):

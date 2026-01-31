@@ -37,7 +37,8 @@ class ExecutorAgent:
             current_node: Optional[int] = None
             execution_history: List[int] = []
             thoughts: str = ""
-            final: bool = False
+            final_ans: bool = False
+            terminate: bool = False
             
         self.State = State
         self.db_uri = db_uri
@@ -130,6 +131,9 @@ Available tools:
             )
 
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
+            if tool_call_result.tool_type == "generate_final_answer":
+                return {"messages": [AIMessage(content=tool_call_result.json())], "final_ans": True }
+
             if not tool_call_result:
                 asyncio.create_task(publish_error(state["context"]))
                 return {}
@@ -163,7 +167,7 @@ Available tools:
 
             if not ready_nodes:
                 logger.info("Get next node: none")
-                return { "final": True }
+                return { "terminate": True }
 
             next_node = min(ready_nodes, key=lambda n: n["id"])
 
@@ -183,7 +187,8 @@ Available tools:
             asyncio.create_task(tool_call(state["context"], tool_call_data["tool_type"], tool_call_data["inputs"]))
             return {}
         
-        async def final_answer(state: self.State):
+        async def generate_final_answer(state: self.State):
+            logger.info("FINAL ANSWER CALLED")
             def build_sys_msg(previous_output, validation_error):
                 feedback_block = ""
                 if validation_error:
@@ -236,29 +241,45 @@ Schema:
                 return {}
 
             asyncio.create_task(publish_result(state["context"], result.answer))
-            return {"messages": [AIMessage(content=result.answer)]}
+
+            current_node = state["current_node"] 
+            return {
+                "completed_steps": {
+                    **state["completed_steps"],
+                    current_node: {
+                        "answer": result.answer,
+                        "thoughts": result.thoughts
+                    }
+                },
+                "execution_history": state["execution_history"] + [current_node],
+                "messages": [AIMessage(content=result.answer)]
+            }
         
         def should_end(state: self.State):
-            if state["final"]:
-                return "final"
+            if state["terminate"]:
+                return END
             return "generate_tool_call"
+        
+        def is_final_ans_call(state: self.State):
+            if state["final_ans"]:
+                return "generate_final_answer"
+            return "tools"
                 
         # Compiling
         builder = StateGraph(self.State)
         builder.add_node("get_next_node", get_next_node)
         builder.add_node("generate_tool_call", generate_tool_call)
         builder.add_node("tools", call_tools)
-        builder.add_node("final", final_answer)
+        builder.add_node("generate_final_answer", generate_final_answer)
 
         builder.add_edge(START, "get_next_node")
         builder.add_conditional_edges(
-            "get_next_node", should_end, ["final", "generate_tool_call"]
+            "get_next_node", should_end, [END, "generate_tool_call"]
         )
 
-        builder.add_edge("generate_tool_call", "tools")
+        builder.add_conditional_edges("generate_tool_call", is_final_ans_call, ["generate_final_answer", "tools"])
         builder.add_edge("tools", "get_next_node")
-
-        builder.add_edge("final", END)
+        builder.add_edge("generate_final_answer", "get_next_node")
         self.builder = builder
 
     async def start_task(self, context: dict, plan: str):
@@ -284,7 +305,8 @@ Schema:
             "current_node": None,
             "execution_history": [],
             "thoughts": "",
-            "final": False, 
+            "final_ans": False, 
+            "terminate": False
         }
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
