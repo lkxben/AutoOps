@@ -493,7 +493,7 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
 
             ai_message = self.llm.invoke([sys_msg])
             raw = ai_message.content
-            # logger.info(f"Raw: {raw}")
+            logger.info(f"Raw: {raw}")
 
             try:
                 parsed = json.loads(raw)
@@ -529,38 +529,38 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
             feedback_block = ""
             if validation_error:
                 feedback_block = f"""
-    PREVIOUS OUTPUT WAS INVALID:
-    {previous_output}
+PREVIOUS OUTPUT WAS INVALID:
+{previous_output}
 
-    VALIDATION ERROR:
-    {validation_error}
+VALIDATION ERROR:
+{validation_error}
 
-    You MUST fix the error and produce a VALID JSON object that strictly conforms to the schema.
-    Do NOT repeat the same mistake.
-    """
+You MUST fix the error and produce a VALID JSON object that strictly conforms to the schema.
+Do NOT repeat the same mistake.
+"""
 
             return SystemMessage(content=f"""
-    You are an execution agent evaluating a workflow condition in a workflow node.
+You are an execution agent evaluating a workflow condition in a workflow node.
 
-    Condition to evaluate:
-    {edge.condition}
+Condition to evaluate:
+{edge.condition}
 
-    Completed workflow steps (JSON):
-    {json.dumps(completed_steps, indent=2)}
+Completed workflow steps (JSON):
+{json.dumps(completed_steps, indent=2)}
 
-    {feedback_block}
+{feedback_block}
 
-    Rules:
-    1. Evaluate the condition using only the data from completed steps.
-    2. Do NOT hallucinate or assume data not present.
-    3. Respond ONLY in the exact JSON format specified below.
-    4. The output must be valid JSON.
+Rules:
+1. Evaluate the condition using the outputs from previous steps.
+2. You may extract numbers or categorical information from text if necessary.
+3. Do NOT invent data that isn’t present.
+4. Respond ONLY in the exact JSON format below.
 
-    Required JSON output:
-    {{
-    "result": True/False
-    }}
-    """)
+Required JSON output:
+{{
+"result": True/False
+}}
+""")
 
         result = self.invoke_with_retries(build_sys_msg, self.ConditionSchema)
         return result.result

@@ -61,9 +61,7 @@ Returns cleaned plain text.""",
         "inputs": []
     },
     "generate_final_answer": {
-        "description": """
-Transform the accumulated execution results into a final user-facing answer.
-This tool does not perform external actions or fetch new data; it only synthesises existing results.""",
+        "description": "Generate the final result based on past execution. Do NOT produce results yourself or include any previous outputs. This tool does not require any inputs.",
         "inputs": []
     }
 }
