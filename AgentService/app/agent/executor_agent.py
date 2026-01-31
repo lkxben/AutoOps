@@ -37,8 +37,9 @@ class ExecutorAgent:
             current_node: Optional[int] = None
             execution_history: List[int] = []
             thoughts: str = ""
-            final_ans: bool = False
+            call_final_ans: bool = False
             terminate: bool = False
+            answer: str = ""
             
         self.State = State
         self.db_uri = db_uri
@@ -132,7 +133,7 @@ Available tools:
 
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
             if tool_call_result.tool_type == "generate_final_answer":
-                return {"messages": [AIMessage(content=tool_call_result.json())], "final_ans": True }
+                return {"messages": [AIMessage(content=tool_call_result.json())], "call_final_ans": True }
 
             if not tool_call_result:
                 asyncio.create_task(publish_error(state["context"]))
@@ -240,8 +241,6 @@ Schema:
                 asyncio.create_task(publish_error(state["context"]))
                 return {}
 
-            asyncio.create_task(publish_result(state["context"], result.answer))
-
             current_node = state["current_node"] 
             return {
                 "completed_steps": {
@@ -252,16 +251,24 @@ Schema:
                     }
                 },
                 "execution_history": state["execution_history"] + [current_node],
+                "call_final_ans": False,
+                "answer": result.answer,
                 "messages": [AIMessage(content=result.answer)]
             }
         
+        async def publish_end(state: self.State):
+            message = state.get("answer") or "Task completed successfully"
+            await publish_result(state["context"], message)
+            logger.info(f"Workflow {state['context']['run_id']} completed with message: {message}")
+            return {"terminate": True, "current_node": None}
+                
         def should_end(state: self.State):
             if state["terminate"]:
-                return END
+                return "publish_end"
             return "generate_tool_call"
         
         def is_final_ans_call(state: self.State):
-            if state["final_ans"]:
+            if state["call_final_ans"]:
                 return "generate_final_answer"
             return "tools"
                 
@@ -271,15 +278,17 @@ Schema:
         builder.add_node("generate_tool_call", generate_tool_call)
         builder.add_node("tools", call_tools)
         builder.add_node("generate_final_answer", generate_final_answer)
+        builder.add_node("publish_end", publish_end)
 
         builder.add_edge(START, "get_next_node")
         builder.add_conditional_edges(
-            "get_next_node", should_end, [END, "generate_tool_call"]
+            "get_next_node", should_end, ["publish_end", "generate_tool_call"]
         )
 
         builder.add_conditional_edges("generate_tool_call", is_final_ans_call, ["generate_final_answer", "tools"])
         builder.add_edge("tools", "get_next_node")
         builder.add_edge("generate_final_answer", "get_next_node")
+        builder.add_edge("publish_end", END)
         self.builder = builder
 
     async def start_task(self, context: dict, plan: str):
@@ -305,8 +314,9 @@ Schema:
             "current_node": None,
             "execution_history": [],
             "thoughts": "",
-            "final_ans": False, 
-            "terminate": False
+            "call_final_ans": False, 
+            "terminate": False,
+            "answer": ""
         }
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
