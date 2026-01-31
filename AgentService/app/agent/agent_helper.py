@@ -3,11 +3,14 @@ from app.messaging.task_updated_publisher import TaskUpdatedPublisher
 from app.messaging.plan_draft_publisher import PlanDraftPublisher
 from app.messaging.notif_call_publisher import NotifCallPublisher
 from app.agent.mcp import MCPRequest
+import asyncio
 import re
 import json
+import logging
 
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Coroutine
 
+logger = logging.getLogger(__name__)
 tool_publisher = ToolCallPublisher()
 event_publisher = TaskUpdatedPublisher()
 plan_draft_publisher = PlanDraftPublisher()
@@ -253,13 +256,22 @@ def strip_reactflow_metadata(plan_json: str) -> dict[str, Any]:
     plan = json.loads(plan_json)
 
     nodes = [
-        {"id": int(node["id"]), "label": node.get("data", {}).get("label", str(node["id"]))}
+        {
+            "id": int(node["id"]),
+            "label": node.get("data", {}).get("label", str(node["id"]))
+        }
         for node in plan.get("nodes", [])
         if node["id"] not in ("START", "END")
     ]
 
     edges = [
-        {"source": int(edge["source"]), "target": int(edge["target"])}
+        {
+            "source": int(edge["source"]),
+            "target": int(edge["target"]),
+            "type": edge.get("data", {}).get("edgeType", "normal"),
+            "condition": edge.get("data", {}).get("condition"),
+            "max_iterations": edge.get("data", {}).get("maxIterations")
+        }
         for edge in plan.get("edges", [])
         if edge.get("source") not in ("START", "END") and edge.get("target") not in ("START", "END")
     ]
@@ -268,3 +280,15 @@ def strip_reactflow_metadata(plan_json: str) -> dict[str, Any]:
         "nodes": nodes,
         "edges": edges
     }
+
+def safe_create_task(coro: Coroutine[Any, Any, Any]):
+    task = asyncio.create_task(coro)
+    
+    def log_exception(t: asyncio.Task):
+        try:
+            t.result()
+        except Exception as e:
+            logger.exception("Exception in fire-and-forget task", exc_info=e)
+    
+    task.add_done_callback(log_exception)
+    return task

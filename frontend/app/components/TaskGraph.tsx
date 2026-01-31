@@ -41,13 +41,23 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
   const onConnect = useCallback((connection: Connection) => {
     const { source, target, sourceHandle, targetHandle } = connection
     if (!source || !target) return
+
+    const isConditional = confirm("Is this a conditional edge? (OK = yes, Cancel = no)")
+
+    const edgeType: 'normal' | 'conditional' = isConditional ? 'conditional' : 'normal'
+    const condition = isConditional ? prompt("Enter condition (JS expression, e.g., x > 5):", "") : undefined
+
     const newEdge: Edge = {
       id: `${source}-${target}`,
       source,
       target,
+      type: 'default',
       sourceHandle: sourceHandle ?? undefined,
       targetHandle: targetHandle ?? undefined,
+      label: edgeType === 'conditional' ? condition : undefined,
+      data: { edgeType, condition, maxIterations: undefined }
     }
+
     updateEdges([...edges, newEdge])
   }, [edges, updateEdges])
 

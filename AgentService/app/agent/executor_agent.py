@@ -11,7 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import tool_call, strip_reactflow_metadata, publish_error, publish_start, publish_result, publish_notification, tool_registry
+from app.agent.agent_helper import tool_call, strip_reactflow_metadata, publish_error, publish_start, publish_result, publish_notification, tool_registry, safe_create_task
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,6 @@ class ExecutorAgent:
 
         class ConditionSchema(BaseModel):
             result: bool
-            reason: str
 
         class State(MessagesState):
             context: dict
@@ -209,7 +208,7 @@ Available tools:
                 return {"messages": [AIMessage(content=tool_call_result.json())], "notify": True }
 
             if not tool_call_result:
-                asyncio.create_task(publish_error(state["context"]))
+                safe_create_task(publish_error(state["context"]))
                 return {}
                 
             return {"messages": [AIMessage(content=tool_call_result.json())]}
@@ -221,8 +220,8 @@ Available tools:
             except json.JSONDecodeError as e:
                 logger.exception(e)
 
-            asyncio.create_task(publish_start(state["context"]))
-            asyncio.create_task(tool_call(state["context"], tool_call_data["tool_type"], tool_call_data["inputs"]))
+            safe_create_task(publish_start(state["context"]))
+            safe_create_task(tool_call(state["context"], tool_call_data["tool_type"], tool_call_data["inputs"]))
             return {}
         
         async def generate_final_answer(state: self.State):
@@ -273,7 +272,7 @@ Schema:
             )
 
             if not result:
-                asyncio.create_task(publish_error(state["context"]))
+                safe_create_task(publish_error(state["context"]))
                 return {}
 
             current_node = state["current_node"] 
@@ -336,9 +335,9 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
 
             result = self.invoke_with_retries(build_sys_msg, self.NotificationSchema)
             if not result:
-                asyncio.create_task(publish_error(state["context"]))
+                safe_create_task(publish_error(state["context"]))
                 return {}
-            asyncio.create_task(publish_notification(state["context"], result.channel, result.message))
+            safe_create_task(publish_notification(state["context"], result.channel, result.message))
 
             current_node = state["current_node"] 
             return {
@@ -347,6 +346,10 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
                     current_node: {
                         "done": True
                     }
+                },
+                "node_state": {
+                    **state["node_state"],
+                    current_node: "completed"
                 },
                 "notify": False
             }
@@ -397,6 +400,9 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
         nodes = stripped["nodes"]
         edges = stripped["edges"]
 
+        logger.info(f"NODES: {nodes}")
+        logger.info(f"EDGES: {edges}")
+
         dependencies = {node["id"]: [] for node in nodes}
         for edge in edges:
             target = edge["target"]
@@ -408,20 +414,14 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
             self.Edge(
                 source=e["source"],
                 target=e["target"],
-                type="normal"
+                type=e.get("type", "normal"),
+                condition=e.get("condition"),
+                max_iterations=e.get("max_iterations")
             )
             for e in edges
         ]
-        # edges_objs = [
-        #     self.Edge(
-        #         source=e["source"],
-        #         target=e["target"],
-        #         type=e.get("type", "normal"),
-        #         condition=e.get("condition"),
-        #         max_iterations=e.get("max_iterations")
-        #     )
-        #     for e in edges
-        # ]
+
+        logger.info(f"Parsed edges: {edges_objs}")
 
         node_state = {node["id"]: "pending" for node in nodes}
         node_iterations = {node["id"]: 0 for node in nodes}
@@ -493,6 +493,7 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
 
             ai_message = self.llm.invoke([sys_msg])
             raw = ai_message.content
+            # logger.info(f"Raw: {raw}")
 
             try:
                 parsed = json.loads(raw)
@@ -521,20 +522,45 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
             if all(satisfied(d) for d in state["dependencies"].get(node_id, [])):
                 ready_nodes.append(node)
         return ready_nodes
-    
+
     async def llm_check_condition(self, edge, completed_steps):
-        prompt = SystemMessage(content=f"""
-You are evaluating a workflow condition.
+        logger.info("CHECKING CONDITION")
+        def build_sys_msg(previous_output=None, validation_error=None):
+            feedback_block = ""
+            if validation_error:
+                feedback_block = f"""
+    PREVIOUS OUTPUT WAS INVALID:
+    {previous_output}
 
-Condition:
-{edge["condition"]}
+    VALIDATION ERROR:
+    {validation_error}
 
-Completed steps:
-{json.dumps(completed_steps, indent=2)}
+    You MUST fix the error and produce a VALID JSON object that strictly conforms to the schema.
+    Do NOT repeat the same mistake.
+    """
 
-Return JSON:
-{{ "result": true/false }}
-""")
+            return SystemMessage(content=f"""
+    You are an execution agent evaluating a workflow condition in a workflow node.
 
-        result = self.invoke_with_retries(lambda *_: prompt, self.ConditionSchema)
+    Condition to evaluate:
+    {edge.condition}
+
+    Completed workflow steps (JSON):
+    {json.dumps(completed_steps, indent=2)}
+
+    {feedback_block}
+
+    Rules:
+    1. Evaluate the condition using only the data from completed steps.
+    2. Do NOT hallucinate or assume data not present.
+    3. Respond ONLY in the exact JSON format specified below.
+    4. The output must be valid JSON.
+
+    Required JSON output:
+    {{
+    "result": True/False
+    }}
+    """)
+
+        result = self.invoke_with_retries(build_sys_msg, self.ConditionSchema)
         return result.result
