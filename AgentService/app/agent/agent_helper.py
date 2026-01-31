@@ -249,21 +249,20 @@ def parse_minimal_plan_to_reactflow(text: str):
         "edges": edges
     }
 
-def strip_reactflow_metadata(plan_json: str) -> Dict[str, Any]:
+def strip_reactflow_metadata(plan_json: str) -> dict[str, Any]:
     plan = json.loads(plan_json)
 
-    nodes = []
-    for node in plan.get("nodes", []):
-        node_id = node.get("id")
-        label = node.get("data", {}).get("label", node_id)
-        nodes.append({"id": node_id, "label": label})
+    nodes = [
+        {"id": int(node["id"]), "label": node.get("data", {}).get("label", str(node["id"]))}
+        for node in plan.get("nodes", [])
+        if node["id"] not in ("START", "END")
+    ]
 
-    edges = []
-    for edge in plan.get("edges", []):
-        source = edge.get("source")
-        target = edge.get("target")
-        if source and target:
-            edges.append({"source": source, "target": target})
+    edges = [
+        {"source": int(edge["source"]), "target": int(edge["target"])}
+        for edge in plan.get("edges", [])
+        if edge.get("source") not in ("START", "END") and edge.get("target") not in ("START", "END")
+    ]
 
     return {
         "nodes": nodes,

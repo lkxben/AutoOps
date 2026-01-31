@@ -26,21 +26,33 @@ class ExecutorAgent:
         return cls._instance
 
     def __init__(self, db_uri: str):
+        class Edge(BaseModel):
+            source: int
+            target: int
+            type: Literal["normal", "conditional", "loop"] = "normal"
+            condition: Optional[str] = None
+            max_iterations: Optional[int] = None
+
+        class ConditionSchema(BaseModel):
+            result: bool
+            reason: str
+
         class State(MessagesState):
             context: dict
             run_id: str
             plan: str
             nodes: List[dict] = []
-            edges: List[dict] = []
+            edges: List[Edge] = []
             dependencies: dict[int, List[int]] = {}
             completed_steps: dict[int, Any]
             current_node: Optional[int] = None
-            execution_history: List[int] = []
             thoughts: str = ""
             call_final_ans: bool = False
             terminate: bool = False
-            answer: str = ""
             notify: bool = False
+            answer: str = ""
+            node_iterations: Dict[int, int] = {}
+            node_state: Dict[int, Literal["pending", "completed", "skipped"]]
             
         self.State = State
         self.db_uri = db_uri
@@ -59,6 +71,8 @@ class ExecutorAgent:
         self.ToolCallSchema = ToolCallSchema
         self.FinalAnswerSchema = FinalAnswerSchema
         self.NotificationSchema = NotificationSchema
+        self.Edge = Edge
+        self.ConditionSchema = ConditionSchema
 
         self.tool_descriptions = "\n".join(
             f"{name}({', '.join(info['inputs'])}): {info['description']}"
@@ -76,10 +90,63 @@ class ExecutorAgent:
             max_tokens=100
         )
 
-        self.react_llm = self.llm.with_structured_output(ToolCallSchema)
-        self.final_llm = self.llm.with_structured_output(FinalAnswerSchema)
-
     async def _async_init(self):
+        async def evaluate_edges(state: self.State):
+            ready_nodes = self.get_ready_nodes(state)
+            edges = [
+                e if isinstance(e, self.Edge) else self.Edge(**e)
+                for e in state["edges"]
+            ]
+            iterations = dict(state.get("node_iterations", {}))
+            node_state = dict(state["node_state"])
+            completed = state["completed_steps"]
+
+            executable = []
+
+            for node in ready_nodes:
+                node_id = node["id"]
+                incoming_edges = [e for e in edges if e.target == node_id]
+                allow = True
+
+                for edge in incoming_edges:
+                    if edge.type == "normal":
+                        continue
+
+                    if edge.type == "conditional":
+                        decision = await self.llm_check_condition(edge, completed)
+                        if not decision:
+                            node_state[node_id] = "skipped"
+                            allow = False
+
+                    if edge.type == "loop":
+                        count = iterations.get(node_id, 0)
+                        if edge.condition:
+                            result = await self.llm_check_condition(edge, completed)
+                            continue_loop = result and (edge.max_iterations is None or count < edge.max_iterations)
+                        else:  # for-loop style
+                            continue_loop = edge.max_iterations is None or count < edge.max_iterations
+
+                        if continue_loop:
+                            node_state[node_id] = "pending"
+                            allow = True
+                        else:
+                            node_state[node_id] = "completed"
+                            allow = False
+
+
+                if allow:
+                    executable.append(node)
+
+            if not executable:
+                return { "terminate": True, "node_state": node_state }
+
+            executable.sort(key=lambda n: n["id"])
+
+            return {
+                "current_node": executable[0]["id"],
+                "node_state": node_state
+            }
+
         async def generate_tool_call(state: self.State):
             # logger.info("Generating tool call...")
             nodes = state["nodes"]
@@ -146,42 +213,6 @@ Available tools:
                 return {}
                 
             return {"messages": [AIMessage(content=tool_call_result.json())]}
-
-        def get_next_node(state: self.State):
-            logger.info("Getting next node...")
-            nodes = state["nodes"]
-            dependencies = state["dependencies"]
-            completed_steps = state["completed_steps"]
-
-            ready_nodes = []
-
-            for node in nodes:
-                node_id = node["id"]
-
-                if node_id in ("START", "END"):
-                    continue
-
-                if node_id in completed_steps:
-                    continue
-
-                node_deps = [
-                    dep for dep in dependencies.get(node_id, [])
-                    if dep not in ("START", "END")
-                ]
-
-                if all(dep in completed_steps for dep in node_deps):
-                    ready_nodes.append(node)
-
-            if not ready_nodes:
-                logger.info("Get next node: none")
-                return { "terminate": True }
-
-            next_node = min(ready_nodes, key=lambda n: n["id"])
-
-            logger.info(f"Get next node: {next_node}")
-            return {
-                "current_node": next_node["id"],
-            }
 
         async def call_tools(state: self.State):
             last_msg = state["messages"][-1].content.strip()
@@ -250,13 +281,15 @@ Schema:
                 "completed_steps": {
                     **state["completed_steps"],
                     current_node: {
-                        "answer": result.answer,
-                        "thoughts": result.thoughts
+                        "answer": result.answer
                     }
                 },
-                "execution_history": state["execution_history"] + [current_node],
                 "call_final_ans": False,
                 "answer": result.answer,
+                "node_state": {
+                    **state["node_state"],
+                    current_node: "completed"
+                },
                 "messages": [AIMessage(content=result.answer)]
             }
 
@@ -265,7 +298,7 @@ Schema:
             node = state["current_node"]
             answer = state["answer"]
             task_info = state["context"]["task"]["prompt"]
-            last_results = {nid: state["completed_steps"][nid] for nid in state["execution_history"][-3:]}
+            last_results = state["completed_steps"]
             def build_sys_msg(previous_output, validation_error):
                 feedback_block = ""
                 if validation_error:
@@ -315,7 +348,6 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
                         "done": True
                     }
                 },
-                "execution_history": state["execution_history"] + [current_node],
                 "notify": False
             }
 
@@ -339,22 +371,22 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
                 
         # Compiling
         builder = StateGraph(self.State)
-        builder.add_node("get_next_node", get_next_node)
+        builder.add_node("evaluate_edges", evaluate_edges)
         builder.add_node("generate_tool_call", generate_tool_call)
         builder.add_node("tools", call_tools)
         builder.add_node("generate_final_answer", generate_final_answer)
         builder.add_node("publish_end", publish_end)
         builder.add_node("notify", notify)
 
-        builder.add_edge(START, "get_next_node")
+        builder.add_edge(START, "evaluate_edges")
         builder.add_conditional_edges(
-            "get_next_node", should_end, ["publish_end", "generate_tool_call"]
+            "evaluate_edges", should_end, ["publish_end", "generate_tool_call"]
         )
 
         builder.add_conditional_edges("generate_tool_call", next_step, ["generate_final_answer", "tools", "notify"])
-        builder.add_edge("tools", "get_next_node")
-        builder.add_edge("notify", "get_next_node")
-        builder.add_edge("generate_final_answer", "get_next_node")
+        builder.add_edge("tools", "evaluate_edges")
+        builder.add_edge("notify", "evaluate_edges")
+        builder.add_edge("generate_final_answer", "evaluate_edges")
         builder.add_edge("publish_end", END)
         self.builder = builder
 
@@ -371,20 +403,44 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
             source = edge["source"]
             dependencies[target].append(source)
 
+        # form Edge objects from reactflow edges
+        edges_objs = [
+            self.Edge(
+                source=e["source"],
+                target=e["target"],
+                type="normal"
+            )
+            for e in edges
+        ]
+        # edges_objs = [
+        #     self.Edge(
+        #         source=e["source"],
+        #         target=e["target"],
+        #         type=e.get("type", "normal"),
+        #         condition=e.get("condition"),
+        #         max_iterations=e.get("max_iterations")
+        #     )
+        #     for e in edges
+        # ]
+
+        node_state = {node["id"]: "pending" for node in nodes}
+        node_iterations = {node["id"]: 0 for node in nodes}
+
         initial_state = {
             "context": context,
             "plan": stripped,
             "nodes": nodes,
-            "edges": edges,
+            "edges": edges_objs,
             "dependencies": dependencies,
             "completed_steps": {},
             "current_node": None,
-            "execution_history": [],
             "thoughts": "",
             "call_final_ans": False, 
             "terminate": False,
+            "notify": False,
             "answer": "",
-            "notify": False
+            "node_iterations": node_iterations,
+            "node_state": node_state
         }
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
@@ -406,14 +462,22 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
             current_node = state["current_node"] 
             completed_steps = dict(state.get("completed_steps", {}))
             completed_steps[current_node] = tool_result
-            execution_history = state.get("execution_history", [])
-            execution_history.append(current_node)
+
+            node_iterations = dict(state.get("node_iterations", {}))
+            node_iterations[current_node] = node_iterations.get(current_node, 0) + 1
+
+            node_state = dict(state["node_state"])
+            node_state[current_node] = "completed"
         
             graph = self.builder.compile(interrupt_after=["tools"], checkpointer=checkpointer)
 
             await graph.aupdate_state(
                 thread,
-                {"completed_steps": completed_steps, "execution_history": execution_history}
+                {
+                    "completed_steps": completed_steps, 
+                    "node_state": node_state,
+                    "node_iterations": node_iterations
+                }
             )
             try:
                 await graph.ainvoke(None, config=thread)
@@ -442,3 +506,35 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
 
         logger.error("All retries failed")
         return None
+    
+    def get_ready_nodes(self, state):
+        ready_nodes = []
+        node_state = state["node_state"]
+
+        def satisfied(dep):
+            return node_state.get(dep) in {"completed", "skipped"}
+
+        for node in state["nodes"]:
+            node_id = node["id"]
+            if node_id in ("START", "END") or node_state[node_id] != "pending":
+                continue
+            if all(satisfied(d) for d in state["dependencies"].get(node_id, [])):
+                ready_nodes.append(node)
+        return ready_nodes
+    
+    async def llm_check_condition(self, edge, completed_steps):
+        prompt = SystemMessage(content=f"""
+You are evaluating a workflow condition.
+
+Condition:
+{edge["condition"]}
+
+Completed steps:
+{json.dumps(completed_steps, indent=2)}
+
+Return JSON:
+{{ "result": true/false }}
+""")
+
+        result = self.invoke_with_retries(lambda *_: prompt, self.ConditionSchema)
+        return result.result
