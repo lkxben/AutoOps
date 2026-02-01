@@ -16,6 +16,13 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { layoutGraph } from "../lib/layoutGraph"
 import GraphNode from "./GraphNode"
+import ConditionalEdge from "./ConditionalEdge"
+
+const EDGE_TYPES = {
+  conditional: ConditionalEdge
+}
+
+const NODE_TYPES = { custom: GraphNode }
 
 type TaskGraphProps = {
   nodes: Node[]
@@ -23,8 +30,6 @@ type TaskGraphProps = {
   setPlan: (nodes: Node[], edges: Edge[]) => void
   onSubmitPlan: (nodes: Node[], edges: Edge[]) => void
 }
-
-const NODE_TYPES = { custom: GraphNode }
 
 export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskGraphProps) {
   const updateNodes = useCallback((updatedNodes: Node[]) => {
@@ -51,7 +56,7 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
       id: `${source}-${target}`,
       source,
       target,
-      type: 'default',
+      type: edgeType === 'conditional' ? 'conditional' : 'default',
       sourceHandle: sourceHandle ?? undefined,
       targetHandle: targetHandle ?? undefined,
       label: edgeType === 'conditional' ? condition : undefined,
@@ -108,6 +113,7 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
         nodes={nodes.map(n => ({ ...n, type: "custom" }))}
         edges={edges}
         nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
