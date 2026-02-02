@@ -3,7 +3,7 @@ import re
 import asyncio
 import logging
 from pydantic import BaseModel, ValidationError
-from typing import TypedDict, Annotated, Optional, List, Any, Dict
+from typing import TypedDict, Annotated, Optional, List, Any, Dict, Literal
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, HumanMessage, ToolMessage
@@ -11,7 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import tool_call, publish_result, strip_reactflow_metadata, publish_error, publish_start, tool_registry
+from app.agent.agent_helper import tool_call, strip_reactflow_metadata, publish_error, publish_start, publish_result, publish_notification, tool_registry, safe_create_task
 
 logger = logging.getLogger(__name__)
 
@@ -26,34 +26,52 @@ class ExecutorAgent:
         return cls._instance
 
     def __init__(self, db_uri: str):
+        class Edge(BaseModel):
+            source: int
+            target: int
+            type: Literal["normal", "conditional", "loop"] = "normal"
+            condition: Optional[str] = None
+            max_iterations: Optional[int] = None
+
+        class ConditionSchema(BaseModel):
+            result: bool
+
         class State(MessagesState):
-            task: str
+            context: dict
+            run_id: str
             plan: str
             nodes: List[dict] = []
-            edges: List[dict] = []
+            edges: List[Edge] = []
             dependencies: dict[int, List[int]] = {}
-            thread_id: str
-            user_id: str
             completed_steps: dict[int, Any]
             current_node: Optional[int] = None
-            execution_history: List[int] = []
             thoughts: str = ""
-            final: bool = False
+            call_final_ans: bool = False
+            terminate: bool = False
+            notify: bool = False
+            answer: str = ""
+            node_iterations: Dict[int, int] = {}
+            node_state: Dict[int, Literal["pending", "completed", "skipped"]]
             
         self.State = State
         self.db_uri = db_uri
 
+        class NotificationSchema(BaseModel):
+            channel: Literal["telegram"]
+            message: str
+
         class ToolCallSchema(BaseModel):
             tool_type: str = None
             inputs: Dict[str, Any] = None
-            thoughts: Optional[str] = None
             
         class FinalAnswerSchema(BaseModel):
             answer: str
-            thoughts: str
         
         self.ToolCallSchema = ToolCallSchema
         self.FinalAnswerSchema = FinalAnswerSchema
+        self.NotificationSchema = NotificationSchema
+        self.Edge = Edge
+        self.ConditionSchema = ConditionSchema
 
         self.tool_descriptions = "\n".join(
             f"{name}({', '.join(info['inputs'])}): {info['description']}"
@@ -71,21 +89,72 @@ class ExecutorAgent:
             max_tokens=100
         )
 
-        self.react_llm = self.llm.with_structured_output(ToolCallSchema)
-        self.final_llm = self.llm.with_structured_output(FinalAnswerSchema)
-
     async def _async_init(self):
+        async def evaluate_edges(state: self.State):
+            ready_nodes = self.get_ready_nodes(state)
+            edges = [
+                e if isinstance(e, self.Edge) else self.Edge(**e)
+                for e in state["edges"]
+            ]
+            iterations = dict(state.get("node_iterations", {}))
+            node_state = dict(state["node_state"])
+            completed = state["completed_steps"]
+
+            executable = []
+
+            for node in ready_nodes:
+                node_id = node["id"]
+                incoming_edges = [e for e in edges if e.target == node_id]
+                allow = True
+
+                for edge in incoming_edges:
+                    if edge.type == "normal":
+                        continue
+
+                    if edge.type == "conditional":
+                        decision = await self.llm_check_condition(edge, completed)
+                        if not decision:
+                            node_state[node_id] = "skipped"
+                            allow = False
+
+                    if edge.type == "loop":
+                        count = iterations.get(node_id, 0)
+                        if edge.condition:
+                            result = await self.llm_check_condition(edge, completed)
+                            continue_loop = result and (edge.max_iterations is None or count < edge.max_iterations)
+                        else:  # for-loop style
+                            continue_loop = edge.max_iterations is None or count < edge.max_iterations
+
+                        if continue_loop:
+                            node_state[node_id] = "pending"
+                            allow = True
+                        else:
+                            node_state[node_id] = "completed"
+                            allow = False
+
+
+                if allow:
+                    executable.append(node)
+
+            if not executable:
+                return { "terminate": True, "node_state": node_state }
+
+            executable.sort(key=lambda n: n["id"])
+
+            return {
+                "current_node": executable[0]["id"],
+                "node_state": node_state
+            }
+
         async def generate_tool_call(state: self.State):
-            logger.info("Generating tool call...")
-            plan = state["plan"]
-            task = state["task"]
+            # logger.info("Generating tool call...")
             nodes = state["nodes"]
             completed_steps = state["completed_steps"]
-            execution_history = state["execution_history"]
             current_node = state["current_node"]
 
             node = next(n for n in nodes if n["id"] == current_node)
-
+            deps = state["dependencies"].get(current_node, [])
+            raw_dep_results = {dep_id: completed_steps[dep_id] for dep_id in deps if dep_id in completed_steps}
             
             def build_sys_msg(previous_output, validation_error):
                 feedback_block = ""
@@ -104,34 +173,23 @@ Do NOT repeat the same mistake.
                 return SystemMessage(content=f"""
 You are an execution agent responsible for executing a single, pre-selected plan node.
 
-Task:
-{task}
-
-Plan:
-{plan}
-
 Current node to execute (JSON):
 {json.dumps(node, indent=2)}
 
-State:
-Completed steps with results: {completed_steps}
-Execution history: {execution_history}
+Dependency results:
+{json.dumps(raw_dep_results, indent=2)}
 
 {feedback_block}
 
 Rules:
 1. Execute ONLY the provided current node.
-2. Do NOT choose, change, or suggest another node.
-3. Do NOT modify, reorder, or reinterpret the plan.
-4. Resolve all $<node> references in inputs using the results of completed steps.
-5. Output EXACTLY ONE JSON object with:
+2. Output EXACTLY ONE JSON object with:
 {{
 "tool_type": "<tool_name>",
 "inputs": {{ ... resolved ... }},
-"thoughts": "optional reasoning or notes"
 }}
-6. Output only JSON. No extra text, no comments, no explanations.
-7. Use ONLY the tools listed below.
+3. Output only JSON. No extra text, no comments, no explanations.
+4. Use ONLY the tools listed below.
 
 Available tools:
 {self.tool_descriptions}
@@ -143,47 +201,17 @@ Available tools:
             )
 
             logger.info(f"Generated Tool Call: {tool_call_result.json()}")
+            if tool_call_result.tool_type == "generate_final_answer":
+                return {"messages": [AIMessage(content=tool_call_result.json())], "call_final_ans": True }
+            
+            if tool_call_result.tool_type == "send_notification":
+                return {"messages": [AIMessage(content=tool_call_result.json())], "notify": True }
+
             if not tool_call_result:
-                asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
+                safe_create_task(publish_error(state["context"]))
                 return {}
                 
             return {"messages": [AIMessage(content=tool_call_result.json())]}
-
-        def get_next_node(state: self.State):
-            logger.info("Getting next node...")
-            nodes = state["nodes"]
-            dependencies = state["dependencies"]
-            completed_steps = state["completed_steps"]
-
-            ready_nodes = []
-
-            for node in nodes:
-                node_id = node["id"]
-
-                if node_id in ("START", "END"):
-                    continue
-
-                if node_id in completed_steps:
-                    continue
-
-                node_deps = [
-                    dep for dep in dependencies.get(node_id, [])
-                    if dep not in ("START", "END")
-                ]
-
-                if all(dep in completed_steps for dep in node_deps):
-                    ready_nodes.append(node)
-
-            if not ready_nodes:
-                logger.info("Get next node: none")
-                return { "final": True }
-
-            next_node = min(ready_nodes, key=lambda n: n["id"])
-
-            logger.info(f"Get next node: {next_node}")
-            return {
-                "current_node": next_node["id"],
-            }
 
         async def call_tools(state: self.State):
             last_msg = state["messages"][-1].content.strip()
@@ -192,13 +220,12 @@ Available tools:
             except json.JSONDecodeError as e:
                 logger.exception(e)
 
-            thread_id = state["thread_id"]
-            user_id = state["user_id"]
-            asyncio.create_task(publish_start(thread_id, user_id))
-            asyncio.create_task(tool_call(thread_id, user_id, tool_call_data["tool_type"], tool_call_data["inputs"]))
+            safe_create_task(publish_start(state["context"]))
+            safe_create_task(tool_call(state["context"], tool_call_data["tool_type"], tool_call_data["inputs"]))
             return {}
         
-        async def final_answer(state: self.State):
+        async def generate_final_answer(state: self.State):
+            logger.info("FINAL ANSWER CALLED")
             def build_sys_msg(previous_output, validation_error):
                 feedback_block = ""
                 if validation_error:
@@ -217,7 +244,7 @@ Do NOT repeat the same mistake.
 You have completed all steps of the task.
 
 Task:
-{state['task']}
+{state['context']['task']['prompt']}
 
 Plan:
 {state['plan']}
@@ -232,13 +259,11 @@ Provide the final answer to the user.
 Rules:
 1. Output ONLY ONE JSON object.
 2. JSON must conform EXACTLY to the schema below.
-3. "thoughts" must be concise (maximum 300 characters).
-4. Do NOT include explanations, markdown, or extra text.
+3. Do NOT include explanations, markdown, or extra text.
 
 Schema:
 {{
   "answer": "<final answer>",
-  "thoughts": "<reasoning, max 300 chars>"
 }}
 """)
             result = self.invoke_with_retries(
@@ -247,40 +272,136 @@ Schema:
             )
 
             if not result:
-                asyncio.create_task(publish_error(state["thread_id"], state["user_id"]))
+                safe_create_task(publish_error(state["context"]))
+                return {}
 
-            asyncio.create_task(publish_result(state["thread_id"], state["user_id"], result.answer))
-            return {"messages": [AIMessage(content=result.answer)]}
-        
+            current_node = state["current_node"] 
+            return {
+                "completed_steps": {
+                    **state["completed_steps"],
+                    current_node: {
+                        "answer": result.answer
+                    }
+                },
+                "call_final_ans": False,
+                "answer": result.answer,
+                "node_state": {
+                    **state["node_state"],
+                    current_node: "completed"
+                },
+                "messages": [AIMessage(content=result.answer)]
+            }
+
+        async def notify(state: self.State):
+            logger.info("NOTIFYING")
+            node = state["current_node"]
+            answer = state["answer"]
+            task_info = state["context"]["task"]["prompt"]
+            last_results = state["completed_steps"]
+            def build_sys_msg(previous_output, validation_error):
+                feedback_block = ""
+                if validation_error:
+                    feedback_block = f"""
+PREVIOUS OUTPUT INVALID:
+{previous_output}
+
+ERROR:
+{validation_error}
+"""
+
+                return SystemMessage(content=f"""
+You are a notification generator LLM.
+
+Task info:
+{json.dumps(task_info, indent=2)}
+
+Notification node:
+{json.dumps(node, indent=2)}
+
+Previous completed steps (recent 3):
+{json.dumps(last_results, indent=2)}
+
+Final answer so far (may be blank):
+{json.dumps(answer, indent=2)}
+
+Based on the above, generate a **relevant, concise, and friendly notification** for the user.
+- You may reason over past results to decide what to notify.
+- Do NOT hallucinate information unrelated to the task.
+- Format your output as EXACTLY ONE JSON object like:
+{{ "channel": "<channel_name>", "message": "<notification message>" }}
+
+{feedback_block}
+        """)
+
+            result = self.invoke_with_retries(build_sys_msg, self.NotificationSchema)
+            if not result:
+                safe_create_task(publish_error(state["context"]))
+                return {}
+            safe_create_task(publish_notification(state["context"], result.channel, result.message))
+
+            current_node = state["current_node"] 
+            return {
+                "completed_steps": {
+                    **state["completed_steps"],
+                    current_node: {
+                        "done": True
+                    }
+                },
+                "node_state": {
+                    **state["node_state"],
+                    current_node: "completed"
+                },
+                "notify": False
+            }
+
+        async def publish_end(state: self.State):
+            message = state.get("answer") or "Task completed successfully"
+            await publish_result(state["context"], message)
+            logger.info(f"Workflow {state['context']['run_id']} completed with message: {message}")
+            return {"terminate": True, "current_node": None}
+                
         def should_end(state: self.State):
-            if state["final"]:
-                return "final"
+            if state["terminate"]:
+                return "publish_end"
             return "generate_tool_call"
+        
+        def next_step(state: self.State):
+            if state["call_final_ans"]:
+                return "generate_final_answer"
+            if state["notify"]:
+                return "notify"
+            return "tools"
                 
         # Compiling
         builder = StateGraph(self.State)
-        builder.add_node("get_next_node", get_next_node)
+        builder.add_node("evaluate_edges", evaluate_edges)
         builder.add_node("generate_tool_call", generate_tool_call)
         builder.add_node("tools", call_tools)
-        builder.add_node("final", final_answer)
+        builder.add_node("generate_final_answer", generate_final_answer)
+        builder.add_node("publish_end", publish_end)
+        builder.add_node("notify", notify)
 
-        builder.add_edge(START, "get_next_node")
+        builder.add_edge(START, "evaluate_edges")
         builder.add_conditional_edges(
-            "get_next_node", should_end, ["final", "generate_tool_call"]
+            "evaluate_edges", should_end, ["publish_end", "generate_tool_call"]
         )
 
-        builder.add_edge("generate_tool_call", "tools")
-        builder.add_edge("tools", "get_next_node")
-
-        builder.add_edge("final", END)
+        builder.add_conditional_edges("generate_tool_call", next_step, ["generate_final_answer", "tools", "notify"])
+        builder.add_edge("tools", "evaluate_edges")
+        builder.add_edge("notify", "evaluate_edges")
+        builder.add_edge("generate_final_answer", "evaluate_edges")
+        builder.add_edge("publish_end", END)
         self.builder = builder
 
-    async def start_task(self, thread_id: str, user_id: str, task: str, plan: str):
-        thread = {"configurable": {"thread_id": thread_id}}
+    async def start_task(self, context: dict, plan: str):
+        thread = {"configurable": {"thread_id": context["run_id"]}}
 
         stripped = strip_reactflow_metadata(plan)
         nodes = stripped["nodes"]
         edges = stripped["edges"]
+
+        logger.info(f"NODES: {nodes}")
+        logger.info(f"EDGES: {edges}")
 
         dependencies = {node["id"]: [] for node in nodes}
         for edge in edges:
@@ -288,19 +409,38 @@ Schema:
             source = edge["source"]
             dependencies[target].append(source)
 
+        # form Edge objects from reactflow edges
+        edges_objs = [
+            self.Edge(
+                source=e["source"],
+                target=e["target"],
+                type=e.get("type", "normal"),
+                condition=e.get("condition"),
+                max_iterations=e.get("max_iterations")
+            )
+            for e in edges
+        ]
+
+        logger.info(f"Parsed edges: {edges_objs}")
+
+        node_state = {node["id"]: "pending" for node in nodes}
+        node_iterations = {node["id"]: 0 for node in nodes}
+
         initial_state = {
-            "task": task,
+            "context": context,
             "plan": stripped,
             "nodes": nodes,
-            "edges": edges,
+            "edges": edges_objs,
             "dependencies": dependencies,
-            "thread_id": thread_id,
-            "user_id": user_id,
             "completed_steps": {},
             "current_node": None,
-            "execution_history": [],
             "thoughts": "",
-            "final": False, 
+            "call_final_ans": False, 
+            "terminate": False,
+            "notify": False,
+            "answer": "",
+            "node_iterations": node_iterations,
+            "node_state": node_state
         }
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
@@ -311,8 +451,8 @@ Schema:
             except Exception as e:
                 logger.exception("Error starting graph")
 
-    async def continue_task(self, thread_id: str, user_id: str, tool_result: dict):
-        thread = {"configurable": {"thread_id": thread_id}}
+    async def continue_task(self, context: dict, tool_result: dict):
+        thread = {"configurable": {"thread_id": context["run_id"]}}
 
         async with AsyncPostgresSaver.from_conn_string(self.db_uri) as checkpointer:
             await checkpointer.setup()
@@ -322,14 +462,22 @@ Schema:
             current_node = state["current_node"] 
             completed_steps = dict(state.get("completed_steps", {}))
             completed_steps[current_node] = tool_result
-            execution_history = state.get("execution_history", [])
-            execution_history.append(current_node)
+
+            node_iterations = dict(state.get("node_iterations", {}))
+            node_iterations[current_node] = node_iterations.get(current_node, 0) + 1
+
+            node_state = dict(state["node_state"])
+            node_state[current_node] = "completed"
         
             graph = self.builder.compile(interrupt_after=["tools"], checkpointer=checkpointer)
 
             await graph.aupdate_state(
                 thread,
-                {"completed_steps": completed_steps, "execution_history": execution_history}
+                {
+                    "completed_steps": completed_steps, 
+                    "node_state": node_state,
+                    "node_iterations": node_iterations
+                }
             )
             try:
                 await graph.ainvoke(None, config=thread)
@@ -345,6 +493,7 @@ Schema:
 
             ai_message = self.llm.invoke([sys_msg])
             raw = ai_message.content
+            logger.info(f"Raw: {raw}")
 
             try:
                 parsed = json.loads(raw)
@@ -358,3 +507,60 @@ Schema:
 
         logger.error("All retries failed")
         return None
+    
+    def get_ready_nodes(self, state):
+        ready_nodes = []
+        node_state = state["node_state"]
+
+        def satisfied(dep):
+            return node_state.get(dep) in {"completed", "skipped"}
+
+        for node in state["nodes"]:
+            node_id = node["id"]
+            if node_id in ("START", "END") or node_state[node_id] != "pending":
+                continue
+            if all(satisfied(d) for d in state["dependencies"].get(node_id, [])):
+                ready_nodes.append(node)
+        return ready_nodes
+
+    async def llm_check_condition(self, edge, completed_steps):
+        logger.info("CHECKING CONDITION")
+        def build_sys_msg(previous_output=None, validation_error=None):
+            feedback_block = ""
+            if validation_error:
+                feedback_block = f"""
+PREVIOUS OUTPUT WAS INVALID:
+{previous_output}
+
+VALIDATION ERROR:
+{validation_error}
+
+You MUST fix the error and produce a VALID JSON object that strictly conforms to the schema.
+Do NOT repeat the same mistake.
+"""
+
+            return SystemMessage(content=f"""
+You are an execution agent evaluating a workflow condition in a workflow node.
+
+Condition to evaluate:
+{edge.condition}
+
+Completed workflow steps (JSON):
+{json.dumps(completed_steps, indent=2)}
+
+{feedback_block}
+
+Rules:
+1. Evaluate the condition using the outputs from previous steps.
+2. You may extract numbers or categorical information from text if necessary.
+3. Do NOT invent data that isn’t present.
+4. Respond ONLY in the exact JSON format below.
+
+Required JSON output:
+{{
+"result": True/False
+}}
+""")
+
+        result = self.invoke_with_retries(build_sys_msg, self.ConditionSchema)
+        return result.result

@@ -15,4 +15,7 @@ class Settings(BaseSettings):
     PLAN_DRAFT_EXCHANGE: str = "plan-draft"
     AGENT_DB: str = "host=localhost port=6502 dbname=AutoOpsAgent user=postgres password=password"
 
+    # with notif service
+    NOTIF_CALL_EXCHANGE: str = "notif-call"
+
 settings = Settings()

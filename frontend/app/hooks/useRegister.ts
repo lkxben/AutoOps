@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query'
-import { apiPost } from '@/app/lib/api'
 import { useAuth } from '@/app/contexts/AuthContext'
 
 export function useRegister() {

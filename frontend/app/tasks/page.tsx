@@ -8,6 +8,7 @@ import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
 import TaskSection from '../components/TaskSection'
+import EmptyState from '../components/EmptyState'
 
 export default function TaskSummaryDashboard() {
   const { isAuthenticated } = useAuth()
@@ -16,7 +17,10 @@ export default function TaskSummaryDashboard() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -65,8 +69,12 @@ export default function TaskSummaryDashboard() {
     [TaskStatus.Completed, TaskStatus.Failed].includes(t.status)
   )
 
-  if (!isAuthenticated || loading) return <LoadingScreen />
+  if (loading) return <LoadingScreen />
+  if (!isAuthenticated) return <Error error="You must be logged in to view tasks." />
   if (error) return <Error error={error} />
+  if (!tasks.length) {
+    return <EmptyState message="No tasks yet" />
+  }
 
   return (
     <div className="flex flex-col flex-1 w-full min-h-0">

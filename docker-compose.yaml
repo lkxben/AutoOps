@@ -106,6 +106,20 @@ services:
     networks:
       - backend
 
+  notification-service:
+    build:
+      context: ./NotificationService
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      NOTIF_DB: "postgresql://postgres:password@postgres-auto:5432/AutoOps"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+
   # External-facing microservices
   api-gateway:
     build:
@@ -120,6 +134,7 @@ services:
       Jwt__ExpiryMinutes: 180
       Grpc__AuthService: "http://auth-service:5002"
       Grpc__WorkflowService: "http://workflow-service:5003"
+      NotifServiceUrl: "http://notification-service:8000"
     ports:
       - "5001:5001"
     depends_on:

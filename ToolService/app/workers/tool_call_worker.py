@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from app.messaging.tool_result_publisher import AgentQueuePublisher
+from app.messaging.tool_result_publisher import ToolResultPublisher
 import app.tools.tools as tools
 import logging
 from app.workers.mcp import MCPResponse, MCPRequest
@@ -17,14 +17,24 @@ for name, fn in inspect.getmembers(tools, inspect.isfunction):
         "description": fn.__doc__ or ""
     }
 
-publisher = AgentQueuePublisher()
+publisher = ToolResultPublisher()
+tools_with_context = {"send_notification"}
 
-async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict, context):
+async def _run_and_publish(fn, inputs: dict, context):
     try:
+        sig = inspect.signature(fn)
+
+        if fn.__name__ in tools_with_context and "context" in sig.parameters:
+            inputs = {**inputs, "context": context}
+
+        logger.info(f"[ToolWorker] Running tool {fn.__name__} with inputs {inputs}")
+
         if inspect.iscoroutinefunction(fn):
             result = await fn(**inputs)
         else:
             result = fn(**inputs)
+
+        logger.info(f"[ToolWorker] Tool {fn.__name__} finished successfully")
         
         mcp_response = MCPResponse(
             output={
@@ -37,17 +47,20 @@ async def _run_and_publish(task_id: str, user_id: str, fn, inputs: dict, context
 
         await publisher.publish({
             "event_type": "tool_result",
-            "task_id": task_id,
-            "user_id": user_id,
             "response": mcp_response.dict()
         })
 
     except Exception as e:
+        logger.exception(f"[ToolWorker] Error running tool {fn.__name__}")
+        mcp_response = MCPResponse(
+            output={
+                "error": str(e)
+            },
+            context={**context}
+        )
         await publisher.publish({
             "event_type": "error",
-            "task_id": task_id,
-            "user_id": user_id,
-            "error": str(e)
+            "response": mcp_response.dict()
         })
 
 async def handle_tool_call(payload: dict):
@@ -62,24 +75,22 @@ async def handle_tool_call(payload: dict):
         logger.error(f"[ToolWorker] Invalid MCPRequest: {e}")
         return
 
-    task_id = mcp_request.context.get("task_id")
-    user_id = mcp_request.context.get("user_id")
     tool_type = mcp_request.tool_name
     inputs = mcp_request.inputs
     context = mcp_request.context
-
-    logger.info(f"[ToolWorker] Calling tool {tool_type} with inputs {inputs}")
-
+    
     if tool_type not in available_tools:
-        asyncio.create_task(
-            publisher.publish({
-                "event_type": "error",
-                "task_id": task_id,
-                "user_id": user_id,
+        mcp_response = MCPResponse(
+            output={
                 "error": f"Unknown tool: {tool_type}"
-            })
+            },
+            context={**context}
         )
+        await publisher.publish({
+            "event_type": "error",
+            "response": mcp_response.dict()
+        })
         return
 
     fn = available_tools[tool_type]["fn"]
-    await _run_and_publish(task_id, user_id, fn, inputs, context)
+    await _run_and_publish(fn, inputs, context)

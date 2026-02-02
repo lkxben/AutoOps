@@ -8,7 +8,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition, ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from app.agent.agent_helper import publish_plan_draft, complete_minimal_plan, tool_registry
+from app.agent.agent_helper import publish_plan_draft, tool_registry
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,15 +66,16 @@ Validation rules:
 - Each node represents exactly one tool call.
 - Every node referenced by an edge must exist.
 - Only AVAILABLE TOOLS are used with correct inputs.
-- Do not compute results; only use symbolic $<step_id> references.
 - Identify any extra/unneeded steps beyond what is necessary to accomplish the USER TASK.
 - Ignore duplicate or non-sequential step IDs.
 - Ignore formatting issues like nodes before edges.
 
 PLAN FORMAT EXAMPLE:
-1|multiply|a=6,b=7|Multiply 6 and 7
-2|add|a=5,b=$1|Add 5 to the result of step 1
+1|multiply|Multiply 6 and 7
+2|add|Add 5 to the result of step 1
+3|send_notification|Send result via Telegram
 1->2
+2->3|condition: result > 10
 
 AVAILABLE TOOLS:
 {self.tool_descriptions}
@@ -130,17 +131,19 @@ GUIDELINES:
 3. Produce **minimal steps**; avoid duplication or unnecessary computation.
 4. Step IDs must be **unique**. Gaps are allowed. Order of IDs does not matter.
 5. List **all nodes first**, then all edges.
-6. Node format: step_id|tool|arg1=val,arg2=val|short description
-7. Edge format: from->to, connecting nodes that depend on each other.
-8. Do **not compute results**; use symbolic $<step_id> references.
+6. Node format: step_id|tool|short description
+7. **Normal edges**: from->to
+8. **Conditional edges**: from->to|condition: <descriptive text>
 9. Avoid filler, extra searches, or unrelated tool calls.
 10. Plain text only. No JSON, no markdown, no commentary.
 
-EXAMPLE USER TASK: 5 + 6 * 7
+EXAMPLE USER TASK: What is 5 + 6 * 7? If it is greater than 10, tell me on Telegram 
 EXAMPLE PLAN:
-1|multiply|a=6,b=7|Multiply 6 and 7
-2|add|a=5,b=$1|Add 5 to the result of step 1
+1|multiply|Multiply 6 and 7
+2|add|Add 5 to the result of step 1
+3|send_notification|Send result via Telegram
 1->2
+2->3|condition: result > 10
 
 AVAILABLE TOOLS:
 {self.tool_descriptions}
@@ -155,7 +158,8 @@ USER TASK:
                 logger.exception("Planner LLM failed")
                 raise
 
-            completed_plan = complete_minimal_plan(ai_msg.content)
+            logger.info(f"Raw plan: {ai_msg.content}")
+            completed_plan = ai_msg.content
 
             return {
                 "previous_plan": completed_plan,

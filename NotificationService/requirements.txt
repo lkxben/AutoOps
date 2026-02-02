@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+aio-pika
+pydantic
+python-dotenv
+pydantic-settings
+aiohttp
+asyncpg

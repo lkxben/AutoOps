@@ -27,6 +27,7 @@ async def startup():
         "tool_result": asyncio.create_task(start_tool_result_consumer()),
         "plan_created": asyncio.create_task(start_plan_created_consumer()),
     }
+    app.state.keep_alive = asyncio.create_task(asyncio.Event().wait())
 
 @app.get("/health")
 def health():
@@ -34,6 +35,13 @@ def health():
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    if hasattr(app.state, "keep_alive"):
+        app.state.keep_alive.cancel()
+        try:
+            await app.state.keep_alive
+        except asyncio.CancelledError:
+            pass
+
     for t in app.state.consumers.values():
         t.cancel()
         try:

@@ -16,6 +16,13 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { layoutGraph } from "../lib/layoutGraph"
 import GraphNode from "./GraphNode"
+import ConditionalEdge from "./ConditionalEdge"
+
+const EDGE_TYPES = {
+  conditional: ConditionalEdge
+}
+
+const NODE_TYPES = { custom: GraphNode }
 
 type TaskGraphProps = {
   nodes: Node[]
@@ -23,8 +30,6 @@ type TaskGraphProps = {
   setPlan: (nodes: Node[], edges: Edge[]) => void
   onSubmitPlan: (nodes: Node[], edges: Edge[]) => void
 }
-
-const NODE_TYPES = { custom: GraphNode }
 
 export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskGraphProps) {
   const updateNodes = useCallback((updatedNodes: Node[]) => {
@@ -41,13 +46,23 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
   const onConnect = useCallback((connection: Connection) => {
     const { source, target, sourceHandle, targetHandle } = connection
     if (!source || !target) return
+
+    const isConditional = confirm("Is this a conditional edge? (OK = yes, Cancel = no)")
+
+    const edgeType: 'normal' | 'conditional' = isConditional ? 'conditional' : 'normal'
+    const condition = isConditional ? prompt("Enter condition (JS expression, e.g., x > 5):", "") : undefined
+
     const newEdge: Edge = {
       id: `${source}-${target}`,
       source,
       target,
+      type: edgeType === 'conditional' ? 'conditional' : 'default',
       sourceHandle: sourceHandle ?? undefined,
       targetHandle: targetHandle ?? undefined,
+      label: edgeType === 'conditional' ? condition : undefined,
+      data: { edgeType, condition, maxIterations: undefined }
     }
+
     updateEdges([...edges, newEdge])
   }, [edges, updateEdges])
 
@@ -98,6 +113,7 @@ export default function TaskGraph({ nodes, edges, setPlan, onSubmitPlan }: TaskG
         nodes={nodes.map(n => ({ ...n, type: "custom" }))}
         edges={edges}
         nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

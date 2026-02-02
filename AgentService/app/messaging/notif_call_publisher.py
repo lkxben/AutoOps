@@ -2,7 +2,7 @@ import aio_pika
 import json
 from app.config import settings
 
-class ToolResultPublisher:
+class NotifCallPublisher:
     def __init__(self):
         self.connection = None
         self.channel = None
@@ -16,7 +16,7 @@ class ToolResultPublisher:
         self.channel = await self.connection.channel()
 
         self.exchange = await self.channel.declare_exchange(
-            settings.TOOL_RESULT_EXCHANGE,
+            settings.NOTIF_CALL_EXCHANGE,
             aio_pika.ExchangeType.FANOUT,
             durable=True
         )

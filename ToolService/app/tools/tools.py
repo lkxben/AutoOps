@@ -3,6 +3,7 @@ from ddgs import DDGS
 from bs4 import BeautifulSoup
 from readability import Document
 import re
+# from app.messaging.notif_call_publisher import NotifCallPublisher
 
 # arithmetic
 def add(a: int, b: int) -> int:
@@ -52,7 +53,7 @@ def search_web(query: str, max_results: int = 5):
     return results
 
 # web scrap
-def web_scrape_text(url: str, max_chars: int = 8000) -> str:
+def web_scrape_text(url: str, max_chars: int = 4000) -> str:
     """
 Fetch a webpage and extract its main readable text (no JS, no interaction).
 Use after web_search when a relevant URL is known.
@@ -60,7 +61,9 @@ Returns cleaned plain text.
     """
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; AgenticAI/1.0)"
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.5993.90 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
     }
 
     with httpx.Client(follow_redirects=True, timeout=10) as client:

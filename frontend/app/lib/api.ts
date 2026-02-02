@@ -5,7 +5,9 @@ export async function apiGet(endpoint: string) {
     credentials: 'include',
   });
   if (!res.ok) throw new Error('API request failed');
-  return res.json();
+
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 export async function apiPost(endpoint: string, data: any) {
@@ -16,7 +18,9 @@ export async function apiPost(endpoint: string, data: any) {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('API request failed');
-  return res.json();
+
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 export async function apiPut(endpoint: string, data: any) {
@@ -27,7 +31,9 @@ export async function apiPut(endpoint: string, data: any) {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('API request failed');
-  return res.json();
+
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 export async function apiDelete(endpoint: string) {
@@ -36,5 +42,7 @@ export async function apiDelete(endpoint: string) {
     credentials: 'include',
   });
   if (!res.ok) throw new Error('API request failed');
-  return res.json();
+
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
