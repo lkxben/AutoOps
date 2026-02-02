@@ -7,7 +7,7 @@ import { TaskStatus, TaskModel } from '@/app/lib/types'
 import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
-import TaskSection from '../components/TaskSection'
+import TaskSection from '../components/RunColumn'
 import EmptyState from '../components/EmptyState'
 
 export default function TaskSummaryDashboard() {

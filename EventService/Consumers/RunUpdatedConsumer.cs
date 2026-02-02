@@ -88,14 +88,21 @@ namespace EventService.Consumers
                 try
                 {
                     var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-                    var dto = JsonSerializer.Deserialize<RunUpdatedDto>(json);
+                    var integrationDto = JsonSerializer.Deserialize<RunUpdatedIntegrationDto>(json);
 
-                    if (dto == null)
+                    if (integrationDto == null)
                         return;
 
+                    var runDto = new RunUpdatedDto(
+                        RunId: integrationDto.RunId,
+                        UserId: integrationDto.UserId,
+                        Status: integrationDto.Status,
+                        Description: integrationDto.Description
+                    );
+
                     await _hub.Clients
-                        .User(dto.UserId)
-                        .SendAsync("RunUpdated", dto);
+                        .User(runDto.UserId)
+                        .SendAsync("RunUpdated", runDto);
 
                     channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }
