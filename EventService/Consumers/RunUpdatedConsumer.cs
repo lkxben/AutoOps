@@ -8,16 +8,16 @@ using EventService.Hubs;
 
 namespace EventService.Consumers
 {
-    public class TaskUpdatedConsumer : BackgroundService
+    public class RunUpdatedConsumer : BackgroundService
     {
         private readonly IHubContext<TaskHub> _hub;
         private readonly RabbitMQSettings _settings;
-        private const string ExchangeName = "task-updates";
-        private const string QueueName = "event.task-updates.queue";
-        private const string DlqExchangeName = "event.task-updates.dlx";
-        private const string DlqQueueName = "event.task-updates.dlq";
+        private const string ExchangeName = "run-updates";
+        private const string QueueName = "event.run-updates.queue";
+        private const string DlqExchangeName = "event.run-updates.dlx";
+        private const string DlqQueueName = "event.run-updates.dlq";
 
-        public TaskUpdatedConsumer(IHubContext<TaskHub> hub, RabbitMQSettings settings)
+        public RunUpdatedConsumer(IHubContext<TaskHub> hub, RabbitMQSettings settings)
         {
             _hub = hub;
             _settings = settings;
@@ -88,14 +88,14 @@ namespace EventService.Consumers
                 try
                 {
                     var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-                    var dto = JsonSerializer.Deserialize<TaskUpdatedDto>(json);
+                    var dto = JsonSerializer.Deserialize<RunUpdatedDto>(json);
 
                     if (dto == null)
                         return;
 
                     await _hub.Clients
                         .User(dto.UserId)
-                        .SendAsync("TaskUpdated", dto);
+                        .SendAsync("RunUpdated", dto);
 
                     channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }

@@ -87,7 +87,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
-builder.Services.AddHostedService<TaskUpdatedConsumer>();
+builder.Services.AddHostedService<RunUpdatedConsumer>();
 builder.Services.AddHostedService<PlanDraftConsumer>();
 
 var app = builder.Build();
