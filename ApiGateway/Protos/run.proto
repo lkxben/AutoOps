@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+option csharp_namespace = "WorkflowService.Protos";
+
+package RunSvc;
+
+service RunSvc {
+    rpc CreateRun (CreateRunModel) returns (CreateRunResponse);
+    rpc GetUserRuns (GetUserRunsModel) returns (UserRunsResponse);
+}
+
+message CreateRunModel {
+    string userId = 1
+    string taskId = 2;
+}
+
+message CreateRunResponse {
+    string id = 1;
+}
+
+enum RunStatus {
+    PENDING = 0;
+    RUNNING = 1;
+    COMPLETED = 2;
+    FAILED = 3;
+}
+
+message RunModel {
+    string id = 1;
+    string userId = 2;
+    string taskId = 3;
+    string planId = 4;
+    RunStatus status = 5;
+    string result = 6;
+    google.protobuf.Timestamp createdAt = 7;
+    google.protobuf.Timestamp updatedAt = 8;
+}
+
+message GetUserRunsModel {
+    string userId = 1;
+}
+
+message UserRunsResponse {
+    repeated RunModel runs = 1;
+}
