@@ -87,7 +87,7 @@ services:
     environment:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TASK_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowTaskCreated"
-      PLAN_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowPlanCreated"
+      RUN_CREATED_EXCHANGE: "Contracts.Workflow:RunCreated"
       TOOL_CALL_EXCHANGE: "tool-call"
       TOOL_RESULT_EXCHANGE: "tool-result"
       TASK_UPDATED_EXCHANGE: "task-updates"

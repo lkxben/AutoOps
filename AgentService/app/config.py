@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:6000"
     # with workflow service
     TASK_CREATED_EXCHANGE: str = "Contracts.Workflow:WorkflowTaskCreated"
-    PLAN_CREATED_EXCHANGE: str = "Contracts.Workflow:WorkflowPlanCreated"
+    RUN_CREATED_EXCHANGE: str = "Contracts.Workflow:RunCreated"
 
     # with tool service
     TOOL_CALL_EXCHANGE: str = "tool-call"

@@ -58,6 +58,7 @@ builder.Services.AddMassTransit(x =>
 
         cfg.Publish<Contracts.Workflow.WorkflowTaskCreated>(p => p.Durable = true);
         cfg.Publish<Contracts.Workflow.WorkflowPlanCreated>(p => p.Durable = true);
+        cfg.Publish<Contracts.Workflow.RunCreated>(p => p.Durable = true);
 
         cfg.ConfigureEndpoints(context);
     });

@@ -16,7 +16,7 @@ async def get_agent():
         agent = await ExecutorAgent.get_instance(settings.AGENT_DB)
     return agent
 
-async def handle_plan(payload: dict):
+async def handle_run(payload: dict):
     msg_data = payload.get("message", {})
     task = {
         "task_id": msg_data.get("task_id"),
@@ -29,7 +29,7 @@ async def handle_plan(payload: dict):
         "task": task
     }
     plan = msg_data.get("graph")
-    logger.info(f"[PlanCreatedWorker] Starting run {context['run_id']}")
+    logger.info(f"[RunCreatedWorker] Starting run {context['run_id']} for task: {task['title']}")
 
     agent_instance = await get_agent()
     lock = thread_locks[context["run_id"]]

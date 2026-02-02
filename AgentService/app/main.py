@@ -2,7 +2,7 @@ import asyncio
 from fastapi import FastAPI
 from app.messaging.task_created_consumer import start_task_created_consumer
 from app.messaging.tool_result_consumer import start_tool_result_consumer
-from app.messaging.plan_created_consumer import start_plan_created_consumer
+from app.messaging.run_created_consumer import start_run_created_consumer
 import logging
 import sys
 
@@ -25,7 +25,7 @@ async def startup():
     app.state.consumers = {
         "task_created": asyncio.create_task(start_task_created_consumer()),
         "tool_result": asyncio.create_task(start_tool_result_consumer()),
-        "plan_created": asyncio.create_task(start_plan_created_consumer()),
+        "run_created": asyncio.create_task(start_run_created_consumer()),
     }
     app.state.keep_alive = asyncio.create_task(asyncio.Event().wait())
 

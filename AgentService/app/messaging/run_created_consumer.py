@@ -1,14 +1,14 @@
 import json
 import aio_pika
-from app.workers.plan_created_worker import handle_plan
+from app.workers.run_created_worker import handle_run
 from app.config import settings
 
-async def start_plan_created_consumer():
+async def start_run_created_consumer():
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 
-    EXCHANGE_NAME = settings.PLAN_CREATED_EXCHANGE
+    EXCHANGE_NAME = settings.RUN_CREATED_EXCHANGE
     QUEUE_NAME = f"agent.{EXCHANGE_NAME}.queue"
     DLX_NAME = f"{QUEUE_NAME}.dlx"
     DLQ_NAME = f"{QUEUE_NAME}.dlq"
@@ -48,4 +48,4 @@ async def start_plan_created_consumer():
         async for message in queue_iter:
             async with message.process():
                 payload = json.loads(message.body)
-                await handle_plan(payload)
+                await handle_run(payload)

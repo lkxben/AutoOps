@@ -51,7 +51,7 @@ namespace WorkflowService.Protos
             };
             _db.Runs.Add(run);
             await _db.SaveChangesAsync();
-            await _publishEndpoint.Publish(new RunCreated(run.Id, task.Id, task.UserId, task.Prompt));
+            await _publishEndpoint.Publish(new RunCreated(run.Id, task.Id, task.UserId, plan.Id, task.Prompt, task.Title, plan.Graph));
             return new CreateRunResponse { Id = run.Id.ToString() };
         }
 
