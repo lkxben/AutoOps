@@ -57,7 +57,6 @@ builder.Services.AddMassTransit(x =>
         });
 
         cfg.Publish<Contracts.Workflow.WorkflowTaskCreated>(p => p.Durable = true);
-        cfg.Publish<Contracts.Workflow.WorkflowPlanCreated>(p => p.Durable = true);
         cfg.Publish<Contracts.Workflow.RunCreated>(p => p.Durable = true);
 
         cfg.ConfigureEndpoints(context);
@@ -65,7 +64,7 @@ builder.Services.AddMassTransit(x =>
 });
 
 builder.Services.AddHostedService<PlanDraftConsumer>();
-builder.Services.AddHostedService<TaskUpdatedConsumer>();
+builder.Services.AddHostedService<RunUpdatedConsumer>();
 
 var app = builder.Build();
 

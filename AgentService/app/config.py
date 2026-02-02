@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     TOOL_RESULT_EXCHANGE: str = "tool-result"
 
     # with event service
-    TASK_UPDATED_EXCHANGE: str = "task-updates"
+    RUN_UPDATED_EXCHANGE: str = "run-updates"
     PLAN_DRAFT_EXCHANGE: str = "plan-draft"
     AGENT_DB: str = "host=localhost port=6502 dbname=AutoOpsAgent user=postgres password=password"
 

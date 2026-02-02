@@ -90,7 +90,7 @@ services:
       RUN_CREATED_EXCHANGE: "Contracts.Workflow:RunCreated"
       TOOL_CALL_EXCHANGE: "tool-call"
       TOOL_RESULT_EXCHANGE: "tool-result"
-      TASK_UPDATED_EXCHANGE: "task-updates"
+      RUN_UPDATED_EXCHANGE: "run-updates"
       PLAN_DRAFT_EXCHANGE: "plan-draft"
       AGENT_DB: "host=postgres-auto port=5432 dbname=AutoOps user=postgres password=password"
       GROQ_API_KEY: "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"

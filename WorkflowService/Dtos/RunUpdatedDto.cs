@@ -2,9 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace WorkflowService.Dtos
 {
-    public record TaskUpdatedDto(
-        [property: JsonPropertyName("task_id")]
-        string TaskId,
+    public record RunUpdatedDto(
+        [property: JsonPropertyName("run_id")]
+        string RunId,
 
         [property: JsonPropertyName("user_id")]
         string UserId,

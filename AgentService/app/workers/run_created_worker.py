@@ -25,7 +25,7 @@ async def handle_run(payload: dict):
         "title": msg_data.get("title"),
     }
     context = {
-        "run_id": msg_data.get("task_id"),
+        "run_id": msg_data.get("run_id"),
         "task": task
     }
     plan = msg_data.get("graph")

@@ -30,9 +30,6 @@ enum WorkflowTaskStatus {
     PENDING = 0;
     DRAFTED = 1;
     FINALIZED = 2;
-    RUNNING = 3;
-    COMPLETED = 4;
-    FAILED = 5;
 }
 
 message WorkflowTaskModel {

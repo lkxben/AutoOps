@@ -10,20 +10,29 @@ using WorkflowService.Entities;
 
 namespace WorkflowService.Consumers
 {
-    public class TaskUpdatedConsumer : BackgroundService
+    public class RunUpdatedConsumer : BackgroundService
     {
         private readonly RabbitMQSettings _settings;
-        private const string ExchangeName = "task-updates";
-        private const string QueueName = "workflow.task-updates.queue";
-        private const string DlqExchangeName = "workflow.task-updates.dlx";
-        private const string DlqQueueName = "workflow.task-updates.dlq";
+        private const string ExchangeName = "run-updates";
+        private const string QueueName = "workflow.run-updates.queue";
+        private const string DlqExchangeName = "workflow.run-updates.dlx";
+        private const string DlqQueueName = "workflow.run-updates.dlq";
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public TaskUpdatedConsumer(IServiceScopeFactory scopeFactory, RabbitMQSettings settings)
+        public RunUpdatedConsumer(IServiceScopeFactory scopeFactory, RabbitMQSettings settings)
         {
             _scopeFactory = scopeFactory;
             _settings = settings;
         }
+
+        private bool IsValidTransition(RunStatus from, RunStatus to) =>
+        (from, to) switch
+        {
+            (RunStatus.Pending, RunStatus.Running) => true,
+            (RunStatus.Running, RunStatus.Completed) => true,
+            (RunStatus.Running, RunStatus.Failed) => true,
+            _ => false
+        };
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -90,36 +99,36 @@ namespace WorkflowService.Consumers
                 try
                 {
                     var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-                    var dto = JsonSerializer.Deserialize<TaskUpdatedDto>(json);
+                    var dto = JsonSerializer.Deserialize<RunUpdatedDto>(json);
 
                     using var scope = _scopeFactory.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<WorkflowServiceContext>();
 
-                    var taskId = Guid.Parse(dto.TaskId);
-                    var task = await db.WorkflowTasks
-                        .FirstOrDefaultAsync(t => t.Id == taskId);
+                    var runId = Guid.Parse(dto.RunId);
+                    var run = await db.Runs
+                        .FirstOrDefaultAsync(r => r.Id == runId);
 
-                    if (task == null)
-                        throw new Exception("Task not found");
+                    if (run == null)
+                        throw new Exception("Run not found");
 
-                    if (!Enum.IsDefined(typeof(WorkflowTaskStatus), dto.Status))
+                    if (!Enum.IsDefined(typeof(RunStatus), dto.Status))
                     {
-                        throw new InvalidOperationException($"Invalid task status: {dto.Status}");
+                        throw new InvalidOperationException($"Invalid run status: {dto.Status}");
                     }
 
-                    var newStatus = (WorkflowTaskStatus)dto.Status;
+                    var newStatus = (RunStatus)dto.Status;
                     var timestampUnix = ea.BasicProperties?.Timestamp.UnixTime ?? 0;
                     var dt = timestampUnix != 0
                         ? DateTimeOffset.FromUnixTimeSeconds((long)timestampUnix).UtcDateTime
                         : DateTime.UtcNow;
 
-                    if (newStatus > task.Status)
+                    if (IsValidTransition(run.Status, newStatus))
                     {
-                        task.Status = newStatus;
-                        if (task.Status == WorkflowTaskStatus.Completed)
+                        run.Status = newStatus;
+                        if (run.Status == RunStatus.Completed)
                         {
-                            task.Result = dto.Description;
-                            task.UpdatedAt = dt;
+                            run.Result = dto.Description;
+                            run.UpdatedAt = dt;
                         }
 
                         await db.SaveChangesAsync();
