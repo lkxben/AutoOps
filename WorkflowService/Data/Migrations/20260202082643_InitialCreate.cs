@@ -15,6 +15,25 @@ namespace WorkflowService.Data.Migrations
                 name: "workflow");
 
             migrationBuilder.CreateTable(
+                name: "Runs",
+                schema: "workflow",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TaskId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PlanId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    Result = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Runs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowPlans",
                 schema: "workflow",
                 columns: table => new
@@ -54,6 +73,10 @@ namespace WorkflowService.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Runs",
+                schema: "workflow");
+
             migrationBuilder.DropTable(
                 name: "WorkflowPlans",
                 schema: "workflow");

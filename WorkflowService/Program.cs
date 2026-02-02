@@ -91,5 +91,6 @@ while (true)
 
 app.MapGrpcService<WorkflowTaskSvcImp>();
 app.MapGrpcService<WorkflowPlanSvcImp>();
+app.MapGrpcService<RunSvcImp>();
 app.MapGet("/health", () => Results.Ok());
 app.Run();

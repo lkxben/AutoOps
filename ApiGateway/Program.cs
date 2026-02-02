@@ -118,6 +118,13 @@ builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 .ConfigureChannel(o => o.MaxRetryAttempts = 0)
 .AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
 
+builder.Services.AddGrpcClient<RunSvc.RunSvcClient>(o =>
+{
+    o.Address = new Uri(workflowServiceUrl);
+})
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
+
 var app = builder.Build();
 
 app.UseCors();
@@ -346,6 +353,45 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     });
 
     return Results.Ok(new IdDto(result.Id));
+}).RequireAuthorization();
+
+app.MapPost("/runs", async (CreateRunDto dto, HttpContext context, RunSvc.RunSvcClient runClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var result = await runClient.CreateRunAsync(new CreateRunModel
+    {
+        UserId = userId,
+        TaskId = dto.TaskId,
+    });
+
+    return Results.Ok(new IdDto(result.Id));
+}).RequireAuthorization();
+
+app.MapGet("/runs", async (HttpContext context, RunSvc.RunSvcClient runClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var response = await runClient.GetUserRunsAsync(new GetUserRunsModel
+    {
+        UserId = userId
+    });
+
+    var runsDto = response.Runs.Select(run => new RunDto
+    (
+        run.Id,
+        run.UserId,
+        run.TaskId,
+        run.PlanId,
+        run.Status,
+        run.Result,
+        run.CreatedAt.ToDateTime(),
+        run.UpdatedAt?.ToDateTime()
+    ));
+
+    return Results.Ok(runsDto);
 }).RequireAuthorization();
 
 app.MapPost("/notifications/channels", async (AddChannelDto dto, HttpContext context, IHttpClientFactory httpFactory) =>

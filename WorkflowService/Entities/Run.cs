@@ -2,7 +2,7 @@ using WorkflowService.Protos;
 
 namespace WorkflowService.Entities
 {
-    public class WorkflowTask
+    public class Run
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid UserId { get; set; }

@@ -26,9 +26,9 @@ namespace WorkflowService.Protos
             _publishEndpoint = publishEndpoint;
 		}
 
-        public override async Task<CreateRunReponse> CreateRun(CreateRunModel request, ServerCallContext context)
+        public override async Task<CreateRunResponse> CreateRun(CreateRunModel request, ServerCallContext context)
         {
-            var task = _db.WorkflowTasks.FirstOrDefaultAsync(t => t.Id == Guid.Parse(request.TaskId) 
+            var task = await _db.WorkflowTasks.FirstOrDefaultAsync(t => t.Id == Guid.Parse(request.TaskId) 
                 && t.UserId == Guid.Parse(request.UserId));
             
             if (task == null)
@@ -36,7 +36,7 @@ namespace WorkflowService.Protos
                 throw new RpcException(new Status(StatusCode.NotFound, "Task not found or access denied."));
             }
 
-            var plan = _db.WorkflowPlans.FirstOrDefaultAsync(p => p.TaskId == task.Id);
+            var plan = await _db.WorkflowPlans.FirstOrDefaultAsync(p => p.TaskId == task.Id);
 
             if (plan == null)
             {
@@ -48,11 +48,11 @@ namespace WorkflowService.Protos
                 UserId = task.UserId,
                 TaskId = task.Id,
                 PlanId = plan.Id
-            }
-            await _db.Runs.Add(run);
+            };
+            _db.Runs.Add(run);
             await _db.SaveChangesAsync();
             await _publishEndpoint.Publish(new RunCreated(run.Id, task.Id, task.UserId, task.Prompt));
-            return new CreateRunReponse { Id = run.Id.ToString() };
+            return new CreateRunResponse { Id = run.Id.ToString() };
         }
 
         public override async Task<UserRunsResponse> GetUserRuns(GetUserRunsModel request, ServerCallContext context)
@@ -70,4 +70,5 @@ namespace WorkflowService.Protos
             
             return response;
         }
+    }
 }

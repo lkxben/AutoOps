@@ -11,7 +11,7 @@ service RunSvc {
 }
 
 message CreateRunModel {
-    string userId = 1
+    string userId = 1;
     string taskId = 2;
 }
 
