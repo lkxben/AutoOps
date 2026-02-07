@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS dev
+WORKDIR /app
+EXPOSE 5007
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "SchedulerService.csproj", "--urls", "http://0.0.0.0:5001"]
