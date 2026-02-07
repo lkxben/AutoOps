@@ -14,7 +14,6 @@ export default function TaskDashboard() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-
     Promise.all([apiGet('/tasks'), apiGet('/runs')])
       .then(([tasksData, runsData]: [TaskModel[], RunModel[]]) => {
         setTasks(tasksData)
@@ -24,32 +23,20 @@ export default function TaskDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  const taskRunsMap = useMemo(() => {
-    const map: Record<string, RunModel[]> = {}
+  const lastRunMap = useMemo(() => {
+    const map: Record<string, Date> = {}
     runs.forEach(run => {
-      if (!map[run.taskId]) map[run.taskId] = []
-      map[run.taskId].push(run)
+      const runTime = new Date(run.updatedAt ?? run.createdAt)
+      if (!map[run.taskId] || runTime > map[run.taskId]) {
+        map[run.taskId] = runTime
+      }
     })
     return map
   }, [runs])
 
-  const tasksWithLastRun = useMemo(() => {
-    return tasks.map(task => {
-      const taskRuns = taskRunsMap[task.id] || []
-      const latestRun = taskRuns.length
-        ? taskRuns.reduce((prev, curr) => {
-            const prevTime = new Date(prev.updatedAt ?? prev.createdAt).getTime()
-            const currTime = new Date(curr.updatedAt ?? curr.createdAt).getTime()
-            return currTime > prevTime ? curr : prev
-          })
-        : null
-
-      return {
-        ...task,
-        lastRun: latestRun ? new Date(latestRun.updatedAt ?? latestRun.createdAt) : undefined,
-      }
-    })
-  }, [tasks, taskRunsMap])
+  const handleRunCreated = (newRun: RunModel) => {
+    setRuns(prev => [...prev, newRun])
+  }
 
   if (loading) return <p className="text-[var(--color-cyan)] p-4">Loading tasks...</p>
   if (error) return <p className="text-red-500 p-4">Error: {error}</p>
@@ -57,11 +44,12 @@ export default function TaskDashboard() {
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      {tasksWithLastRun.map(task => (
+      {tasks.map(task => (
         <TaskCard
           key={task.id}
           task={task}
-          onRunClick={() => alert(`Run ${task.title}`)}
+          lastRun={lastRunMap[task.id]}
+          onRunCreated={handleRunCreated}
         />
       ))}
     </div>
