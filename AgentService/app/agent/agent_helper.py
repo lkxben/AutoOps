@@ -96,6 +96,7 @@ async def publish_start(context: dict):
     payload = {
         "run_id": context["run_id"],
         "user_id": context["task"]["user_id"],
+        "task_id": context["task"]["task_id"],
         "status": 1,
         "description": "Run started"
     }
@@ -105,6 +106,7 @@ async def publish_result(context: dict, result: str):
     payload = {
         "run_id": context["run_id"],
         "user_id": context["task"]["user_id"],
+        "task_id": context["task"]["task_id"],
         "status": 2,
         "description": result
     }
@@ -114,6 +116,7 @@ async def publish_error(context: dict):
     payload = {
         "run_id": context["run_id"],
         "user_id": context["task"]["user_id"],
+        "task_id": context["task"]["task_id"],
         "status": 3,
         "description": "LLM failed to call tool"
     }

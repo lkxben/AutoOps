@@ -58,6 +58,7 @@ export enum RunStatus {
 export type RunUpdate = {
   runId: string
   userId: string
+  taskId: string
   status: number
   description?: string
 }

@@ -9,6 +9,9 @@ namespace WorkflowService.Dtos
         [property: JsonPropertyName("user_id")]
         string UserId,
 
+        [property: JsonPropertyName("task_id")]
+        string TaskId,
+
         [property: JsonPropertyName("status")]
         int Status,
 

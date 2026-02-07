@@ -96,6 +96,7 @@ namespace EventService.Consumers
                     var runDto = new RunUpdatedDto(
                         RunId: integrationDto.RunId,
                         UserId: integrationDto.UserId,
+                        TaskId: integrationDto.TaskId,
                         Status: integrationDto.Status,
                         Description: integrationDto.Description
                     );

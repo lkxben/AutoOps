@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { apiGet } from '@/app/lib/api'
-import { RunModel, RunStatus } from '@/app/lib/types'
+import { RunModel, RunStatus, TaskModel } from '@/app/lib/types'
 import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
@@ -13,6 +13,7 @@ import EmptyState from '@/app/components/EmptyState'
 export default function RunDashboard() {
   const { isAuthenticated } = useAuth()
   const [runs, setRuns] = useState<RunModel[]>([])
+  const [tasks, setTasks] = useState<TaskModel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -25,51 +26,79 @@ export default function RunDashboard() {
     setLoading(true)
     setError(null)
 
-    apiGet('/runs')
-      .then((data: RunModel[]) => setRuns(data))
+    Promise.all([apiGet('/runs'), apiGet('/tasks')])
+      .then(([runsData, tasksData]: [RunModel[], TaskModel[]]) => {
+        setRuns(runsData)
+        setTasks(tasksData)
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [isAuthenticated])
+
+  const taskMap = useMemo(() => {
+    const map: Record<string, TaskModel> = {}
+    tasks.forEach(t => (map[t.id] = t))
+    return map
+  }, [tasks])
+
+  const enrichedRuns = useMemo(() => {
+    return runs.map(r => ({
+      ...r,
+      task: taskMap[r.taskId],
+    }))
+  }, [runs, taskMap])
 
   const { updates: runUpdates } = useTaskHubUpdates()
 
   useEffect(() => {
     if (!runUpdates?.length) return
 
-    setRuns(prev => {
-      const updatedRuns = [...prev]
-
-      runUpdates.forEach(update => {
-        const existingIndex = updatedRuns.findIndex(r => r.id === update.runId)
-        const runData = {
-          id: update.runId,
-          userId: update.userId,
-          taskId: '',
-          planId: '',
-          status: update.status,
-          result: update.description,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }
-
+    runUpdates.forEach(async update => {
+      setRuns(prev => {
+        const existingIndex = prev.findIndex(r => r.id === update.runId)
         if (existingIndex >= 0) {
-          updatedRuns[existingIndex] = { ...updatedRuns[existingIndex], ...runData }
+          const updatedRun = {
+            ...prev[existingIndex],
+            status: update.status,
+            result: update.description,
+            updatedAt: new Date().toISOString(),
+          }
+          const newRuns = [...prev]
+          newRuns[existingIndex] = updatedRun
+          return newRuns
         } else {
-          updatedRuns.push(runData)
+          const newRun: RunModel = {
+            id: update.runId,
+            userId: update.userId,
+            taskId: update.taskId,
+            planId: '',
+            status: update.status,
+            result: update.description,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+
+          if (!taskMap[update.taskId]) {
+            apiGet(`/tasks/${update.taskId}`)
+            .then((task: TaskModel) => {
+              setTasks(prevTasks => [...prevTasks, task])
+            })
+            .catch(err => console.error('Failed to fetch task for new run:', err))
+          }
+
+          return [...prev, newRun]
         }
       })
-
-      return updatedRuns
     })
-  }, [runUpdates])
+  }, [runUpdates, taskMap])
 
   const sortedRuns = useMemo(() => {
-    return [...runs].sort((a, b) => {
+    return [...enrichedRuns].sort((a, b) => {
       const aTime = a.updatedAt ?? a.createdAt
       const bTime = b.updatedAt ?? b.createdAt
       return new Date(bTime).getTime() - new Date(aTime).getTime()
     })
-  }, [runs])
+  }, [enrichedRuns])
 
   const upcoming = sortedRuns.filter(r => r.status === RunStatus.Pending)
   const running = sortedRuns.filter(r => r.status === RunStatus.Running)
