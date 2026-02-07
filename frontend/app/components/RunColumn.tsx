@@ -12,7 +12,7 @@ export default function RunColumn({
 }) {
 
   return (
-    <section className="flex flex-col gap-4 flex-1 px-2 py-2">
+    <section className="flex flex-col gap-4 flex-1 px-2 py-4">
       <div
         className={`flex items-center justify-between px-4 py-2 rounded-lg ${color} mx-auto`}
         style={{ width: '95%' }}
