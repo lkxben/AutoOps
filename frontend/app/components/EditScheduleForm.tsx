@@ -1,34 +1,79 @@
 'use client'
 
-import { useState } from 'react'
-import { ScheduleType } from '@/app/lib/types'
+import { useState, useEffect } from 'react'
+import { ScheduleModel, ScheduleType } from '@/app/lib/types'
+import { apiPatch } from '@/app/lib/api'
 
-interface ScheduleCreateFormProps {
-  onCreate: (cronEx: string) => void
+interface ScheduleEditFormProps {
+  schedule: ScheduleModel
+  onEdit: (updated: ScheduleModel) => void
+  onCancel: () => void
   browserTimezone: string
 }
 
-export default function ScheduleCreateForm({ onCreate, browserTimezone }: ScheduleCreateFormProps) {
+export default function ScheduleEditForm({
+  schedule,
+  onEdit,
+  onCancel,
+  browserTimezone,
+}: ScheduleEditFormProps) {
   const [type, setType] = useState<ScheduleType>('daily')
   const [interval, setInterval] = useState(1)
   const [time, setTime] = useState('09:00')
   const [weekday, setWeekday] = useState(1)
 
+  useEffect(() => {
+    const parts = schedule.cronEx.split(' ')
+    const [min, hour, , , weekdayPart] = parts
+
+    if (min.startsWith('*/')) {
+      setType('minutes')
+      setInterval(parseInt(min.replace('*/', ''), 10))
+    } else if (hour.startsWith('*/')) {
+      setType('hours')
+      setInterval(parseInt(hour.replace('*/', ''), 10))
+    } else {
+      const utcHour = parseInt(hour, 10)
+      const utcMinute = parseInt(min, 10)
+      const now = new Date()
+      const localDate = new Date(Date.UTC(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        utcHour,
+        utcMinute
+      ))
+      const localHour = localDate.getHours()
+      const localMinute = localDate.getMinutes()
+      const timeStr = `${localHour.toString().padStart(2, '0')}:${localMinute.toString().padStart(2, '0')}`
+
+      if (weekdayPart === '*') {
+        setType('daily')
+        setTime(timeStr)
+      } else {
+        setType('weekly')
+        setTime(timeStr)
+        setWeekday(parseInt(weekdayPart, 10))
+      }
+    }
+  }, [schedule.cronEx])
+
   function buildCronUtc() {
     if (type === 'minutes') return `*/${interval} * * * *`
     if (type === 'hours') return `0 */${interval} * * *`
 
-    const [hour, minute] = time.split(':').map(Number)
+    const [hourStr, minStr] = time.split(':')
+    const hour = parseInt(hourStr, 10)
+    const minute = parseInt(minStr, 10)
+
     const now = new Date()
     const localDate = new Date(
       now.getFullYear(),
       now.getMonth(),
       now.getDate(),
       hour,
-      minute,
-      0
+      minute
     )
-
     const utcHour = localDate.getUTCHours()
     const utcMinute = localDate.getUTCMinutes()
 
@@ -45,14 +90,15 @@ export default function ScheduleCreateForm({ onCreate, browserTimezone }: Schedu
     }
   }
 
-  const handleCreateClick = () => {
+  const handleSave = async () => {
     const cronEx = buildCronUtc()
-    onCreate(cronEx)
+    const updated = await apiPatch(`/schedules/${schedule.id}`, { cronEx, timezone: 'UTC' })
+    onEdit(updated)
   }
 
   return (
     <div className="border rounded-xl p-4 mb-4 bg-gray-50">
-      <h3 className="font-semibold mb-3">New Schedule</h3>
+      <h3 className="font-semibold mb-3">Edit Schedule</h3>
 
       <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-4">
         <div className="flex flex-wrap gap-2">
@@ -97,12 +143,18 @@ export default function ScheduleCreateForm({ onCreate, browserTimezone }: Schedu
           <div className="text-xs font-mono">UTC cron: {buildCronUtc()}</div>
         </div>
 
-        <div>
+        <div className="flex flex-col gap-2">
           <button
             className="bg-cyan-500 text-white px-4 py-2 rounded hover:bg-cyan-600"
-            onClick={handleCreateClick}
+            onClick={handleSave}
           >
-            Create
+            Save
+          </button>
+          <button
+            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            onClick={onCancel}
+          >
+            Cancel
           </button>
         </div>
       </div>

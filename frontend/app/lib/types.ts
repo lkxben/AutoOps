@@ -76,3 +76,5 @@ export type ScheduleModel = {
   timezone: string,
   nextRunAt: string
 }
+
+export type ScheduleType = 'minutes' | 'hours' | 'daily' | 'weekly'

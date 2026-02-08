@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost, apiDelete } from '@/app/lib/api'
-import { TaskModel, ScheduleModel } from '@/app/lib/types'
+import { TaskModel, ScheduleModel, ScheduleType } from '@/app/lib/types'
 import ScheduleCard from './ScheduleCard'
-import ScheduleCreateForm, { ScheduleType } from '@/app/components/CreateScheduleForm'
+import ScheduleCreateForm from '@/app/components/CreateScheduleForm'
 
 interface TaskSchedulePanelProps {
   task: TaskModel
@@ -41,6 +41,12 @@ export default function TaskSchedulePanel({ task, onClose }: TaskSchedulePanelPr
     fetchSchedules()
   }
 
+  const handleUpdate = (updated: ScheduleModel) => {
+    setSchedules(prev =>
+      prev.map(s => (s.id === updated.id ? updated : s))
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -60,8 +66,9 @@ export default function TaskSchedulePanel({ task, onClose }: TaskSchedulePanelPr
             <ScheduleCard
               key={schedule.id}
               schedule={schedule}
-              onEdit={() => console.log('edit')}
+              onEdit={handleUpdate}
               onDelete={handleDelete}
+              browserTimezone={browserTimezone}
             />
           ))}
         </div>
