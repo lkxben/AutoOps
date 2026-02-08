@@ -3,9 +3,9 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 option csharp_namespace = "SchedulerService.Protos";
 
-package SchedulerSvc;
+package ScheduleSvc;
 
-service SchedulerSvc {
+service ScheduleSvc {
     rpc CreateSchedule (CreateScheduleModel) returns (CreateScheduleResponse);
     rpc EditSchedule (EditScheduleModel) returns (EditScheduleResponse);
     rpc DeleteSchedule (DeleteScheduleModel) returns (DeleteScheduleResponse);

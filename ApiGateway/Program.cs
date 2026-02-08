@@ -94,6 +94,9 @@ var authServiceUrl = builder.Configuration["Grpc:AuthService"]
 var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
                              ?? throw new Exception("Grpc:WorkflowService configuration is missing");
 
+var schedulerService = builder.Configuration["Grpc:SchedulerService"] 
+                             ?? throw new Exception("Grpc:SchedulerService configuration is missing");
+
 var notifServiceUrl = builder.Configuration["NotifServiceUrl"] 
                       ?? throw new Exception("NotifServiceUrl configuration is missing");
 
@@ -121,6 +124,13 @@ builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 builder.Services.AddGrpcClient<RunSvc.RunSvcClient>(o =>
 {
     o.Address = new Uri(workflowServiceUrl);
+})
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
+
+builder.Services.AddGrpcClient<ScheduleSvc.ScheduleSvcClient>(o =>
+{
+    o.Address = new Uri(schedulerServiceUrl);
 })
 .ConfigureChannel(o => o.MaxRetryAttempts = 0)
 .AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
