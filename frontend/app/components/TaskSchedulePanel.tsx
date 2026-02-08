@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { apiGet, apiPost, apiDelete } from '@/app/lib/api'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import ScheduleCard from './ScheduleCard'
-
-type ScheduleType = 'minutes' | 'hours' | 'daily' | 'weekly'
+import ScheduleCreateForm, { ScheduleType } from '@/app/components/CreateScheduleForm'
 
 interface TaskSchedulePanelProps {
   task: TaskModel
@@ -16,14 +15,8 @@ export default function TaskSchedulePanel({ task, onClose }: TaskSchedulePanelPr
   const [schedules, setSchedules] = useState<ScheduleModel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
   const [showCreate, setShowCreate] = useState(false)
-
-  const [type, setType] = useState<ScheduleType>('daily')
-  const [interval, setInterval] = useState(1)
-  const [time, setTime] = useState('09:00')
-  const [weekday, setWeekday] = useState(1)
-  const [timezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
   const fetchSchedules = () => {
     setLoading(true)
@@ -42,51 +35,8 @@ export default function TaskSchedulePanel({ task, onClose }: TaskSchedulePanelPr
     fetchSchedules()
   }
 
-  function buildCronUtc() {
-    if (type === 'minutes') return `*/${interval} * * * *`
-    if (type === 'hours') return `0 */${interval} * * *`
-
-    const [hour, minute] = time.split(':').map(Number)
-
-    const now = new Date()
-    const localDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      hour,
-      minute,
-      0
-    )
-
-    const utcHour = localDate.getUTCHours()
-    const utcMinute = localDate.getUTCMinutes()
-
-    if (type === 'daily') return `${utcMinute} ${utcHour} * * *`
-    return `${utcMinute} ${utcHour} * * ${weekday}`
-  }
-
-  function cronPreview() {
-    switch (type) {
-      case 'minutes':
-        return `Every ${interval} minute(s)`
-      case 'hours':
-        return `Every ${interval} hour(s)`
-      case 'daily':
-        return `Every day at ${time}`
-      case 'weekly':
-        return `Every week on ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][weekday]} at ${time}`
-    }
-  }
-
-  const handleCreate = async () => {
-    const cronEx = buildCronUtc()
-
-    await apiPost('/schedules', {
-      taskId: task.id,
-      cronEx,
-      timezone,
-    })
-
+  const handleCreate = async (cronEx: string) => {
+    await apiPost('/schedules', { taskId: task.id, cronEx, timezone: 'UTC' })
     setShowCreate(false)
     fetchSchedules()
   }
@@ -117,58 +67,7 @@ export default function TaskSchedulePanel({ task, onClose }: TaskSchedulePanelPr
         </div>
 
         {showCreate && (
-          <div className="border rounded-xl p-4 mb-4 bg-gray-50">
-            <h3 className="font-semibold mb-2">New Schedule</h3>
-
-            <div className="flex flex-wrap gap-2 mb-3">
-              <select value={type} onChange={e => setType(e.target.value as ScheduleType)} className="border rounded px-2 py-1">
-                <option value="minutes">Every N minutes</option>
-                <option value="hours">Every N hours</option>
-                <option value="daily">Daily at time</option>
-                <option value="weekly">Weekly at time</option>
-              </select>
-
-              {(type === 'minutes' || type === 'hours') && (
-                <input
-                  type="number"
-                  min={1}
-                  value={interval}
-                  onChange={e => setInterval(Number(e.target.value))}
-                  className="border rounded px-2 py-1 w-20"
-                />
-              )}
-
-              {(type === 'daily' || type === 'weekly') && (
-                <input
-                  type="time"
-                  value={time}
-                  onChange={e => setTime(e.target.value)}
-                  className="border rounded px-2 py-1"
-                />
-              )}
-
-              {type === 'weekly' && (
-                <select value={weekday} onChange={e => setWeekday(Number(e.target.value))} className="border rounded px-2 py-1">
-                  {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) => (
-                    <option key={i} value={i}>{d}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div className="text-xs text-gray-500 mb-2">
-              Preview: <span className="font-medium">{cronPreview()}</span><br/>
-              Local timezone: {timezone}<br/>
-              Stored cron (UTC): <span className="font-mono">{buildCronUtc()}</span>
-            </div>
-
-            <button
-              className="bg-cyan-500 text-white px-4 py-2 rounded hover:bg-cyan-600"
-              onClick={handleCreate}
-            >
-              Create schedule
-            </button>
-          </div>
+          <ScheduleCreateForm onCreate={handleCreate} browserTimezone={browserTimezone} />
         )}
 
         <button
@@ -189,9 +88,7 @@ export default function TaskSchedulePanel({ task, onClose }: TaskSchedulePanelPr
           animation: slide-up 0.7s forwards;
         }
         @keyframes slide-up {
-          to {
-            transform: translateY(0);
-          }
+          to { transform: translateY(0); }
         }
       `}</style>
     </div>
