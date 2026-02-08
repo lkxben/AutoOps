@@ -30,14 +30,14 @@ enum ScheduleStatus {
 
 message EditScheduleModel {
     string id = 1;
-    string cronEx = 2;
-    ScheduleStatus status = 3;
+    ScheduleStatus status = 2;
+    string cronEx = 3;
 }
 
 message EditScheduleResponse {
     string id = 1;
-    string cronEx = 2;
-    ScheduleStatus status = 3;
+    ScheduleStatus status = 2;
+    string cronEx = 3;
     string timezone = 4;
     google.protobuf.Timestamp nextRunAt = 5;
 }

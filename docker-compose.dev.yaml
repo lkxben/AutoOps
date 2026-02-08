@@ -135,6 +135,32 @@ services:
     networks:
       - backend
 
+  scheduler-service:
+    build:
+      context: .
+      dockerfile: SchedulerService/Dockerfile.dev
+    volumes:
+      - ./SchedulerService:/app/SchedulerService:cached
+      - ./Contracts:/app/Contracts:cached
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Grpc__Port: 5007
+      ConnectionStrings__SchedulerServiceDb: "Host=postgres-auto;Port=5432;Database=AutoOps;Username=postgres;Password=password"
+      RabbitMQSettings__Host: rabbitmq
+      RabbitMQSettings__Port: 5672
+      RabbitMQSettings__Username: guest
+      RabbitMQSettings__Password: guest
+      Grpc__WorkflowService: "http://workflow-service:5003"
+    depends_on:
+      workflow-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres-auto:
+        condition: service_healthy
+    networks:
+      - backend
+
   # External-facing microservices
   api-gateway:
     build:
@@ -158,6 +184,7 @@ services:
     depends_on:
       - auth-service
       - workflow-service
+      - scheduler-service
     networks:
       - backend
 

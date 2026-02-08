@@ -20,6 +20,7 @@ namespace SchedulerService.Data
             builder.HasDefaultSchema(_schema);
         }
 
-        public DbSet<Schedules> Schedule { get; set; } = default!;
+        public DbSet<Schedule> Schedules { get; set; } = default!;
+        public DbSet<TaskUserMapping> TaskUserMappings { get; set; } = default!;
     }
 }

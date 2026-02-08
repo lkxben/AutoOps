@@ -30,10 +30,10 @@ namespace SchedulerService.Protos {
             "GAMgASgJEhAKCHRpbWV6b25lGAQgASgJIlMKFkNyZWF0ZVNjaGVkdWxlUmVz",
             "cG9uc2USCgoCaWQYASABKAkSLQoJbmV4dFJ1bkF0GAIgASgLMhouZ29vZ2xl",
             "LnByb3RvYnVmLlRpbWVzdGFtcCJdChFFZGl0U2NoZWR1bGVNb2RlbBIKCgJp",
-            "ZBgBIAEoCRIOCgZjcm9uRXgYAiABKAkSLAoGc3RhdHVzGAMgASgOMhwuU2No",
-            "ZWR1bGVyU3ZjLlNjaGVkdWxlU3RhdHVzIqEBChRFZGl0U2NoZWR1bGVSZXNw",
-            "b25zZRIKCgJpZBgBIAEoCRIOCgZjcm9uRXgYAiABKAkSLAoGc3RhdHVzGAMg",
-            "ASgOMhwuU2NoZWR1bGVyU3ZjLlNjaGVkdWxlU3RhdHVzEhAKCHRpbWV6b25l",
+            "ZBgBIAEoCRIsCgZzdGF0dXMYAiABKA4yHC5TY2hlZHVsZXJTdmMuU2NoZWR1",
+            "bGVTdGF0dXMSDgoGY3JvbkV4GAMgASgJIqEBChRFZGl0U2NoZWR1bGVSZXNw",
+            "b25zZRIKCgJpZBgBIAEoCRIsCgZzdGF0dXMYAiABKA4yHC5TY2hlZHVsZXJT",
+            "dmMuU2NoZWR1bGVTdGF0dXMSDgoGY3JvbkV4GAMgASgJEhAKCHRpbWV6b25l",
             "GAQgASgJEi0KCW5leHRSdW5BdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5U",
             "aW1lc3RhbXAiIQoTRGVsZXRlU2NoZWR1bGVNb2RlbBIKCgJpZBgBIAEoCSIp",
             "ChZEZWxldGVTY2hlZHVsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgqKAoO",
@@ -50,8 +50,8 @@ namespace SchedulerService.Protos {
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::SchedulerService.Protos.ScheduleStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.CreateScheduleModel), global::SchedulerService.Protos.CreateScheduleModel.Parser, new[]{ "UserId", "TaskId", "CronEx", "Timezone" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.CreateScheduleResponse), global::SchedulerService.Protos.CreateScheduleResponse.Parser, new[]{ "Id", "NextRunAt" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleModel), global::SchedulerService.Protos.EditScheduleModel.Parser, new[]{ "Id", "CronEx", "Status" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleResponse), global::SchedulerService.Protos.EditScheduleResponse.Parser, new[]{ "Id", "CronEx", "Status", "Timezone", "NextRunAt" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleModel), global::SchedulerService.Protos.EditScheduleModel.Parser, new[]{ "Id", "Status", "CronEx" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleResponse), global::SchedulerService.Protos.EditScheduleResponse.Parser, new[]{ "Id", "Status", "CronEx", "Timezone", "NextRunAt" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.DeleteScheduleModel), global::SchedulerService.Protos.DeleteScheduleModel.Parser, new[]{ "Id" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.DeleteScheduleResponse), global::SchedulerService.Protos.DeleteScheduleResponse.Parser, new[]{ "Success" }, null, null, null, null)
           }));
@@ -638,8 +638,8 @@ namespace SchedulerService.Protos {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public EditScheduleModel(EditScheduleModel other) : this() {
       id_ = other.id_;
-      cronEx_ = other.cronEx_;
       status_ = other.status_;
+      cronEx_ = other.cronEx_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -661,20 +661,8 @@ namespace SchedulerService.Protos {
       }
     }
 
-    /// <summary>Field number for the "cronEx" field.</summary>
-    public const int CronExFieldNumber = 2;
-    private string cronEx_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string CronEx {
-      get { return cronEx_; }
-      set {
-        cronEx_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
     /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 3;
+    public const int StatusFieldNumber = 2;
     private global::SchedulerService.Protos.ScheduleStatus status_ = global::SchedulerService.Protos.ScheduleStatus.Active;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -682,6 +670,18 @@ namespace SchedulerService.Protos {
       get { return status_; }
       set {
         status_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "cronEx" field.</summary>
+    public const int CronExFieldNumber = 3;
+    private string cronEx_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string CronEx {
+      get { return cronEx_; }
+      set {
+        cronEx_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -701,8 +701,8 @@ namespace SchedulerService.Protos {
         return true;
       }
       if (Id != other.Id) return false;
-      if (CronEx != other.CronEx) return false;
       if (Status != other.Status) return false;
+      if (CronEx != other.CronEx) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -711,8 +711,8 @@ namespace SchedulerService.Protos {
     public override int GetHashCode() {
       int hash = 1;
       if (Id.Length != 0) hash ^= Id.GetHashCode();
-      if (CronEx.Length != 0) hash ^= CronEx.GetHashCode();
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) hash ^= Status.GetHashCode();
+      if (CronEx.Length != 0) hash ^= CronEx.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -735,13 +735,13 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
-      if (CronEx.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(CronEx);
-      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
-        output.WriteRawTag(24);
+        output.WriteRawTag(16);
         output.WriteEnum((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(CronEx);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -757,13 +757,13 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
-      if (CronEx.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(CronEx);
-      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
-        output.WriteRawTag(24);
+        output.WriteRawTag(16);
         output.WriteEnum((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(CronEx);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -778,11 +778,11 @@ namespace SchedulerService.Protos {
       if (Id.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
       }
-      if (CronEx.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(CronEx);
-      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CronEx);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -799,11 +799,11 @@ namespace SchedulerService.Protos {
       if (other.Id.Length != 0) {
         Id = other.Id;
       }
-      if (other.CronEx.Length != 0) {
-        CronEx = other.CronEx;
-      }
       if (other.Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
         Status = other.Status;
+      }
+      if (other.CronEx.Length != 0) {
+        CronEx = other.CronEx;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -824,12 +824,12 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
-          case 18: {
-            CronEx = input.ReadString();
+          case 16: {
+            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
             break;
           }
-          case 24: {
-            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
+          case 26: {
+            CronEx = input.ReadString();
             break;
           }
         }
@@ -851,12 +851,12 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
-          case 18: {
-            CronEx = input.ReadString();
+          case 16: {
+            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
             break;
           }
-          case 24: {
-            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
+          case 26: {
+            CronEx = input.ReadString();
             break;
           }
         }
@@ -901,8 +901,8 @@ namespace SchedulerService.Protos {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public EditScheduleResponse(EditScheduleResponse other) : this() {
       id_ = other.id_;
-      cronEx_ = other.cronEx_;
       status_ = other.status_;
+      cronEx_ = other.cronEx_;
       timezone_ = other.timezone_;
       nextRunAt_ = other.nextRunAt_ != null ? other.nextRunAt_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -926,20 +926,8 @@ namespace SchedulerService.Protos {
       }
     }
 
-    /// <summary>Field number for the "cronEx" field.</summary>
-    public const int CronExFieldNumber = 2;
-    private string cronEx_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string CronEx {
-      get { return cronEx_; }
-      set {
-        cronEx_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
     /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 3;
+    public const int StatusFieldNumber = 2;
     private global::SchedulerService.Protos.ScheduleStatus status_ = global::SchedulerService.Protos.ScheduleStatus.Active;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -947,6 +935,18 @@ namespace SchedulerService.Protos {
       get { return status_; }
       set {
         status_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "cronEx" field.</summary>
+    public const int CronExFieldNumber = 3;
+    private string cronEx_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string CronEx {
+      get { return cronEx_; }
+      set {
+        cronEx_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -990,8 +990,8 @@ namespace SchedulerService.Protos {
         return true;
       }
       if (Id != other.Id) return false;
-      if (CronEx != other.CronEx) return false;
       if (Status != other.Status) return false;
+      if (CronEx != other.CronEx) return false;
       if (Timezone != other.Timezone) return false;
       if (!object.Equals(NextRunAt, other.NextRunAt)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -1002,8 +1002,8 @@ namespace SchedulerService.Protos {
     public override int GetHashCode() {
       int hash = 1;
       if (Id.Length != 0) hash ^= Id.GetHashCode();
-      if (CronEx.Length != 0) hash ^= CronEx.GetHashCode();
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) hash ^= Status.GetHashCode();
+      if (CronEx.Length != 0) hash ^= CronEx.GetHashCode();
       if (Timezone.Length != 0) hash ^= Timezone.GetHashCode();
       if (nextRunAt_ != null) hash ^= NextRunAt.GetHashCode();
       if (_unknownFields != null) {
@@ -1028,13 +1028,13 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
-      if (CronEx.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(CronEx);
-      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
-        output.WriteRawTag(24);
+        output.WriteRawTag(16);
         output.WriteEnum((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(CronEx);
       }
       if (Timezone.Length != 0) {
         output.WriteRawTag(34);
@@ -1058,13 +1058,13 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
-      if (CronEx.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(CronEx);
-      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
-        output.WriteRawTag(24);
+        output.WriteRawTag(16);
         output.WriteEnum((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(CronEx);
       }
       if (Timezone.Length != 0) {
         output.WriteRawTag(34);
@@ -1087,11 +1087,11 @@ namespace SchedulerService.Protos {
       if (Id.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
       }
-      if (CronEx.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(CronEx);
-      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CronEx);
       }
       if (Timezone.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Timezone);
@@ -1114,11 +1114,11 @@ namespace SchedulerService.Protos {
       if (other.Id.Length != 0) {
         Id = other.Id;
       }
-      if (other.CronEx.Length != 0) {
-        CronEx = other.CronEx;
-      }
       if (other.Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
         Status = other.Status;
+      }
+      if (other.CronEx.Length != 0) {
+        CronEx = other.CronEx;
       }
       if (other.Timezone.Length != 0) {
         Timezone = other.Timezone;
@@ -1148,12 +1148,12 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
-          case 18: {
-            CronEx = input.ReadString();
+          case 16: {
+            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
             break;
           }
-          case 24: {
-            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
+          case 26: {
+            CronEx = input.ReadString();
             break;
           }
           case 34: {
@@ -1186,12 +1186,12 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
-          case 18: {
-            CronEx = input.ReadString();
+          case 16: {
+            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
             break;
           }
-          case 24: {
-            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
+          case 26: {
+            CronEx = input.ReadString();
             break;
           }
           case 34: {
