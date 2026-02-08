@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using SchedulerService.Consumers;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,9 +74,25 @@ builder.Services.AddMassTransit(x =>
             h.Username(rabbitMQSettings.Username);
             h.Password(rabbitMQSettings.Password);
         });
+        cfg.Publish<Contracts.Scheduler.RunCreateRequest>(p => p.Durable = true);
         cfg.ConfigureEndpoints(context);
     });
 });
+
+// hangfire
+builder.Services.AddHangfire(config =>
+{
+    config.UsePostgreSqlStorage(dbConnection, new Hangfire.PostgreSql.PostgreSqlStorageOptions
+    {
+        SchemaName = schema
+    });
+});
+
+builder.Services.AddHangfireServer(options =>
+{
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddScoped<ScheduleRunner>();
 
 var app = builder.Build();
 
@@ -98,4 +117,14 @@ while (true)
     }
 }
 app.MapGrpcService<ScheduleSvcImp>();
+
+using var hangfireScope = app.Services.CreateScope();
+var recurringJobManager = hangfireScope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+var runner = hangfireScope.ServiceProvider.GetRequiredService<ScheduleRunner>();
+recurringJobManager.AddOrUpdate(
+    "run-due-schedules",
+    () => runner.RunDueSchedules(),
+    "*/15 * * * * *"
+);
+
 app.Run();

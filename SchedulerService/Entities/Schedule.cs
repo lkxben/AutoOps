@@ -8,7 +8,7 @@ namespace SchedulerService.Entities
         public Guid UserId { get; set; }
         public Guid TaskId { get; set; }
         public ScheduleStatus Status { get; set ;} = ScheduleStatus.Active;
-        public string CronEx { get; set; }
+        public required string CronEx { get; set; }
         public string Timezone { get; set; } = "UTC";
         public DateTime? NextRunAt { get; set; }
         public DateTime? LastRunAt { get; set; }

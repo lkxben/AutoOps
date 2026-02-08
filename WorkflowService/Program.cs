@@ -48,6 +48,8 @@ var uri = new Uri($"rabbitmq://{rabbitMQSettings.Host}:{port}/");
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<RunCreateRequestConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(uri, h =>
