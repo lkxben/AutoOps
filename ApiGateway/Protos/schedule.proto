@@ -30,8 +30,9 @@ enum ScheduleStatus {
 
 message EditScheduleModel {
     string id = 1;
-    ScheduleStatus status = 2;
-    string cronEx = 3;
+    string userId = 2;
+    ScheduleStatus status = 3;
+    string cronEx = 4;
 }
 
 message EditScheduleResponse {
@@ -44,6 +45,7 @@ message EditScheduleResponse {
 
 message DeleteScheduleModel {
     string id = 1;
+    string userId = 2;
 }
 
 message DeleteScheduleResponse {

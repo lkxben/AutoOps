@@ -79,11 +79,21 @@ namespace SchedulerService.Protos
 
         public override async Task<EditScheduleResponse> EditSchedule(EditScheduleModel request, ServerCallContext context)
         {
-            var schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.Id == Guid.Parse(request.Id));
+            var userId = Guid.Parse(request.UserId);
+            var scheduleId = Guid.Parse(request.Id);
             
+            var schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId);
             if (schedule == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "Schedule not found."));
+            }
+
+            var mapping = await _db.TaskUserMappings
+                .FirstOrDefaultAsync(m => m.TaskId == schedule.TaskId && m.UserId == userId);
+            
+            if (mapping == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "Access denied. Schedule does not belong to this user."));
             }
 
             CrontabSchedule cron;
@@ -128,11 +138,21 @@ namespace SchedulerService.Protos
 
         public override async Task<DeleteScheduleResponse> DeleteSchedule(DeleteScheduleModel request, ServerCallContext context)
         {
-            var schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.Id == Guid.Parse(request.Id));
-            
+            var userId = Guid.Parse(request.UserId);
+            var scheduleId = Guid.Parse(request.Id);
+
+            var schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId);
             if (schedule == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "Schedule not found."));
+            }
+
+            var mapping = await _db.TaskUserMappings
+                .FirstOrDefaultAsync(m => m.TaskId == schedule.TaskId && m.UserId == userId);
+            
+            if (mapping == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "Access denied. Schedule does not belong to this user."));
             }
 
             _db.Schedules.Remove(schedule);

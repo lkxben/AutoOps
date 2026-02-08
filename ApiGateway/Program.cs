@@ -11,6 +11,8 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -477,6 +479,45 @@ app.MapPost("/schedules", async (CreateScheduleDto dto, HttpContext context, IHt
     });
 
     return Results.Ok(new CreateScheduleResponseDto(result.Id, result.NextRunAt.ToDateTime()));
+}).RequireAuthorization();
+
+app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var scheduleId))
+        return Results.BadRequest(new { error = "Invalid schedule ID" });
+
+    var result = await scheduleClient.EditScheduleAsync(new EditScheduleModel
+    {
+        Id = scheduleId.ToString(),
+        UserId = userId,
+        CronEx = dto.CronEx,
+        Status = dto.Status
+    });
+
+    return Results.Ok(new EditScheduleResponseDto(result.Id, result.Status, result.CronEx, result.Timezone, result.NextRunAt.ToDateTime()));
+}).RequireAuthorization();
+
+app.MapDelete("/schedules/{id}", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var scheduleId))
+        return Results.BadRequest(new { error = "Invalid schedule ID" });
+
+    var result = await scheduleClient.DeleteScheduleAsync(new DeleteScheduleModel
+    {
+        Id = scheduleId.ToString(),
+        UserId = userId,
+    });
+
+    if (!result.Success)
+        return Results.NotFound();
+
+    return Results.NoContent();
 }).RequireAuthorization();
 
 app.MapGet("/health", () => Results.Ok());

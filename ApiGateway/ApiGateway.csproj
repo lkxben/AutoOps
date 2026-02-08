@@ -16,5 +16,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
     <PackageReference Include="Google.protobuf" Version="3.33.2" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+    <!-- <PackageReference Include="Grpc.Tools" Version="2.55.1">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\schedule.proto" GrpcServices="Client"/> -->
   </ItemGroup>
 </Project>

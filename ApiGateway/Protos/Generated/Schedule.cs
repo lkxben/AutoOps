@@ -29,30 +29,31 @@ namespace SchedulerService.Protos {
             "ZWwSDgoGdXNlcklkGAEgASgJEg4KBnRhc2tJZBgCIAEoCRIOCgZjcm9uRXgY",
             "AyABKAkSEAoIdGltZXpvbmUYBCABKAkiUwoWQ3JlYXRlU2NoZWR1bGVSZXNw",
             "b25zZRIKCgJpZBgBIAEoCRItCgluZXh0UnVuQXQYAiABKAsyGi5nb29nbGUu",
-            "cHJvdG9idWYuVGltZXN0YW1wIlwKEUVkaXRTY2hlZHVsZU1vZGVsEgoKAmlk",
-            "GAEgASgJEisKBnN0YXR1cxgCIAEoDjIbLlNjaGVkdWxlU3ZjLlNjaGVkdWxl",
-            "U3RhdHVzEg4KBmNyb25FeBgDIAEoCSKgAQoURWRpdFNjaGVkdWxlUmVzcG9u",
-            "c2USCgoCaWQYASABKAkSKwoGc3RhdHVzGAIgASgOMhsuU2NoZWR1bGVTdmMu",
-            "U2NoZWR1bGVTdGF0dXMSDgoGY3JvbkV4GAMgASgJEhAKCHRpbWV6b25lGAQg",
-            "ASgJEi0KCW5leHRSdW5BdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1l",
-            "c3RhbXAiIQoTRGVsZXRlU2NoZWR1bGVNb2RlbBIKCgJpZBgBIAEoCSIpChZE",
-            "ZWxldGVTY2hlZHVsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgqKAoOU2No",
-            "ZWR1bGVTdGF0dXMSCgoGQUNUSVZFEAASCgoGUEFVU0VEEAEykgIKC1NjaGVk",
-            "dWxlU3ZjElcKDkNyZWF0ZVNjaGVkdWxlEiAuU2NoZWR1bGVTdmMuQ3JlYXRl",
-            "U2NoZWR1bGVNb2RlbBojLlNjaGVkdWxlU3ZjLkNyZWF0ZVNjaGVkdWxlUmVz",
-            "cG9uc2USUQoMRWRpdFNjaGVkdWxlEh4uU2NoZWR1bGVTdmMuRWRpdFNjaGVk",
-            "dWxlTW9kZWwaIS5TY2hlZHVsZVN2Yy5FZGl0U2NoZWR1bGVSZXNwb25zZRJX",
-            "Cg5EZWxldGVTY2hlZHVsZRIgLlNjaGVkdWxlU3ZjLkRlbGV0ZVNjaGVkdWxl",
-            "TW9kZWwaIy5TY2hlZHVsZVN2Yy5EZWxldGVTY2hlZHVsZVJlc3BvbnNlQhqq",
-            "AhdTY2hlZHVsZXJTZXJ2aWNlLlByb3Rvc2IGcHJvdG8z"));
+            "cHJvdG9idWYuVGltZXN0YW1wImwKEUVkaXRTY2hlZHVsZU1vZGVsEgoKAmlk",
+            "GAEgASgJEg4KBnVzZXJJZBgCIAEoCRIrCgZzdGF0dXMYAyABKA4yGy5TY2hl",
+            "ZHVsZVN2Yy5TY2hlZHVsZVN0YXR1cxIOCgZjcm9uRXgYBCABKAkioAEKFEVk",
+            "aXRTY2hlZHVsZVJlc3BvbnNlEgoKAmlkGAEgASgJEisKBnN0YXR1cxgCIAEo",
+            "DjIbLlNjaGVkdWxlU3ZjLlNjaGVkdWxlU3RhdHVzEg4KBmNyb25FeBgDIAEo",
+            "CRIQCgh0aW1lem9uZRgEIAEoCRItCgluZXh0UnVuQXQYBSABKAsyGi5nb29n",
+            "bGUucHJvdG9idWYuVGltZXN0YW1wIjEKE0RlbGV0ZVNjaGVkdWxlTW9kZWwS",
+            "CgoCaWQYASABKAkSDgoGdXNlcklkGAIgASgJIikKFkRlbGV0ZVNjaGVkdWxl",
+            "UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCooCg5TY2hlZHVsZVN0YXR1cxIK",
+            "CgZBQ1RJVkUQABIKCgZQQVVTRUQQATKSAgoLU2NoZWR1bGVTdmMSVwoOQ3Jl",
+            "YXRlU2NoZWR1bGUSIC5TY2hlZHVsZVN2Yy5DcmVhdGVTY2hlZHVsZU1vZGVs",
+            "GiMuU2NoZWR1bGVTdmMuQ3JlYXRlU2NoZWR1bGVSZXNwb25zZRJRCgxFZGl0",
+            "U2NoZWR1bGUSHi5TY2hlZHVsZVN2Yy5FZGl0U2NoZWR1bGVNb2RlbBohLlNj",
+            "aGVkdWxlU3ZjLkVkaXRTY2hlZHVsZVJlc3BvbnNlElcKDkRlbGV0ZVNjaGVk",
+            "dWxlEiAuU2NoZWR1bGVTdmMuRGVsZXRlU2NoZWR1bGVNb2RlbBojLlNjaGVk",
+            "dWxlU3ZjLkRlbGV0ZVNjaGVkdWxlUmVzcG9uc2VCGqoCF1NjaGVkdWxlclNl",
+            "cnZpY2UuUHJvdG9zYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::SchedulerService.Protos.ScheduleStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.CreateScheduleModel), global::SchedulerService.Protos.CreateScheduleModel.Parser, new[]{ "UserId", "TaskId", "CronEx", "Timezone" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.CreateScheduleResponse), global::SchedulerService.Protos.CreateScheduleResponse.Parser, new[]{ "Id", "NextRunAt" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleModel), global::SchedulerService.Protos.EditScheduleModel.Parser, new[]{ "Id", "Status", "CronEx" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleModel), global::SchedulerService.Protos.EditScheduleModel.Parser, new[]{ "Id", "UserId", "Status", "CronEx" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleResponse), global::SchedulerService.Protos.EditScheduleResponse.Parser, new[]{ "Id", "Status", "CronEx", "Timezone", "NextRunAt" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.DeleteScheduleModel), global::SchedulerService.Protos.DeleteScheduleModel.Parser, new[]{ "Id" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.DeleteScheduleModel), global::SchedulerService.Protos.DeleteScheduleModel.Parser, new[]{ "Id", "UserId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.DeleteScheduleResponse), global::SchedulerService.Protos.DeleteScheduleResponse.Parser, new[]{ "Success" }, null, null, null, null)
           }));
     }
@@ -638,6 +639,7 @@ namespace SchedulerService.Protos {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public EditScheduleModel(EditScheduleModel other) : this() {
       id_ = other.id_;
+      userId_ = other.userId_;
       status_ = other.status_;
       cronEx_ = other.cronEx_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -661,8 +663,20 @@ namespace SchedulerService.Protos {
       }
     }
 
+    /// <summary>Field number for the "userId" field.</summary>
+    public const int UserIdFieldNumber = 2;
+    private string userId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 2;
+    public const int StatusFieldNumber = 3;
     private global::SchedulerService.Protos.ScheduleStatus status_ = global::SchedulerService.Protos.ScheduleStatus.Active;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -674,7 +688,7 @@ namespace SchedulerService.Protos {
     }
 
     /// <summary>Field number for the "cronEx" field.</summary>
-    public const int CronExFieldNumber = 3;
+    public const int CronExFieldNumber = 4;
     private string cronEx_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -701,6 +715,7 @@ namespace SchedulerService.Protos {
         return true;
       }
       if (Id != other.Id) return false;
+      if (UserId != other.UserId) return false;
       if (Status != other.Status) return false;
       if (CronEx != other.CronEx) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -711,6 +726,7 @@ namespace SchedulerService.Protos {
     public override int GetHashCode() {
       int hash = 1;
       if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) hash ^= Status.GetHashCode();
       if (CronEx.Length != 0) hash ^= CronEx.GetHashCode();
       if (_unknownFields != null) {
@@ -735,12 +751,16 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
+      if (UserId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UserId);
+      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
-        output.WriteRawTag(16);
+        output.WriteRawTag(24);
         output.WriteEnum((int) Status);
       }
       if (CronEx.Length != 0) {
-        output.WriteRawTag(26);
+        output.WriteRawTag(34);
         output.WriteString(CronEx);
       }
       if (_unknownFields != null) {
@@ -757,12 +777,16 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
+      if (UserId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UserId);
+      }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
-        output.WriteRawTag(16);
+        output.WriteRawTag(24);
         output.WriteEnum((int) Status);
       }
       if (CronEx.Length != 0) {
-        output.WriteRawTag(26);
+        output.WriteRawTag(34);
         output.WriteString(CronEx);
       }
       if (_unknownFields != null) {
@@ -777,6 +801,9 @@ namespace SchedulerService.Protos {
       int size = 0;
       if (Id.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
       }
       if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
@@ -798,6 +825,9 @@ namespace SchedulerService.Protos {
       }
       if (other.Id.Length != 0) {
         Id = other.Id;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
       }
       if (other.Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
         Status = other.Status;
@@ -824,11 +854,15 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
-          case 16: {
+          case 18: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 24: {
             Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
             break;
           }
-          case 26: {
+          case 34: {
             CronEx = input.ReadString();
             break;
           }
@@ -851,11 +885,15 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
-          case 16: {
+          case 18: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 24: {
             Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
             break;
           }
-          case 26: {
+          case 34: {
             CronEx = input.ReadString();
             break;
           }
@@ -1247,6 +1285,7 @@ namespace SchedulerService.Protos {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public DeleteScheduleModel(DeleteScheduleModel other) : this() {
       id_ = other.id_;
+      userId_ = other.userId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1268,6 +1307,18 @@ namespace SchedulerService.Protos {
       }
     }
 
+    /// <summary>Field number for the "userId" field.</summary>
+    public const int UserIdFieldNumber = 2;
+    private string userId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1284,6 +1335,7 @@ namespace SchedulerService.Protos {
         return true;
       }
       if (Id != other.Id) return false;
+      if (UserId != other.UserId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1292,6 +1344,7 @@ namespace SchedulerService.Protos {
     public override int GetHashCode() {
       int hash = 1;
       if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1314,6 +1367,10 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
+      if (UserId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UserId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1328,6 +1385,10 @@ namespace SchedulerService.Protos {
         output.WriteRawTag(10);
         output.WriteString(Id);
       }
+      if (UserId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UserId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1340,6 +1401,9 @@ namespace SchedulerService.Protos {
       int size = 0;
       if (Id.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1355,6 +1419,9 @@ namespace SchedulerService.Protos {
       }
       if (other.Id.Length != 0) {
         Id = other.Id;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1375,6 +1442,10 @@ namespace SchedulerService.Protos {
             Id = input.ReadString();
             break;
           }
+          case 18: {
+            UserId = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -1392,6 +1463,10 @@ namespace SchedulerService.Protos {
             break;
           case 10: {
             Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            UserId = input.ReadString();
             break;
           }
         }
