@@ -2,14 +2,16 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { apiGet } from '@/app/lib/api'
-import { TaskModel, RunModel } from '@/app/lib/types'
+import { TaskModel, RunModel, ScheduleModel } from '@/app/lib/types'
 import TaskCard from '@/app/components/TaskCard'
+import TaskSchedulePanel from '@/app/components/TaskSchedulePanel'
 
 export default function TaskDashboard() {
   const [tasks, setTasks] = useState<TaskModel[]>([])
   const [runs, setRuns] = useState<RunModel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedTask, setSelectedTask] = useState<TaskModel | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -43,15 +45,25 @@ export default function TaskDashboard() {
   if (!tasks.length) return <p className="text-[var(--color-cyan)] p-4">No tasks yet.</p>
 
   return (
-    <div className="flex flex-col gap-3 p-4">
-      {tasks.map(task => (
-        <TaskCard
-          key={task.id}
-          task={task}
-          lastRun={lastRunMap[task.id]}
-          onRunCreated={handleRunCreated}
+    <>
+      <div className="flex flex-col gap-3 p-4">
+        {tasks.map(task => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            lastRun={lastRunMap[task.id]}
+            onRunCreated={handleRunCreated}
+            onClick={() => setSelectedTask(task)}
+          />
+        ))}
+      </div>
+
+      {selectedTask && (
+        <TaskSchedulePanel
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
         />
-      ))}
-    </div>
+      )}
+    </>
   )
 }

@@ -36,6 +36,19 @@ export async function apiPut(endpoint: string, data: any) {
   return text ? JSON.parse(text) : null;
 }
 
+export async function apiPatch(endpoint: string, data: any) {
+  const res = await fetch(`${PROXY_BASE}${endpoint}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('API request failed');
+
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
 export async function apiDelete(endpoint: string) {
   const res = await fetch(`${PROXY_BASE}${endpoint}`, {
     method: 'DELETE',

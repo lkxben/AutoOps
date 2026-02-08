@@ -8,10 +8,12 @@ type TaskCardProps = {
   task: TaskModel & { schedule?: string }
   lastRun?: Date
   onRunCreated?: (run: RunModel) => void
+  onClick?: () => void // <--- added
 }
 
-export default function TaskCard({ task, lastRun, onRunCreated }: TaskCardProps) {
-  const handleRunClick = async () => {
+export default function TaskCard({ task, lastRun, onRunCreated, onClick }: TaskCardProps) {
+  const handleRunClick = async (e: React.MouseEvent) => {
+    e.stopPropagation() // prevent triggering the card click
     try {
       const optimisticRun: RunModel = {
         id: 'temp-' + Date.now(),
@@ -32,7 +34,10 @@ export default function TaskCard({ task, lastRun, onRunCreated }: TaskCardProps)
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl transition w-[95%] min-w-[24rem] mx-auto py-6 px-8">
+    <div
+      className="bg-white border border-gray-200 rounded-2xl transition w-[95%] min-w-[24rem] mx-auto py-6 px-8 hover:shadow-md cursor-pointer"
+      onClick={onClick} // <--- trigger panel
+    >
       <div className="grid grid-cols-[1fr_1fr_1fr_1fr] items-center gap-4">
         <div className="flex flex-col items-start min-w-0">
           <h2 className="text-sm font-semibold text-gray-900 truncate">{task.title || 'Untitled task'}</h2>

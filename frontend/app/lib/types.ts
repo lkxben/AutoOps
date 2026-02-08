@@ -62,3 +62,17 @@ export type RunUpdate = {
   status: number
   description?: string
 }
+
+export enum ScheduleStatus {
+  Active = 0,
+  Paused = 1,
+}
+
+export type ScheduleModel = {
+  id: string,
+  taskId: string,
+  status: ScheduleStatus,
+  cronEx: string,
+  timezone: string,
+  nextRunAt: string
+}
