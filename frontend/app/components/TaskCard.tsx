@@ -8,26 +8,28 @@ type TaskCardProps = {
   task: TaskModel & { schedule?: string }
   lastRun?: Date
   onRunCreated?: (run: RunModel) => void
-  onClick?: () => void // <--- added
+  onClick?: () => void
 }
 
 export default function TaskCard({ task, lastRun, onRunCreated, onClick }: TaskCardProps) {
   const handleRunClick = async (e: React.MouseEvent) => {
     e.stopPropagation() // prevent triggering the card click
     try {
-      const optimisticRun: RunModel = {
-        id: 'temp-' + Date.now(),
-        taskId: task.id,
-        userId: '',
-        planId: '',
-        status: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      onRunCreated?.(optimisticRun)
+      const response = await apiPost('/runs', { taskId: task.id })
 
-      const newRun = await apiPost('/runs', { taskId: task.id })
-      onRunCreated?.(newRun)
+      if (response && response.id) {
+        const now = new Date().toISOString()
+        const newRun: RunModel = {
+          id: response.id,
+          taskId: task.id,
+          userId: '',
+          planId: '',
+          status: 0,
+          createdAt: now,
+          updatedAt: now,
+        }
+        onRunCreated?.(newRun)
+      }
     } catch (err) {
       console.error('Failed to start run', err)
     }
@@ -46,7 +48,7 @@ export default function TaskCard({ task, lastRun, onRunCreated, onClick }: TaskC
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-400 uppercase">Last Run</span>
           <span className="text-xs text-gray-500 text-center">
-            {lastRun ? formatDistanceToNow(lastRun, { addSuffix: true }) : 'No runs yet'}
+            {lastRun ? formatDistanceToNow(lastRun, { addSuffix: true }) : '-'}
           </span>
         </div>
         <div className="flex flex-col items-center">
