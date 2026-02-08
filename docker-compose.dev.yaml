@@ -178,6 +178,7 @@ services:
       Jwt__ExpiryMinutes: 180
       Grpc__AuthService: "http://auth-service:5002"
       Grpc__WorkflowService: "http://workflow-service:5003"
+      Grpc__SchedulerService: "http://scheduler-service:5007"
       NotifServiceUrl: "http://notification-service:8000"
     ports:
       - "5001:5001"

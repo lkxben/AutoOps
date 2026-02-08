@@ -1,5 +1,6 @@
 using AuthService.Protos;
 using WorkflowService.Protos;
+using SchedulerService.Protos;
 using Grpc.Net.Client;
 using Grpc.Core;
 using ApiGateway.Dtos;
@@ -94,7 +95,7 @@ var authServiceUrl = builder.Configuration["Grpc:AuthService"]
 var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
                              ?? throw new Exception("Grpc:WorkflowService configuration is missing");
 
-var schedulerService = builder.Configuration["Grpc:SchedulerService"] 
+var schedulerServiceUrl = builder.Configuration["Grpc:SchedulerService"] 
                              ?? throw new Exception("Grpc:SchedulerService configuration is missing");
 
 var notifServiceUrl = builder.Configuration["NotifServiceUrl"] 
@@ -460,6 +461,22 @@ app.MapGet("/notifications/channels", async (HttpContext context, IHttpClientFac
 
     var channels = await resp.Content.ReadFromJsonAsync<List<ChannelResponseDto>>();
     return Results.Ok(channels);
+}).RequireAuthorization();
+
+app.MapPost("/schedules", async (CreateScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var result = await scheduleClient.CreateScheduleAsync(new CreateScheduleModel
+    {
+        UserId = userId,
+        TaskId = dto.TaskId,
+        CronEx = dto.CronEx,
+        Timezone = dto.Timezone
+    });
+
+    return Results.Ok(new CreateScheduleResponseDto(result.Id, result.NextRunAt.ToDateTime()));
 }).RequireAuthorization();
 
 app.MapGet("/health", () => Results.Ok());

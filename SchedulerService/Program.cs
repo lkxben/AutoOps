@@ -97,5 +97,5 @@ while (true)
         await Task.Delay(5000);
     }
 }
-
+app.MapGrpcService<ScheduleSvcImp>();
 app.Run();
