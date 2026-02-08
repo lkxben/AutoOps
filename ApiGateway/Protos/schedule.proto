@@ -6,9 +6,28 @@ option csharp_namespace = "SchedulerService.Protos";
 package ScheduleSvc;
 
 service ScheduleSvc {
+    rpc GetTaskSchedules (GetTaskSchedulesModel) returns (GetTaskSchedulesResponse);
     rpc CreateSchedule (CreateScheduleModel) returns (CreateScheduleResponse);
     rpc EditSchedule (EditScheduleModel) returns (EditScheduleResponse);
     rpc DeleteSchedule (DeleteScheduleModel) returns (DeleteScheduleResponse);
+}
+
+message GetTaskSchedulesModel {
+  string taskId = 1;
+  string userId = 2;
+}
+
+message ScheduleModel {
+    string id = 1;
+    string taskId = 2;
+    ScheduleStatus status = 3;
+    string cronEx = 4;
+    string timezone = 5;
+    google.protobuf.Timestamp nextRunAt = 6;
+}
+
+message GetTaskSchedulesResponse {
+  repeated ScheduleModel schedules = 1;
 }
 
 message CreateScheduleModel {

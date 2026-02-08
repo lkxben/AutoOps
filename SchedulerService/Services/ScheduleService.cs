@@ -24,6 +24,42 @@ namespace SchedulerService.Protos
             _publishEndpoint = publishEndpoint;
 		}
 
+        public override async Task<GetTaskSchedulesResponse> GetTaskSchedules(GetTaskSchedulesModel request, ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.UserId, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid userId"));
+
+            if (!Guid.TryParse(request.TaskId, out var taskId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
+            
+            var mappingExists = await _db.TaskUserMappings
+                .AnyAsync(m => m.UserId == userId && m.TaskId == taskId);
+
+            if (!mappingExists)
+                throw new RpcException(new Status(StatusCode.NotFound, "Task not found or access denied"));
+
+            var schedules = await _db.Schedules
+                .Where(s => s.TaskId == taskId && s.UserId == userId)
+                .OrderBy(s => s.CreatedAt)
+                .ToListAsync();
+
+            var response = new GetTaskSchedulesResponse();
+
+            response.Schedules.AddRange(schedules.Select(s => new ScheduleModel
+            {
+                Id = s.Id.ToString(),
+                TaskId = s.TaskId.ToString(),
+                Status = s.Status,
+                CronEx = s.CronEx,
+                Timezone = s.Timezone,
+                NextRunAt = s.NextRunAt.HasValue 
+                    ? Timestamp.FromDateTime(DateTime.SpecifyKind(s.NextRunAt.Value, DateTimeKind.Utc))
+                    : null
+            }));
+
+            return response;
+        }
+
         public override async Task<CreateScheduleResponse> CreateSchedule(CreateScheduleModel request, ServerCallContext context)
         {
             var mapping = await _db.TaskUserMappings.FirstOrDefaultAsync(e => e.TaskId == Guid.Parse(request.TaskId) 

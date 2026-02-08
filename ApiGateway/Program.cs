@@ -292,13 +292,43 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
     return Results.Ok(tasksDto);
 }).RequireAuthorization();
 
+app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var taskId))
+        return Results.BadRequest(new { error = "Invalid task ID" });
+
+    var response = await scheduleClient.GetTaskSchedulesAsync(new GetTaskSchedulesModel
+    {
+        UserId = userId,
+        TaskId = taskId.ToString(),
+    });
+
+    var schedulesDto = response.Schedules.Select(s => new ScheduleDto
+    (
+        s.Id,
+        s.TaskId,
+        s.Status,
+        s.CronEx,
+        s.Timezone,
+        s.NextRunAt.ToDateTime()
+    ));
+
+    return Results.Ok(schedulesDto);
+}).RequireAuthorization();
+
 app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
+    if (!Guid.TryParse(id, out var taskId))
+        return Results.BadRequest(new { error = "Invalid task ID" });
+
     var task = await wftClient.GetTaskAsync(new GetWorkflowTaskModel { 
-        Id = id,
+        Id = taskId.ToString(),
         UserId = userId
     });
     

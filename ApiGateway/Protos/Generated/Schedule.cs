@@ -25,30 +25,42 @@ namespace SchedulerService.Protos {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChVQcm90b3Mvc2NoZWR1bGUucHJvdG8SC1NjaGVkdWxlU3ZjGh9nb29nbGUv",
-            "cHJvdG9idWYvdGltZXN0YW1wLnByb3RvIlcKE0NyZWF0ZVNjaGVkdWxlTW9k",
-            "ZWwSDgoGdXNlcklkGAEgASgJEg4KBnRhc2tJZBgCIAEoCRIOCgZjcm9uRXgY",
-            "AyABKAkSEAoIdGltZXpvbmUYBCABKAkiUwoWQ3JlYXRlU2NoZWR1bGVSZXNw",
-            "b25zZRIKCgJpZBgBIAEoCRItCgluZXh0UnVuQXQYAiABKAsyGi5nb29nbGUu",
-            "cHJvdG9idWYuVGltZXN0YW1wImwKEUVkaXRTY2hlZHVsZU1vZGVsEgoKAmlk",
-            "GAEgASgJEg4KBnVzZXJJZBgCIAEoCRIrCgZzdGF0dXMYAyABKA4yGy5TY2hl",
-            "ZHVsZVN2Yy5TY2hlZHVsZVN0YXR1cxIOCgZjcm9uRXgYBCABKAkioAEKFEVk",
-            "aXRTY2hlZHVsZVJlc3BvbnNlEgoKAmlkGAEgASgJEisKBnN0YXR1cxgCIAEo",
-            "DjIbLlNjaGVkdWxlU3ZjLlNjaGVkdWxlU3RhdHVzEg4KBmNyb25FeBgDIAEo",
-            "CRIQCgh0aW1lem9uZRgEIAEoCRItCgluZXh0UnVuQXQYBSABKAsyGi5nb29n",
-            "bGUucHJvdG9idWYuVGltZXN0YW1wIjEKE0RlbGV0ZVNjaGVkdWxlTW9kZWwS",
-            "CgoCaWQYASABKAkSDgoGdXNlcklkGAIgASgJIikKFkRlbGV0ZVNjaGVkdWxl",
-            "UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCooCg5TY2hlZHVsZVN0YXR1cxIK",
-            "CgZBQ1RJVkUQABIKCgZQQVVTRUQQATKSAgoLU2NoZWR1bGVTdmMSVwoOQ3Jl",
-            "YXRlU2NoZWR1bGUSIC5TY2hlZHVsZVN2Yy5DcmVhdGVTY2hlZHVsZU1vZGVs",
-            "GiMuU2NoZWR1bGVTdmMuQ3JlYXRlU2NoZWR1bGVSZXNwb25zZRJRCgxFZGl0",
-            "U2NoZWR1bGUSHi5TY2hlZHVsZVN2Yy5FZGl0U2NoZWR1bGVNb2RlbBohLlNj",
-            "aGVkdWxlU3ZjLkVkaXRTY2hlZHVsZVJlc3BvbnNlElcKDkRlbGV0ZVNjaGVk",
-            "dWxlEiAuU2NoZWR1bGVTdmMuRGVsZXRlU2NoZWR1bGVNb2RlbBojLlNjaGVk",
-            "dWxlU3ZjLkRlbGV0ZVNjaGVkdWxlUmVzcG9uc2VCGqoCF1NjaGVkdWxlclNl",
-            "cnZpY2UuUHJvdG9zYgZwcm90bzM="));
+            "cHJvdG9idWYvdGltZXN0YW1wLnByb3RvIjcKFUdldFRhc2tTY2hlZHVsZXNN",
+            "b2RlbBIOCgZ0YXNrSWQYASABKAkSDgoGdXNlcklkGAIgASgJIqkBCg1TY2hl",
+            "ZHVsZU1vZGVsEgoKAmlkGAEgASgJEg4KBnRhc2tJZBgCIAEoCRIrCgZzdGF0",
+            "dXMYAyABKA4yGy5TY2hlZHVsZVN2Yy5TY2hlZHVsZVN0YXR1cxIOCgZjcm9u",
+            "RXgYBCABKAkSEAoIdGltZXpvbmUYBSABKAkSLQoJbmV4dFJ1bkF0GAYgASgL",
+            "MhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJJChhHZXRUYXNrU2NoZWR1",
+            "bGVzUmVzcG9uc2USLQoJc2NoZWR1bGVzGAEgAygLMhouU2NoZWR1bGVTdmMu",
+            "U2NoZWR1bGVNb2RlbCJXChNDcmVhdGVTY2hlZHVsZU1vZGVsEg4KBnVzZXJJ",
+            "ZBgBIAEoCRIOCgZ0YXNrSWQYAiABKAkSDgoGY3JvbkV4GAMgASgJEhAKCHRp",
+            "bWV6b25lGAQgASgJIlMKFkNyZWF0ZVNjaGVkdWxlUmVzcG9uc2USCgoCaWQY",
+            "ASABKAkSLQoJbmV4dFJ1bkF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRp",
+            "bWVzdGFtcCJsChFFZGl0U2NoZWR1bGVNb2RlbBIKCgJpZBgBIAEoCRIOCgZ1",
+            "c2VySWQYAiABKAkSKwoGc3RhdHVzGAMgASgOMhsuU2NoZWR1bGVTdmMuU2No",
+            "ZWR1bGVTdGF0dXMSDgoGY3JvbkV4GAQgASgJIqABChRFZGl0U2NoZWR1bGVS",
+            "ZXNwb25zZRIKCgJpZBgBIAEoCRIrCgZzdGF0dXMYAiABKA4yGy5TY2hlZHVs",
+            "ZVN2Yy5TY2hlZHVsZVN0YXR1cxIOCgZjcm9uRXgYAyABKAkSEAoIdGltZXpv",
+            "bmUYBCABKAkSLQoJbmV4dFJ1bkF0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVm",
+            "LlRpbWVzdGFtcCIxChNEZWxldGVTY2hlZHVsZU1vZGVsEgoKAmlkGAEgASgJ",
+            "Eg4KBnVzZXJJZBgCIAEoCSIpChZEZWxldGVTY2hlZHVsZVJlc3BvbnNlEg8K",
+            "B3N1Y2Nlc3MYASABKAgqKAoOU2NoZWR1bGVTdGF0dXMSCgoGQUNUSVZFEAAS",
+            "CgoGUEFVU0VEEAEy8QIKC1NjaGVkdWxlU3ZjEl0KEEdldFRhc2tTY2hlZHVs",
+            "ZXMSIi5TY2hlZHVsZVN2Yy5HZXRUYXNrU2NoZWR1bGVzTW9kZWwaJS5TY2hl",
+            "ZHVsZVN2Yy5HZXRUYXNrU2NoZWR1bGVzUmVzcG9uc2USVwoOQ3JlYXRlU2No",
+            "ZWR1bGUSIC5TY2hlZHVsZVN2Yy5DcmVhdGVTY2hlZHVsZU1vZGVsGiMuU2No",
+            "ZWR1bGVTdmMuQ3JlYXRlU2NoZWR1bGVSZXNwb25zZRJRCgxFZGl0U2NoZWR1",
+            "bGUSHi5TY2hlZHVsZVN2Yy5FZGl0U2NoZWR1bGVNb2RlbBohLlNjaGVkdWxl",
+            "U3ZjLkVkaXRTY2hlZHVsZVJlc3BvbnNlElcKDkRlbGV0ZVNjaGVkdWxlEiAu",
+            "U2NoZWR1bGVTdmMuRGVsZXRlU2NoZWR1bGVNb2RlbBojLlNjaGVkdWxlU3Zj",
+            "LkRlbGV0ZVNjaGVkdWxlUmVzcG9uc2VCGqoCF1NjaGVkdWxlclNlcnZpY2Uu",
+            "UHJvdG9zYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::SchedulerService.Protos.ScheduleStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.GetTaskSchedulesModel), global::SchedulerService.Protos.GetTaskSchedulesModel.Parser, new[]{ "TaskId", "UserId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.ScheduleModel), global::SchedulerService.Protos.ScheduleModel.Parser, new[]{ "Id", "TaskId", "Status", "CronEx", "Timezone", "NextRunAt" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.GetTaskSchedulesResponse), global::SchedulerService.Protos.GetTaskSchedulesResponse.Parser, new[]{ "Schedules" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.CreateScheduleModel), global::SchedulerService.Protos.CreateScheduleModel.Parser, new[]{ "UserId", "TaskId", "CronEx", "Timezone" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.CreateScheduleResponse), global::SchedulerService.Protos.CreateScheduleResponse.Parser, new[]{ "Id", "NextRunAt" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::SchedulerService.Protos.EditScheduleModel), global::SchedulerService.Protos.EditScheduleModel.Parser, new[]{ "Id", "UserId", "Status", "CronEx" }, null, null, null, null),
@@ -69,6 +81,793 @@ namespace SchedulerService.Protos {
   #endregion
 
   #region Messages
+  public sealed partial class GetTaskSchedulesModel : pb::IMessage<GetTaskSchedulesModel>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GetTaskSchedulesModel> _parser = new pb::MessageParser<GetTaskSchedulesModel>(() => new GetTaskSchedulesModel());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GetTaskSchedulesModel> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetTaskSchedulesModel() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetTaskSchedulesModel(GetTaskSchedulesModel other) : this() {
+      taskId_ = other.taskId_;
+      userId_ = other.userId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetTaskSchedulesModel Clone() {
+      return new GetTaskSchedulesModel(this);
+    }
+
+    /// <summary>Field number for the "taskId" field.</summary>
+    public const int TaskIdFieldNumber = 1;
+    private string taskId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TaskId {
+      get { return taskId_; }
+      set {
+        taskId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "userId" field.</summary>
+    public const int UserIdFieldNumber = 2;
+    private string userId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GetTaskSchedulesModel);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GetTaskSchedulesModel other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (TaskId != other.TaskId) return false;
+      if (UserId != other.UserId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (TaskId.Length != 0) hash ^= TaskId.GetHashCode();
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (TaskId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(TaskId);
+      }
+      if (UserId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UserId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (TaskId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(TaskId);
+      }
+      if (UserId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UserId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (TaskId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TaskId);
+      }
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GetTaskSchedulesModel other) {
+      if (other == null) {
+        return;
+      }
+      if (other.TaskId.Length != 0) {
+        TaskId = other.TaskId;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            TaskId = input.ReadString();
+            break;
+          }
+          case 18: {
+            UserId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            TaskId = input.ReadString();
+            break;
+          }
+          case 18: {
+            UserId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  public sealed partial class ScheduleModel : pb::IMessage<ScheduleModel>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<ScheduleModel> _parser = new pb::MessageParser<ScheduleModel>(() => new ScheduleModel());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<ScheduleModel> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[1]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ScheduleModel() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ScheduleModel(ScheduleModel other) : this() {
+      id_ = other.id_;
+      taskId_ = other.taskId_;
+      status_ = other.status_;
+      cronEx_ = other.cronEx_;
+      timezone_ = other.timezone_;
+      nextRunAt_ = other.nextRunAt_ != null ? other.nextRunAt_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ScheduleModel Clone() {
+      return new ScheduleModel(this);
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 1;
+    private string id_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Id {
+      get { return id_; }
+      set {
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "taskId" field.</summary>
+    public const int TaskIdFieldNumber = 2;
+    private string taskId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TaskId {
+      get { return taskId_; }
+      set {
+        taskId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "status" field.</summary>
+    public const int StatusFieldNumber = 3;
+    private global::SchedulerService.Protos.ScheduleStatus status_ = global::SchedulerService.Protos.ScheduleStatus.Active;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::SchedulerService.Protos.ScheduleStatus Status {
+      get { return status_; }
+      set {
+        status_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "cronEx" field.</summary>
+    public const int CronExFieldNumber = 4;
+    private string cronEx_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string CronEx {
+      get { return cronEx_; }
+      set {
+        cronEx_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "timezone" field.</summary>
+    public const int TimezoneFieldNumber = 5;
+    private string timezone_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Timezone {
+      get { return timezone_; }
+      set {
+        timezone_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "nextRunAt" field.</summary>
+    public const int NextRunAtFieldNumber = 6;
+    private global::Google.Protobuf.WellKnownTypes.Timestamp nextRunAt_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Google.Protobuf.WellKnownTypes.Timestamp NextRunAt {
+      get { return nextRunAt_; }
+      set {
+        nextRunAt_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as ScheduleModel);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(ScheduleModel other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Id != other.Id) return false;
+      if (TaskId != other.TaskId) return false;
+      if (Status != other.Status) return false;
+      if (CronEx != other.CronEx) return false;
+      if (Timezone != other.Timezone) return false;
+      if (!object.Equals(NextRunAt, other.NextRunAt)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (TaskId.Length != 0) hash ^= TaskId.GetHashCode();
+      if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) hash ^= Status.GetHashCode();
+      if (CronEx.Length != 0) hash ^= CronEx.GetHashCode();
+      if (Timezone.Length != 0) hash ^= Timezone.GetHashCode();
+      if (nextRunAt_ != null) hash ^= NextRunAt.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (TaskId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(TaskId);
+      }
+      if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(CronEx);
+      }
+      if (Timezone.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Timezone);
+      }
+      if (nextRunAt_ != null) {
+        output.WriteRawTag(50);
+        output.WriteMessage(NextRunAt);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (TaskId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(TaskId);
+      }
+      if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(CronEx);
+      }
+      if (Timezone.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Timezone);
+      }
+      if (nextRunAt_ != null) {
+        output.WriteRawTag(50);
+        output.WriteMessage(NextRunAt);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (TaskId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TaskId);
+      }
+      if (Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
+      }
+      if (CronEx.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CronEx);
+      }
+      if (Timezone.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Timezone);
+      }
+      if (nextRunAt_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(NextRunAt);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(ScheduleModel other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Id.Length != 0) {
+        Id = other.Id;
+      }
+      if (other.TaskId.Length != 0) {
+        TaskId = other.TaskId;
+      }
+      if (other.Status != global::SchedulerService.Protos.ScheduleStatus.Active) {
+        Status = other.Status;
+      }
+      if (other.CronEx.Length != 0) {
+        CronEx = other.CronEx;
+      }
+      if (other.Timezone.Length != 0) {
+        Timezone = other.Timezone;
+      }
+      if (other.nextRunAt_ != null) {
+        if (nextRunAt_ == null) {
+          NextRunAt = new global::Google.Protobuf.WellKnownTypes.Timestamp();
+        }
+        NextRunAt.MergeFrom(other.NextRunAt);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            TaskId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
+            break;
+          }
+          case 34: {
+            CronEx = input.ReadString();
+            break;
+          }
+          case 42: {
+            Timezone = input.ReadString();
+            break;
+          }
+          case 50: {
+            if (nextRunAt_ == null) {
+              NextRunAt = new global::Google.Protobuf.WellKnownTypes.Timestamp();
+            }
+            input.ReadMessage(NextRunAt);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            TaskId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Status = (global::SchedulerService.Protos.ScheduleStatus) input.ReadEnum();
+            break;
+          }
+          case 34: {
+            CronEx = input.ReadString();
+            break;
+          }
+          case 42: {
+            Timezone = input.ReadString();
+            break;
+          }
+          case 50: {
+            if (nextRunAt_ == null) {
+              NextRunAt = new global::Google.Protobuf.WellKnownTypes.Timestamp();
+            }
+            input.ReadMessage(NextRunAt);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  public sealed partial class GetTaskSchedulesResponse : pb::IMessage<GetTaskSchedulesResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GetTaskSchedulesResponse> _parser = new pb::MessageParser<GetTaskSchedulesResponse>(() => new GetTaskSchedulesResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GetTaskSchedulesResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetTaskSchedulesResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetTaskSchedulesResponse(GetTaskSchedulesResponse other) : this() {
+      schedules_ = other.schedules_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetTaskSchedulesResponse Clone() {
+      return new GetTaskSchedulesResponse(this);
+    }
+
+    /// <summary>Field number for the "schedules" field.</summary>
+    public const int SchedulesFieldNumber = 1;
+    private static readonly pb::FieldCodec<global::SchedulerService.Protos.ScheduleModel> _repeated_schedules_codec
+        = pb::FieldCodec.ForMessage(10, global::SchedulerService.Protos.ScheduleModel.Parser);
+    private readonly pbc::RepeatedField<global::SchedulerService.Protos.ScheduleModel> schedules_ = new pbc::RepeatedField<global::SchedulerService.Protos.ScheduleModel>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::SchedulerService.Protos.ScheduleModel> Schedules {
+      get { return schedules_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GetTaskSchedulesResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GetTaskSchedulesResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if(!schedules_.Equals(other.schedules_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= schedules_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      schedules_.WriteTo(output, _repeated_schedules_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      schedules_.WriteTo(ref output, _repeated_schedules_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      size += schedules_.CalculateSize(_repeated_schedules_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GetTaskSchedulesResponse other) {
+      if (other == null) {
+        return;
+      }
+      schedules_.Add(other.schedules_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            schedules_.AddEntriesFrom(input, _repeated_schedules_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            schedules_.AddEntriesFrom(ref input, _repeated_schedules_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
   public sealed partial class CreateScheduleModel : pb::IMessage<CreateScheduleModel>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -83,7 +882,7 @@ namespace SchedulerService.Protos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[0]; }
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -383,7 +1182,7 @@ namespace SchedulerService.Protos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[1]; }
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -618,7 +1417,7 @@ namespace SchedulerService.Protos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[2]; }
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -918,7 +1717,7 @@ namespace SchedulerService.Protos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[3]; }
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1264,7 +2063,7 @@ namespace SchedulerService.Protos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[4]; }
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1490,7 +2289,7 @@ namespace SchedulerService.Protos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[5]; }
+      get { return global::SchedulerService.Protos.ScheduleReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
