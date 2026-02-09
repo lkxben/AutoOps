@@ -13,6 +13,6 @@ namespace Contracts.Scheduler
         [property: JsonPropertyName("task_id")] Guid TaskId,
         [property: JsonPropertyName("schedule_id")] Guid ScheduleId,
         [property: JsonPropertyName("next_run_at")] DateTime NextRunAt,
-        [property: JsonPropertyName("last_run_at")] DateTime? LastRunAt
+        [property: JsonPropertyName("last_run_at")] DateTime LastRunAt
     );
 }

@@ -79,3 +79,11 @@ export type ScheduleModel = {
 }
 
 export type ScheduleType = 'minutes' | 'hours' | 'daily' | 'weekly'
+
+export type ScheduleUpdate = {
+  userId: string
+  taskId: string
+  scheduleId: string
+  nextRunAt: string
+  lastRunAt: string
+}

@@ -16,6 +16,6 @@ namespace EventService.Dtos
         DateTime NextRunAt,
 
         [property: JsonPropertyName("lastRunAt")]
-        DateTime? LastRunAt
+        DateTime LastRunAt
     );
 }

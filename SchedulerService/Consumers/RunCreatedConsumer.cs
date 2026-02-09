@@ -16,6 +16,7 @@ namespace SchedulerService.Consumers
         public RunCreatedConsumer(SchedulerServiceContext db, IPublishEndpoint publish)
         {
             _db = db;
+            _publish = publish;
         }
 
         public async Task Consume(ConsumeContext<RunCreated> context)
@@ -38,7 +39,7 @@ namespace SchedulerService.Consumers
                 schedule.TaskId,
                 schedule.Id,
                 schedule.NextRunAt,
-                schedule.LastRunAt
+                schedule.LastRunAt.Value
             ));
             Console.WriteLine($"Schedule {schedule.Id} updated from RunCreated event");
         }

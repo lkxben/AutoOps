@@ -26,9 +26,19 @@ export default function TaskCard({ task, schedules, onClick }: TaskCardProps) {
   }, [task.id])
 
   const lastRunTime = useMemo(() => {
-    if (!latestRun) return null
-    return new Date(latestRun.updatedAt ?? latestRun.createdAt)
-  }, [latestRun])
+    const scheduleLastRuns = schedules
+      .map(s => s.lastRunAt)
+      .filter((t): t is string => !!t)
+      .map(t => new Date(t))
+
+    const times = [...scheduleLastRuns]
+    if (latestRun) {
+      times.push(new Date(latestRun.updatedAt ?? latestRun.createdAt))
+    }
+
+    if (!times.length) return null
+    return new Date(Math.max(...times.map(d => d.getTime())))
+  }, [schedules, latestRun])
 
   const nextRun = useMemo(() => {
     const now = Date.now()

@@ -5,6 +5,7 @@ import { apiGet } from '@/app/lib/api'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import TaskCard from '@/app/components/TaskCard'
 import TaskSchedulePanel from '@/app/components/TaskSchedulePanel'
+import { useScheduleUpdates } from '@/app/hooks/useScheduleUpdates'
 
 export default function TaskDashboard() {
   const [tasks, setTasks] = useState<TaskModel[]>([])
@@ -12,6 +13,8 @@ export default function TaskDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<TaskModel | null>(null)
+
+  const { updates } = useScheduleUpdates()
 
   useEffect(() => {
     setLoading(true)
@@ -62,6 +65,19 @@ export default function TaskDashboard() {
       [taskId]: prev[taskId].filter(s => s.id !== scheduleId),
     }))
   }, [])
+
+  useEffect(() => {
+    updates.forEach(update => {
+      const taskSchedules = schedules[update.taskId]
+      if (!taskSchedules) return
+
+      updateSchedule(update.taskId, {
+        ...taskSchedules.find(s => s.id === update.scheduleId)!,
+        lastRunAt: update.lastRunAt,
+        nextRunAt: update.nextRunAt,
+      })
+    })
+  }, [updates, updateSchedule])
 
   if (loading) return <p className="text-[var(--color-cyan)] p-4">Loading tasks...</p>
   if (error) return <p className="text-red-500 p-4">Error: {error}</p>
