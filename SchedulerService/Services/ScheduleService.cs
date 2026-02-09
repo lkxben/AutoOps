@@ -52,9 +52,7 @@ namespace SchedulerService.Protos
                 Status = s.Status,
                 CronEx = s.CronEx,
                 Timezone = s.Timezone,
-                NextRunAt = s.NextRunAt.HasValue 
-                    ? Timestamp.FromDateTime(DateTime.SpecifyKind(s.NextRunAt.Value, DateTimeKind.Utc))
-                    : null,
+                NextRunAt = Timestamp.FromDateTime(DateTime.SpecifyKind(s.NextRunAt, DateTimeKind.Utc)),
                 LastRunAt = s.LastRunAt.HasValue 
                     ? Timestamp.FromDateTime(DateTime.SpecifyKind(s.LastRunAt.Value, DateTimeKind.Utc))
                     : null
@@ -116,11 +114,9 @@ namespace SchedulerService.Protos
                 Status = newSchedule.Status,
                 CronEx = newSchedule.CronEx,
                 Timezone = newSchedule.Timezone,
-                NextRunAt = newSchedule.NextRunAt.HasValue 
-                    ? Timestamp.FromDateTime(newSchedule.NextRunAt.Value)
-                    : null,
+                NextRunAt = Timestamp.FromDateTime(DateTime.SpecifyKind(newSchedule.NextRunAt, DateTimeKind.Utc)),
                 LastRunAt = newSchedule.LastRunAt.HasValue
-                    ? Timestamp.FromDateTime(newSchedule.LastRunAt.Value)
+                    ? Timestamp.FromDateTime(DateTime.SpecifyKind(newSchedule.LastRunAt.Value, DateTimeKind.Utc))
                     : null
             };
         }
@@ -181,11 +177,9 @@ namespace SchedulerService.Protos
                 Status = schedule.Status,
                 CronEx = schedule.CronEx,
                 Timezone = schedule.Timezone,
-                NextRunAt = schedule.NextRunAt.HasValue 
-                    ? Timestamp.FromDateTime(schedule.NextRunAt.Value)
-                    : null,
+                NextRunAt = Timestamp.FromDateTime(DateTime.SpecifyKind(schedule.NextRunAt, DateTimeKind.Utc)),
                 LastRunAt = schedule.LastRunAt.HasValue
-                    ? Timestamp.FromDateTime(schedule.LastRunAt.Value)
+                    ? Timestamp.FromDateTime(DateTime.SpecifyKind(schedule.LastRunAt.Value, DateTimeKind.Utc))
                     : null
             };
         }

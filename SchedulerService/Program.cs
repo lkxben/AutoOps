@@ -54,6 +54,7 @@ var uri = new Uri($"rabbitmq://{rabbitMQSettings.Host}:{port}/");
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<WorkflowTaskCreatedConsumer>();
+    x.AddConsumer<RunCreatedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -63,6 +64,7 @@ builder.Services.AddMassTransit(x =>
             h.Password(rabbitMQSettings.Password);
         });
         cfg.Publish<Contracts.Scheduler.RunCreateRequest>(p => p.Durable = true);
+        cfg.Publish<Contracts.Scheduler.ScheduleUpdated>(p => p.Durable = true);
         cfg.ConfigureEndpoints(context);
     });
 });

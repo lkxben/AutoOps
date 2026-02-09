@@ -40,7 +40,7 @@ namespace WorkflowService.Consumers
 
             _db.Runs.Add(run);
             await _db.SaveChangesAsync();
-            await _publishEndpoint.Publish(new RunCreated(run.Id, task.Id, run.UserId, plan.Id, task.Prompt, task.Title, plan.Graph));
+            await _publishEndpoint.Publish(new RunCreated(run.Id, task.Id, run.UserId, plan.Id, task.Prompt, task.Title, plan.Graph, message.ScheduleId));
             Console.WriteLine($"Workflow received RunCreateRequest for Task {message.TaskId}");
         }
     }

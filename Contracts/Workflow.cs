@@ -15,6 +15,7 @@ namespace Contracts.Workflow
         [property: JsonPropertyName("plan_id")] Guid PlanId,
         [property: JsonPropertyName("prompt")] string Prompt,
         [property: JsonPropertyName("title")] string Title,
-        [property: JsonPropertyName("graph")] string Graph
+        [property: JsonPropertyName("graph")] string Graph,
+        [property: JsonPropertyName("schedule_id")] Guid? ScheduleId = null
     );
 }

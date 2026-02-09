@@ -188,10 +188,11 @@ services:
 
   event-service:
     build:
-      context: ./EventService
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: EventService/Dockerfile.dev
     volumes:
-      - ./EventService:/app:cached
+      - ./EventService:/app/EventService:cached
+      - ./Contracts:/app/Contracts:cached
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'
