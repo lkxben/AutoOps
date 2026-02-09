@@ -1,19 +1,29 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { TaskModel, RunModel } from '@/app/lib/types'
+import { TaskModel, RunModel, ScheduleModel } from '@/app/lib/types'
 import { apiPost } from '@/app/lib/api'
 
 type TaskCardProps = {
   task: TaskModel & { schedule?: string }
+  schedules: ScheduleModel[]
   lastRun?: Date
   onRunCreated?: (run: RunModel) => void
   onClick?: () => void
 }
 
-export default function TaskCard({ task, lastRun, onRunCreated, onClick }: TaskCardProps) {
+export default function TaskCard({ task, schedules, lastRun, onRunCreated, onClick }: TaskCardProps) {
+  const nextRun = (() => {
+    const now = Date.now()
+    const times = schedules
+      .map(s => s.nextRunAt ? new Date(s.nextRunAt).getTime() : null)
+      .filter((t): t is number => t !== null && t > now)
+    if (!times.length) return null
+    return new Date(Math.min(...times))
+  })()
+
   const handleRunClick = async (e: React.MouseEvent) => {
-    e.stopPropagation() // prevent triggering the card click
+    e.stopPropagation()
     try {
       const response = await apiPost('/runs', { taskId: task.id })
 
@@ -38,7 +48,7 @@ export default function TaskCard({ task, lastRun, onRunCreated, onClick }: TaskC
   return (
     <div
       className="bg-white border border-gray-200 rounded-2xl transition w-[95%] min-w-[24rem] mx-auto py-6 px-8 hover:shadow-md cursor-pointer"
-      onClick={onClick} // <--- trigger panel
+      onClick={onClick}
     >
       <div className="grid grid-cols-[1fr_1fr_1fr_1fr] items-center gap-4">
         <div className="flex flex-col items-start min-w-0">
@@ -53,7 +63,9 @@ export default function TaskCard({ task, lastRun, onRunCreated, onClick }: TaskC
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-400 uppercase">Next Run</span>
-          <span className="text-xs text-gray-500 text-center">{task.schedule ?? '-'}</span>
+          <span className="text-xs text-gray-500 text-center">
+            {nextRun ? formatDistanceToNow(nextRun, { addSuffix: true }) : '-'}
+          </span>
         </div>
         <div className="flex justify-end">
           <button

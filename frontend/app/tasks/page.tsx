@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { apiGet } from '@/app/lib/api'
 import { TaskModel, RunModel, ScheduleModel } from '@/app/lib/types'
 import TaskCard from '@/app/components/TaskCard'
@@ -57,26 +57,26 @@ export default function TaskDashboard() {
     setRuns(prev => [...prev, newRun])
   }
 
-  const addSchedule = (taskId: string, newSchedule: ScheduleModel) => {
+  const addSchedule = useCallback((taskId: string, newSchedule: ScheduleModel) => {
     setSchedules(prev => ({
       ...prev,
       [taskId]: [...(prev[taskId] || []), newSchedule],
     }))
-  }
+  }, [])
 
-  const updateSchedule = (taskId: string, updatedSchedule: ScheduleModel) => {
+  const updateSchedule = useCallback((taskId: string, updatedSchedule: ScheduleModel) => {
     setSchedules(prev => ({
       ...prev,
       [taskId]: prev[taskId].map(s => (s.id === updatedSchedule.id ? updatedSchedule : s)),
     }))
-  }
+  }, [])
 
-  const deleteSchedule = (taskId: string, scheduleId: string) => {
+  const deleteSchedule = useCallback((taskId: string, scheduleId: string) => {
     setSchedules(prev => ({
       ...prev,
       [taskId]: prev[taskId].filter(s => s.id !== scheduleId),
     }))
-  }
+  }, [])
 
   if (loading) return <p className="text-[var(--color-cyan)] p-4">Loading tasks...</p>
   if (error) return <p className="text-red-500 p-4">Error: {error}</p>
@@ -93,9 +93,6 @@ export default function TaskDashboard() {
             lastRun={lastRunMap[task.id]}
             onRunCreated={handleRunCreated}
             onClick={() => setSelectedTask(task)}
-            addSchedule={addSchedule}
-            updateSchedule={updateSchedule}
-            deleteSchedule={deleteSchedule}
           />
         ))}
       </div>
