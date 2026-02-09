@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
-import TaskSchedulesSection from './TaskSchedulesSection'
+import TaskSchedulesSection from '@/app/components/TaskSchedulesSection'
+import TaskRunsSection from '@/app/components/TaskRunsSection'
 
 type Tab = 'schedules' | 'runs' | 'graph'
 
@@ -73,9 +74,7 @@ export default function TaskDashboardPanel({
           )}
 
           {tab === 'runs' && (
-            <div className="text-gray-500 text-sm py-6">
-              Runs view coming soon…
-            </div>
+            <TaskRunsSection task={task} />
           )}
 
           {tab === 'graph' && (
@@ -89,7 +88,7 @@ export default function TaskDashboardPanel({
       <style jsx>{`
         .animate-slide-up {
           transform: translateY(100%);
-          animation: slide-up 0.7s forwards;
+          animation: slide-up 0.5s forwards;
         }
         @keyframes slide-up {
           to {

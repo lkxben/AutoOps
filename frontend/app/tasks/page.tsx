@@ -2,12 +2,17 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { apiGet } from '@/app/lib/api'
+import { useAuth } from '@/app/contexts/AuthContext'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import TaskCard from '@/app/components/TaskCard'
 import TaskDashboardPanel from '@/app/components/TaskDashboardPanel'
 import { useScheduleUpdates } from '@/app/hooks/useScheduleUpdates'
+import LoadingScreen from '@/app/loading'
+import Error from '@/app/error'
+import EmptyState from '@/app/components/EmptyState'
 
 export default function TaskDashboard() {
+  const { isAuthenticated } = useAuth()
   const [tasks, setTasks] = useState<TaskModel[]>([])
   const [schedules, setSchedules] = useState<Record<string, ScheduleModel[]>>({})
   const [loading, setLoading] = useState(true)
@@ -17,6 +22,11 @@ export default function TaskDashboard() {
   const { updates } = useScheduleUpdates()
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -41,7 +51,7 @@ export default function TaskDashboard() {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [isAuthenticated])
 
   const addSchedule = useCallback((taskId: string, newSchedule: ScheduleModel) => {
     setSchedules(prev => ({
@@ -79,9 +89,12 @@ export default function TaskDashboard() {
     })
   }, [updates, updateSchedule])
 
-  if (loading) return <p className="text-[var(--color-cyan)] p-4">Loading tasks...</p>
-  if (error) return <p className="text-red-500 p-4">Error: {error}</p>
-  if (!tasks.length) return <p className="text-[var(--color-cyan)] p-4">No tasks yet.</p>
+  if (loading) return <LoadingScreen />
+  if (!isAuthenticated) return <Error error="You must be logged in to view tasks." />
+  if (error) return <Error error={error} />
+  if (!tasks.length) {
+    return <EmptyState message="No tasks yet" />
+  }
 
   return (
     <>
