@@ -48,19 +48,23 @@ namespace WorkflowService.Protos {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::WorkflowService.Protos.CreateRunModel> __Marshaller_RunSvc_CreateRunModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.CreateRunModel.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::WorkflowService.Protos.CreateRunResponse> __Marshaller_RunSvc_CreateRunResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.CreateRunResponse.Parser));
+    static readonly grpc::Marshaller<global::WorkflowService.Protos.RunModel> __Marshaller_RunSvc_RunModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.RunModel.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::WorkflowService.Protos.GetUserRunsModel> __Marshaller_RunSvc_GetUserRunsModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.GetUserRunsModel.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::WorkflowService.Protos.UserRunsResponse> __Marshaller_RunSvc_UserRunsResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.UserRunsResponse.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::WorkflowService.Protos.GetTaskRunsModel> __Marshaller_RunSvc_GetTaskRunsModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.GetTaskRunsModel.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::WorkflowService.Protos.TaskRunsResponse> __Marshaller_RunSvc_TaskRunsResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::WorkflowService.Protos.TaskRunsResponse.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::WorkflowService.Protos.CreateRunModel, global::WorkflowService.Protos.CreateRunResponse> __Method_CreateRun = new grpc::Method<global::WorkflowService.Protos.CreateRunModel, global::WorkflowService.Protos.CreateRunResponse>(
+    static readonly grpc::Method<global::WorkflowService.Protos.CreateRunModel, global::WorkflowService.Protos.RunModel> __Method_CreateRun = new grpc::Method<global::WorkflowService.Protos.CreateRunModel, global::WorkflowService.Protos.RunModel>(
         grpc::MethodType.Unary,
         __ServiceName,
         "CreateRun",
         __Marshaller_RunSvc_CreateRunModel,
-        __Marshaller_RunSvc_CreateRunResponse);
+        __Marshaller_RunSvc_RunModel);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::WorkflowService.Protos.GetUserRunsModel, global::WorkflowService.Protos.UserRunsResponse> __Method_GetUserRuns = new grpc::Method<global::WorkflowService.Protos.GetUserRunsModel, global::WorkflowService.Protos.UserRunsResponse>(
@@ -69,6 +73,14 @@ namespace WorkflowService.Protos {
         "GetUserRuns",
         __Marshaller_RunSvc_GetUserRunsModel,
         __Marshaller_RunSvc_UserRunsResponse);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::WorkflowService.Protos.GetTaskRunsModel, global::WorkflowService.Protos.TaskRunsResponse> __Method_GetTaskRuns = new grpc::Method<global::WorkflowService.Protos.GetTaskRunsModel, global::WorkflowService.Protos.TaskRunsResponse>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetTaskRuns",
+        __Marshaller_RunSvc_GetTaskRunsModel,
+        __Marshaller_RunSvc_TaskRunsResponse);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -104,22 +116,22 @@ namespace WorkflowService.Protos {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::WorkflowService.Protos.CreateRunResponse CreateRun(global::WorkflowService.Protos.CreateRunModel request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::WorkflowService.Protos.RunModel CreateRun(global::WorkflowService.Protos.CreateRunModel request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return CreateRun(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::WorkflowService.Protos.CreateRunResponse CreateRun(global::WorkflowService.Protos.CreateRunModel request, grpc::CallOptions options)
+      public virtual global::WorkflowService.Protos.RunModel CreateRun(global::WorkflowService.Protos.CreateRunModel request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_CreateRun, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.CreateRunResponse> CreateRunAsync(global::WorkflowService.Protos.CreateRunModel request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.RunModel> CreateRunAsync(global::WorkflowService.Protos.CreateRunModel request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return CreateRunAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.CreateRunResponse> CreateRunAsync(global::WorkflowService.Protos.CreateRunModel request, grpc::CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.RunModel> CreateRunAsync(global::WorkflowService.Protos.CreateRunModel request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_CreateRun, null, options, request);
       }
@@ -142,6 +154,26 @@ namespace WorkflowService.Protos {
       public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.UserRunsResponse> GetUserRunsAsync(global::WorkflowService.Protos.GetUserRunsModel request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetUserRuns, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::WorkflowService.Protos.TaskRunsResponse GetTaskRuns(global::WorkflowService.Protos.GetTaskRunsModel request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetTaskRuns(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::WorkflowService.Protos.TaskRunsResponse GetTaskRuns(global::WorkflowService.Protos.GetTaskRunsModel request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetTaskRuns, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.TaskRunsResponse> GetTaskRunsAsync(global::WorkflowService.Protos.GetTaskRunsModel request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetTaskRunsAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::WorkflowService.Protos.TaskRunsResponse> GetTaskRunsAsync(global::WorkflowService.Protos.GetTaskRunsModel request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetTaskRuns, null, options, request);
       }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]

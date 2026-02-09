@@ -292,6 +292,36 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
     return Results.Ok(tasksDto);
 }).RequireAuthorization();
 
+app.MapGet("/tasks/{id}/runs", async (string id, bool latest, HttpContext context, RunSvc.RunSvcClient runClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var taskId))
+        return Results.BadRequest(new { error = "Invalid task ID" });
+
+    var response = await runClient.GetTaskRunsAsync(new GetTaskRunsModel
+    {
+        UserId = userId,
+        TaskId = taskId.ToString(),
+        Latest = latest
+    });
+
+    var runsDto = response.Runs.Select(run => new RunDto
+    (
+        run.Id,
+        run.UserId,
+        run.TaskId,
+        run.PlanId,
+        run.Status,
+        run.Result,
+        run.CreatedAt.ToDateTime(),
+        run.UpdatedAt?.ToDateTime()
+    ));
+
+    return Results.Ok(runsDto);
+}).RequireAuthorization();
+
 app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -313,8 +343,8 @@ app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttp
         s.Status,
         s.CronEx,
         s.Timezone,
-        s.NextRunAt != null ? s.NextRunAt.ToDateTime() : (DateTime?)null,
-        s.LastRunAt != null ? s.LastRunAt.ToDateTime() : (DateTime?)null
+        s.NextRunAt?.ToDateTime(),
+        s.LastRunAt?.ToDateTime()
     ));
 
     return Results.Ok(schedulesDto);
@@ -410,7 +440,16 @@ app.MapPost("/runs", async (CreateRunDto dto, HttpContext context, RunSvc.RunSvc
         TaskId = dto.TaskId,
     });
 
-    return Results.Ok(new IdDto(result.Id));
+    return Results.Ok(new RunDto(
+        result.Id,
+        result.UserId,
+        result.TaskId,
+        result.PlanId,
+        result.Status,
+        result.Result,
+        result.CreatedAt.ToDateTime(),
+        result.UpdatedAt?.ToDateTime()
+    ));
 }).RequireAuthorization();
 
 app.MapGet("/runs", async (HttpContext context, RunSvc.RunSvcClient runClient) =>
@@ -516,8 +555,8 @@ app.MapPost("/schedules", async (CreateScheduleDto dto, HttpContext context, IHt
         result.Status,
         result.CronEx,
         result.Timezone,
-        result.NextRunAt != null ? result.NextRunAt.ToDateTime() : (DateTime?)null,
-        result.LastRunAt != null ? result.LastRunAt.ToDateTime() : (DateTime?)null
+        result.NextRunAt?.ToDateTime(),
+        result.LastRunAt?.ToDateTime()
     ));
 }).RequireAuthorization();
 
@@ -544,8 +583,8 @@ app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpConte
         result.Status,
         result.CronEx,
         result.Timezone,
-        result.NextRunAt != null ? result.NextRunAt.ToDateTime() : (DateTime?)null,
-        result.LastRunAt != null ? result.LastRunAt.ToDateTime() : (DateTime?)null
+        result.NextRunAt?.ToDateTime(),
+        result.LastRunAt?.ToDateTime()
     ));
 }).RequireAuthorization();
 

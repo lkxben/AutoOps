@@ -3,7 +3,6 @@ using Grpc.Core;
 using SchedulerService.Data;
 using MassTransit;
 using SchedulerService.Protos;
-using WorkflowService.Protos;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using SchedulerService.Consumers;
 using Microsoft.Extensions.Options;
