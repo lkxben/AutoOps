@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { apiGet } from '@/app/lib/api'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import TaskCard from '@/app/components/TaskCard'
-import TaskSchedulePanel from '@/app/components/TaskSchedulePanel'
+import TaskDashboardPanel from '@/app/components/TaskDashboardPanel'
 import { useScheduleUpdates } from '@/app/hooks/useScheduleUpdates'
 
 export default function TaskDashboard() {
@@ -97,7 +97,7 @@ export default function TaskDashboard() {
       </div>
 
       {selectedTask && (
-        <TaskSchedulePanel
+        <TaskDashboardPanel
           task={selectedTask}
           schedules={schedules[selectedTask.id] || []}
           addSchedule={addSchedule}
