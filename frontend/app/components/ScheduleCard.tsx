@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { formatDistanceToNow } from 'date-fns'
+import TimeAgo from 'react-timeago'
+import { formatter } from '@/app/lib/timeago'
 import { ScheduleModel, ScheduleStatus } from '@/app/lib/types'
 import cronstrue from 'cronstrue'
 import ScheduleEditForm from '@/app/components/EditScheduleForm'
@@ -82,14 +83,18 @@ export default function ScheduleCard({ schedule, onDelete, onEdit, browserTimezo
       <div className="flex flex-col items-center">
         <span className="text-[10px] text-gray-400 uppercase">Last Run</span>
         <span className="text-xs text-gray-500 text-center">
-          {lastRun ? formatDistanceToNow(lastRun, { addSuffix: true }) : '-'}
+          {lastRun ? <TimeAgo date={lastRun} formatter={formatter} /> : '-'}
         </span>
       </div>
 
       <div className="flex flex-col items-center">
         <span className="text-[10px] text-gray-400 uppercase">Next Run</span>
         <span className="text-xs text-gray-500 text-center">
-          {nextRun ? formatDistanceToNow(nextRun, { addSuffix: true }) : '-'}
+          {nextRun
+            ? nextRun.getTime() <= Date.now()
+              ? 'Running'
+              : <TimeAgo date={nextRun} formatter={formatter} />
+            : '-'}
         </span>
       </div>
 

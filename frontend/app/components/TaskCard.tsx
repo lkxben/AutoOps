@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { formatDistanceToNow } from 'date-fns'
 import { TaskModel, RunModel, ScheduleModel } from '@/app/lib/types'
 import { apiGet, apiPost } from '@/app/lib/api'
+import TimeAgo from 'react-timeago'
+import { formatter } from '@/app/lib/timeago'
 
 type TaskCardProps = {
   task: TaskModel & { schedule?: string }
@@ -75,14 +76,18 @@ export default function TaskCard({ task, schedules, onClick }: TaskCardProps) {
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-400 uppercase">Last Run</span>
           <span className="text-xs text-gray-500 text-center">
-            {loadingRun ? 'Loading...' : lastRunTime ? formatDistanceToNow(lastRunTime, { addSuffix: true }) : '-'}
+            {loadingRun ? 'Loading...' : lastRunTime ? <TimeAgo date={lastRunTime} formatter={formatter} /> : '-'}
           </span>
         </div>
 
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-400 uppercase">Next Run</span>
           <span className="text-xs text-gray-500 text-center">
-            {nextRun ? formatDistanceToNow(nextRun, { addSuffix: true }) : '-'}
+              {nextRun
+              ? nextRun.getTime() <= Date.now()
+                ? 'Running'
+                : <TimeAgo date={nextRun} formatter={formatter} />
+              : '-'}
           </span>
         </div>
 
