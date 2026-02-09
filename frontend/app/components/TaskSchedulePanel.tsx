@@ -47,6 +47,7 @@ export default function TaskSchedulePanel({
         timezone: 'UTC',
         status: 0,
         nextRunAt: created.nextRunAt,
+        lastRunAt: undefined
       }
 
       addSchedule(task.id, fullSchedule)

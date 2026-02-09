@@ -64,10 +64,12 @@ export default function TaskDashboard() {
     }))
   }, [])
 
-  const updateSchedule = useCallback((taskId: string, updatedSchedule: ScheduleModel) => {
+  const updateSchedule = useCallback((taskId: string, updated: ScheduleModel) => {
     setSchedules(prev => ({
       ...prev,
-      [taskId]: prev[taskId].map(s => (s.id === updatedSchedule.id ? updatedSchedule : s)),
+      [taskId]: prev[taskId].map(s =>
+        s.id === updated.id ? { ...s, ...updated } : s
+      ),
     }))
   }, [])
 

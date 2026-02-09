@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { formatDistanceToNow } from 'date-fns'
 import { ScheduleModel, ScheduleStatus } from '@/app/lib/types'
 import cronstrue from 'cronstrue'
 import ScheduleEditForm from '@/app/components/EditScheduleForm'
@@ -52,6 +53,9 @@ export default function ScheduleCard({ schedule, onDelete, onEdit, browserTimezo
       ? 'bg-green-100 text-green-700'
       : 'bg-yellow-100 text-yellow-700'
 
+  const lastRun = schedule.lastRunAt ? new Date(schedule.lastRunAt) : null
+  const nextRun = schedule.nextRunAt ? new Date(schedule.nextRunAt) : null
+
   if (isEditing) {
     return (
       <ScheduleEditForm
@@ -67,15 +71,29 @@ export default function ScheduleCard({ schedule, onDelete, onEdit, browserTimezo
   }
 
   return (
-    <div className="flex justify-between items-center border py-3 px-4 rounded-lg">
-      <div className="flex flex-col gap-1">
-        <p className="font-medium text-gray-900">{humanCron}</p>
+    <div className="grid grid-cols-[1fr_1fr_1fr_1fr] items-center border py-3 px-4 rounded-lg gap-4">
+      <div className="flex flex-col gap-1 min-w-0">
+        <p className="font-medium text-gray-900 truncate">{humanCron}</p>
         <span className={`text-xs px-2 py-0.5 rounded-full w-fit ${statusClass}`}>
           {statusLabel}
         </span>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] text-gray-400 uppercase">Last Run</span>
+        <span className="text-xs text-gray-500 text-center">
+          {lastRun ? formatDistanceToNow(lastRun, { addSuffix: true }) : '-'}
+        </span>
+      </div>
+
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] text-gray-400 uppercase">Next Run</span>
+        <span className="text-xs text-gray-500 text-center">
+          {nextRun ? formatDistanceToNow(nextRun, { addSuffix: true }) : '-'}
+        </span>
+      </div>
+
+      <div className="flex gap-3 justify-end">
         <button
           className="p-1 text-blue-500 hover:bg-blue-100 rounded"
           onClick={() => setIsEditing(true)}

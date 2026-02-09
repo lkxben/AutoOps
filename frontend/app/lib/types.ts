@@ -74,7 +74,8 @@ export type ScheduleModel = {
   status: ScheduleStatus,
   cronEx: string,
   timezone: string,
-  nextRunAt: string
+  nextRunAt: string,
+  lastRunAt?: string
 }
 
 export type ScheduleType = 'minutes' | 'hours' | 'daily' | 'weekly'
