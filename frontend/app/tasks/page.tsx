@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { apiGet } from '@/app/lib/api'
-import { TaskModel, RunModel, ScheduleModel } from '@/app/lib/types'
+import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import TaskCard from '@/app/components/TaskCard'
 import TaskSchedulePanel from '@/app/components/TaskSchedulePanel'
 
 export default function TaskDashboard() {
   const [tasks, setTasks] = useState<TaskModel[]>([])
-  const [runs, setRuns] = useState<RunModel[]>([])
   const [schedules, setSchedules] = useState<Record<string, ScheduleModel[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -18,10 +17,9 @@ export default function TaskDashboard() {
     setLoading(true)
     setError(null)
 
-    Promise.all([apiGet('/tasks'), apiGet('/runs')])
-      .then(([tasksData, runsData]: [TaskModel[], RunModel[]]) => {
+    apiGet('/tasks')
+      .then((tasksData: TaskModel[]) => {
         setTasks(tasksData)
-        setRuns(runsData)
 
         return Promise.all(
           tasksData.map(task =>
@@ -41,21 +39,6 @@ export default function TaskDashboard() {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
-
-  const lastRunMap = useMemo(() => {
-    const map: Record<string, Date> = {}
-    runs.forEach(run => {
-      const runTime = new Date(run.updatedAt ?? run.createdAt)
-      if (!map[run.taskId] || runTime > map[run.taskId]) {
-        map[run.taskId] = runTime
-      }
-    })
-    return map
-  }, [runs])
-
-  const handleRunCreated = (newRun: RunModel) => {
-    setRuns(prev => [...prev, newRun])
-  }
 
   const addSchedule = useCallback((taskId: string, newSchedule: ScheduleModel) => {
     setSchedules(prev => ({
@@ -92,8 +75,6 @@ export default function TaskDashboard() {
             key={task.id}
             task={task}
             schedules={schedules[task.id] || []}
-            lastRun={lastRunMap[task.id]}
-            onRunCreated={handleRunCreated}
             onClick={() => setSelectedTask(task)}
           />
         ))}

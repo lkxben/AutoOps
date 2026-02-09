@@ -40,17 +40,7 @@ export default function TaskSchedulePanel({
     try {
       const created = await apiPost('/schedules', { taskId: task.id, cronEx, timezone: 'UTC' })
 
-      const fullSchedule: ScheduleModel = {
-        id: created.id,
-        taskId: task.id,
-        cronEx,
-        timezone: 'UTC',
-        status: 0,
-        nextRunAt: created.nextRunAt,
-        lastRunAt: undefined
-      }
-
-      addSchedule(task.id, fullSchedule)
+      addSchedule(task.id, created)
       setShowCreate(false)
     } catch (err: any) {
       setError(err.message)

@@ -292,7 +292,7 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
     return Results.Ok(tasksDto);
 }).RequireAuthorization();
 
-app.MapGet("/tasks/{id}/runs", async (string id, bool latest, HttpContext context, RunSvc.RunSvcClient runClient) =>
+app.MapGet("/tasks/{id}/runs", async (string id, bool latest = false, HttpContext context, RunSvc.RunSvcClient runClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
