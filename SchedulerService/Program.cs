@@ -28,17 +28,6 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 });
 
-// client
-var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
-                             ?? throw new Exception("Grpc:WorkflowService configuration is missing");
-
-builder.Services.AddGrpcClient<RunSvc.RunSvcClient>(o =>
-{
-    o.Address = new Uri(workflowServiceUrl);
-})
-.ConfigureChannel(o => o.MaxRetryAttempts = 0)
-.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
-
 builder.Services.AddDbContext<SchedulerServiceContext>(options =>
 {
     options.UseNpgsql(dbConnection, npgsqlOptions =>
@@ -82,10 +71,13 @@ builder.Services.AddMassTransit(x =>
 // hangfire
 builder.Services.AddHangfire(config =>
 {
-    config.UsePostgreSqlStorage(dbConnection, new Hangfire.PostgreSql.PostgreSqlStorageOptions
-    {
-        SchemaName = schema
-    });
+    config.UsePostgreSqlStorage(
+        dbConnection,
+        new Hangfire.PostgreSql.PostgreSqlStorageOptions
+        {
+            SchemaName = schema
+        }
+    );
 });
 
 builder.Services.AddHangfireServer(options =>

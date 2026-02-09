@@ -52,11 +52,9 @@ namespace SchedulerService.Protos {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::SchedulerService.Protos.CreateScheduleModel> __Marshaller_ScheduleSvc_CreateScheduleModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SchedulerService.Protos.CreateScheduleModel.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SchedulerService.Protos.CreateScheduleResponse> __Marshaller_ScheduleSvc_CreateScheduleResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SchedulerService.Protos.CreateScheduleResponse.Parser));
+    static readonly grpc::Marshaller<global::SchedulerService.Protos.ScheduleModel> __Marshaller_ScheduleSvc_ScheduleModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SchedulerService.Protos.ScheduleModel.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::SchedulerService.Protos.EditScheduleModel> __Marshaller_ScheduleSvc_EditScheduleModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SchedulerService.Protos.EditScheduleModel.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SchedulerService.Protos.EditScheduleResponse> __Marshaller_ScheduleSvc_EditScheduleResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SchedulerService.Protos.EditScheduleResponse.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::SchedulerService.Protos.DeleteScheduleModel> __Marshaller_ScheduleSvc_DeleteScheduleModel = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SchedulerService.Protos.DeleteScheduleModel.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -71,20 +69,20 @@ namespace SchedulerService.Protos {
         __Marshaller_ScheduleSvc_GetTaskSchedulesResponse);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::SchedulerService.Protos.CreateScheduleModel, global::SchedulerService.Protos.CreateScheduleResponse> __Method_CreateSchedule = new grpc::Method<global::SchedulerService.Protos.CreateScheduleModel, global::SchedulerService.Protos.CreateScheduleResponse>(
+    static readonly grpc::Method<global::SchedulerService.Protos.CreateScheduleModel, global::SchedulerService.Protos.ScheduleModel> __Method_CreateSchedule = new grpc::Method<global::SchedulerService.Protos.CreateScheduleModel, global::SchedulerService.Protos.ScheduleModel>(
         grpc::MethodType.Unary,
         __ServiceName,
         "CreateSchedule",
         __Marshaller_ScheduleSvc_CreateScheduleModel,
-        __Marshaller_ScheduleSvc_CreateScheduleResponse);
+        __Marshaller_ScheduleSvc_ScheduleModel);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::SchedulerService.Protos.EditScheduleModel, global::SchedulerService.Protos.EditScheduleResponse> __Method_EditSchedule = new grpc::Method<global::SchedulerService.Protos.EditScheduleModel, global::SchedulerService.Protos.EditScheduleResponse>(
+    static readonly grpc::Method<global::SchedulerService.Protos.EditScheduleModel, global::SchedulerService.Protos.ScheduleModel> __Method_EditSchedule = new grpc::Method<global::SchedulerService.Protos.EditScheduleModel, global::SchedulerService.Protos.ScheduleModel>(
         grpc::MethodType.Unary,
         __ServiceName,
         "EditSchedule",
         __Marshaller_ScheduleSvc_EditScheduleModel,
-        __Marshaller_ScheduleSvc_EditScheduleResponse);
+        __Marshaller_ScheduleSvc_ScheduleModel);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::SchedulerService.Protos.DeleteScheduleModel, global::SchedulerService.Protos.DeleteScheduleResponse> __Method_DeleteSchedule = new grpc::Method<global::SchedulerService.Protos.DeleteScheduleModel, global::SchedulerService.Protos.DeleteScheduleResponse>(
@@ -111,13 +109,13 @@ namespace SchedulerService.Protos {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SchedulerService.Protos.CreateScheduleResponse> CreateSchedule(global::SchedulerService.Protos.CreateScheduleModel request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SchedulerService.Protos.ScheduleModel> CreateSchedule(global::SchedulerService.Protos.CreateScheduleModel request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SchedulerService.Protos.EditScheduleResponse> EditSchedule(global::SchedulerService.Protos.EditScheduleModel request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SchedulerService.Protos.ScheduleModel> EditSchedule(global::SchedulerService.Protos.EditScheduleModel request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -150,8 +148,8 @@ namespace SchedulerService.Protos {
     public static void BindService(grpc::ServiceBinderBase serviceBinder, ScheduleSvcBase serviceImpl)
     {
       serviceBinder.AddMethod(__Method_GetTaskSchedules, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SchedulerService.Protos.GetTaskSchedulesModel, global::SchedulerService.Protos.GetTaskSchedulesResponse>(serviceImpl.GetTaskSchedules));
-      serviceBinder.AddMethod(__Method_CreateSchedule, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SchedulerService.Protos.CreateScheduleModel, global::SchedulerService.Protos.CreateScheduleResponse>(serviceImpl.CreateSchedule));
-      serviceBinder.AddMethod(__Method_EditSchedule, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SchedulerService.Protos.EditScheduleModel, global::SchedulerService.Protos.EditScheduleResponse>(serviceImpl.EditSchedule));
+      serviceBinder.AddMethod(__Method_CreateSchedule, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SchedulerService.Protos.CreateScheduleModel, global::SchedulerService.Protos.ScheduleModel>(serviceImpl.CreateSchedule));
+      serviceBinder.AddMethod(__Method_EditSchedule, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SchedulerService.Protos.EditScheduleModel, global::SchedulerService.Protos.ScheduleModel>(serviceImpl.EditSchedule));
       serviceBinder.AddMethod(__Method_DeleteSchedule, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SchedulerService.Protos.DeleteScheduleModel, global::SchedulerService.Protos.DeleteScheduleResponse>(serviceImpl.DeleteSchedule));
     }
 

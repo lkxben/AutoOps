@@ -54,13 +54,16 @@ namespace SchedulerService.Protos
                 Timezone = s.Timezone,
                 NextRunAt = s.NextRunAt.HasValue 
                     ? Timestamp.FromDateTime(DateTime.SpecifyKind(s.NextRunAt.Value, DateTimeKind.Utc))
+                    : null,
+                LastRunAt = s.LastRunAt.HasValue 
+                    ? Timestamp.FromDateTime(DateTime.SpecifyKind(s.LastRunAt.Value, DateTimeKind.Utc))
                     : null
             }));
 
             return response;
         }
 
-        public override async Task<CreateScheduleResponse> CreateSchedule(CreateScheduleModel request, ServerCallContext context)
+        public override async Task<ScheduleModel> CreateSchedule(CreateScheduleModel request, ServerCallContext context)
         {
             var mapping = await _db.TaskUserMappings.FirstOrDefaultAsync(e => e.TaskId == Guid.Parse(request.TaskId) 
                 && e.UserId == Guid.Parse(request.UserId));
@@ -106,14 +109,23 @@ namespace SchedulerService.Protos
 
             _db.Schedules.Add(newSchedule);
             await _db.SaveChangesAsync();
-            return new CreateScheduleResponse
+            return new ScheduleModel
             {
                 Id = newSchedule.Id.ToString(),
-                NextRunAt = Timestamp.FromDateTime(newSchedule.NextRunAt.Value)
+                TaskId = newSchedule.TaskId.ToString(),
+                Status = newSchedule.Status,
+                CronEx = newSchedule.CronEx,
+                Timezone = newSchedule.Timezone,
+                NextRunAt = newSchedule.NextRunAt.HasValue 
+                    ? Timestamp.FromDateTime(newSchedule.NextRunAt.Value)
+                    : null,
+                LastRunAt = newSchedule.LastRunAt.HasValue
+                    ? Timestamp.FromDateTime(newSchedule.LastRunAt.Value)
+                    : null
             };
         }
 
-        public override async Task<EditScheduleResponse> EditSchedule(EditScheduleModel request, ServerCallContext context)
+        public override async Task<ScheduleModel> EditSchedule(EditScheduleModel request, ServerCallContext context)
         {
             var userId = Guid.Parse(request.UserId);
             var scheduleId = Guid.Parse(request.Id);
@@ -162,13 +174,19 @@ namespace SchedulerService.Protos
             schedule.UpdatedAt = DateTime.UtcNow;
             
             await _db.SaveChangesAsync();
-            return new EditScheduleResponse
+            return new ScheduleModel
             {
                 Id = schedule.Id.ToString(),
-                CronEx = schedule.CronEx,
+                TaskId = schedule.TaskId.ToString(),
                 Status = schedule.Status,
+                CronEx = schedule.CronEx,
                 Timezone = schedule.Timezone,
-                NextRunAt = Timestamp.FromDateTime(schedule.NextRunAt.Value)
+                NextRunAt = schedule.NextRunAt.HasValue 
+                    ? Timestamp.FromDateTime(schedule.NextRunAt.Value)
+                    : null,
+                LastRunAt = schedule.LastRunAt.HasValue
+                    ? Timestamp.FromDateTime(schedule.LastRunAt.Value)
+                    : null
             };
         }
 

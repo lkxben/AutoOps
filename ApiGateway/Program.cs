@@ -313,7 +313,8 @@ app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttp
         s.Status,
         s.CronEx,
         s.Timezone,
-        s.NextRunAt.ToDateTime()
+        s.NextRunAt != null ? s.NextRunAt.ToDateTime() : (DateTime?)null,
+        s.LastRunAt != null ? s.LastRunAt.ToDateTime() : (DateTime?)null
     ));
 
     return Results.Ok(schedulesDto);
@@ -508,7 +509,16 @@ app.MapPost("/schedules", async (CreateScheduleDto dto, HttpContext context, IHt
         Timezone = dto.Timezone
     });
 
-    return Results.Ok(new CreateScheduleResponseDto(result.Id, result.NextRunAt.ToDateTime()));
+    return Results.Ok(new ScheduleDto
+    (
+        result.Id,
+        result.TaskId,
+        result.Status,
+        result.CronEx,
+        result.Timezone,
+        result.NextRunAt != null ? result.NextRunAt.ToDateTime() : (DateTime?)null,
+        result.LastRunAt != null ? result.LastRunAt.ToDateTime() : (DateTime?)null
+    ));
 }).RequireAuthorization();
 
 app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
@@ -527,7 +537,16 @@ app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpConte
         Status = dto.Status
     });
 
-    return Results.Ok(new EditScheduleResponseDto(result.Id, result.Status, result.CronEx, result.Timezone, result.NextRunAt.ToDateTime()));
+    return Results.Ok(new ScheduleDto
+    (
+        result.Id,
+        result.TaskId,
+        result.Status,
+        result.CronEx,
+        result.Timezone,
+        result.NextRunAt != null ? result.NextRunAt.ToDateTime() : (DateTime?)null,
+        result.LastRunAt != null ? result.LastRunAt.ToDateTime() : (DateTime?)null
+    ));
 }).RequireAuthorization();
 
 app.MapDelete("/schedules/{id}", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>

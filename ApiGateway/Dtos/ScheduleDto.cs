@@ -7,5 +7,6 @@ public record ScheduleDto(
     ScheduleStatus Status,
     string CronEx,
     string Timezone,
-    DateTime NextRunAt
+    DateTime? NextRunAt,
+    DateTime? LastRunAt
 );

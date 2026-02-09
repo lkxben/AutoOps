@@ -150,10 +150,7 @@ services:
       RabbitMQSettings__Port: 5672
       RabbitMQSettings__Username: guest
       RabbitMQSettings__Password: guest
-      Grpc__WorkflowService: "http://workflow-service:5003"
     depends_on:
-      workflow-service:
-        condition: service_started
       rabbitmq:
         condition: service_healthy
       postgres-auto:

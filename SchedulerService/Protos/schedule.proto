@@ -7,8 +7,8 @@ package ScheduleSvc;
 
 service ScheduleSvc {
     rpc GetTaskSchedules (GetTaskSchedulesModel) returns (GetTaskSchedulesResponse);
-    rpc CreateSchedule (CreateScheduleModel) returns (CreateScheduleResponse);
-    rpc EditSchedule (EditScheduleModel) returns (EditScheduleResponse);
+    rpc CreateSchedule (CreateScheduleModel) returns (ScheduleModel);
+    rpc EditSchedule (EditScheduleModel) returns (ScheduleModel);
     rpc DeleteSchedule (DeleteScheduleModel) returns (DeleteScheduleResponse);
 }
 
@@ -24,6 +24,7 @@ message ScheduleModel {
     string cronEx = 4;
     string timezone = 5;
     google.protobuf.Timestamp nextRunAt = 6;
+    google.protobuf.Timestamp lastRunAt = 7;
 }
 
 message GetTaskSchedulesResponse {
@@ -37,11 +38,6 @@ message CreateScheduleModel {
     string timezone = 4;
 }
 
-message CreateScheduleResponse {
-    string id = 1;
-    google.protobuf.Timestamp nextRunAt = 2;
-}
-
 enum ScheduleStatus {
     ACTIVE = 0;
     PAUSED = 1;
@@ -52,14 +48,6 @@ message EditScheduleModel {
     string userId = 2;
     ScheduleStatus status = 3;
     string cronEx = 4;
-}
-
-message EditScheduleResponse {
-    string id = 1;
-    ScheduleStatus status = 2;
-    string cronEx = 3;
-    string timezone = 4;
-    google.protobuf.Timestamp nextRunAt = 5;
 }
 
 message DeleteScheduleModel {
