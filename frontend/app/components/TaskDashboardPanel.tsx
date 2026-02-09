@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import TaskSchedulesSection from '@/app/components/TaskSchedulesSection'
 import TaskRunsSection from '@/app/components/TaskRunsSection'
+import TaskGraphSection from '@/app/components/TaskGraphSection'
 
 type Tab = 'schedules' | 'runs' | 'graph'
 
@@ -78,9 +79,7 @@ export default function TaskDashboardPanel({
           )}
 
           {tab === 'graph' && (
-            <div className="text-gray-500 text-sm py-6">
-              Graph coming soon…
-            </div>
+            <TaskGraphSection taskId={task.id} />
           )}
         </div>
       </div>
