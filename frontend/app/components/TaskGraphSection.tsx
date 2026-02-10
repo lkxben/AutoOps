@@ -5,11 +5,11 @@ import ReactFlow, { Node, Edge, MiniMap, Controls, Background } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { apiGet } from '@/app/lib/api'
 import CenteredMessage from '@/app/components/CenteredMessage'
-import GraphNode from '@/app/components/GraphNode'
 import ConditionalEdge from '@/app/components/ConditionalEdge'
 import { layoutGraph } from '@/app/lib/layoutGraph'
+import DisplayGraphNode from './DisplayGraphNode'
 
-const NODE_TYPES = { custom: GraphNode }
+const NODE_TYPES = { custom: DisplayGraphNode }
 const EDGE_TYPES = { conditional: ConditionalEdge }
 
 type TaskGraphSectionProps = {
