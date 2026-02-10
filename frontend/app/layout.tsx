@@ -5,6 +5,7 @@ import { ReactQueryProvider } from './providers/ReactQueryProvider'
 import { AuthProvider } from './contexts/AuthContext'
 import NavBar from "./components/NavBar";
 import 'reactflow/dist/style.css'
+import ToasterClient from '@/app/components/ToasterClient'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
             </div>
           </ReactQueryProvider>
         </AuthProvider>
+        <ToasterClient />
       </body>
     </html>
   );

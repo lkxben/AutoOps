@@ -8,17 +8,25 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
-  const { mutate, isPending, error } = useLogin()
+  const { mutate, isPending } = useLogin()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  const [errors, setErrors] = useState<{ username?: string; password?: string }>({})
+
+  const validate = () => {
+    const newErrors: typeof errors = {}
+    if (!username.trim()) newErrors.username = 'Username is required'
+    if (!password.trim()) newErrors.password = 'Password is required'
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    mutate({ username, password }, {
-      onSuccess: () => {
-        onSuccess?.()
-      }
-    })
+    if (!validate()) return
+    mutate({ username, password }, { onSuccess })
   }
 
   return (
@@ -26,23 +34,27 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       <h2 className="text-xl font-semibold mb-4">Login</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="username"
-          placeholder="Username"
-          className="w-full border p-2 rounded"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
+        <div>
+          <input
+            type="text"
+            placeholder="Username"
+            className="w-full border p-2 rounded"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full border p-2 rounded"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+        </div>
 
         <button
           type="submit"
@@ -51,8 +63,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         >
           {isPending ? 'Logging in...' : 'Login'}
         </button>
-
-        {error && <p className="text-red-500 text-sm mt-2">Login failed</p>}
       </form>
     </div>
   )
