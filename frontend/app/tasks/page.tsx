@@ -1,20 +1,25 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@/app/contexts/AuthContext'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { apiGet } from '@/app/lib/api'
-import { TaskStatus, TaskModel } from '@/app/lib/types'
-import { useTaskHubUpdates } from '@/app/hooks/useTaskHubUpdates'
+import { useAuth } from '@/app/contexts/AuthContext'
+import { TaskModel, ScheduleModel } from '@/app/lib/types'
+import TaskCard from '@/app/components/TaskCard'
+import TaskDashboardPanel from '@/app/components/TaskDashboardPanel'
+import { useScheduleUpdates } from '@/app/hooks/useScheduleUpdates'
 import LoadingScreen from '@/app/loading'
 import Error from '@/app/error'
-import TaskSection from '../components/TaskSection'
-import EmptyState from '../components/EmptyState'
+import EmptyState from '@/app/components/EmptyState'
 
-export default function TaskSummaryDashboard() {
+export default function TaskDashboard() {
   const { isAuthenticated } = useAuth()
   const [tasks, setTasks] = useState<TaskModel[]>([])
+  const [schedules, setSchedules] = useState<Record<string, ScheduleModel[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedTask, setSelectedTask] = useState<TaskModel | null>(null)
+
+  const { updates } = useScheduleUpdates()
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,48 +31,63 @@ export default function TaskSummaryDashboard() {
     setError(null)
 
     apiGet('/tasks')
-      .then((data: TaskModel[]) => setTasks(data))
+      .then((tasksData: TaskModel[]) => {
+        setTasks(tasksData)
+
+        return Promise.all(
+          tasksData.map(task =>
+            apiGet(`/tasks/${task.id}/schedules`).then(
+              (taskSchedules: ScheduleModel[]) => [task.id, taskSchedules] as [string, ScheduleModel[]]
+            )
+          )
+        )
+      })
+      .then((taskSchedules: [string, ScheduleModel[]][]) => {
+        const scheduleMap: Record<string, ScheduleModel[]> = {}
+        taskSchedules.forEach(([taskId, taskSched]) => {
+          scheduleMap[taskId] = taskSched
+        })
+        setSchedules(scheduleMap)
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [isAuthenticated])
 
-  const { updates: taskUpdates } = useTaskHubUpdates()
+  const addSchedule = useCallback((taskId: string, newSchedule: ScheduleModel) => {
+    setSchedules(prev => ({
+      ...prev,
+      [taskId]: [...(prev[taskId] || []), newSchedule],
+    }))
+  }, [])
+
+  const updateSchedule = useCallback((taskId: string, updated: ScheduleModel) => {
+    setSchedules(prev => ({
+      ...prev,
+      [taskId]: prev[taskId].map(s =>
+        s.id === updated.id ? { ...s, ...updated } : s
+      ),
+    }))
+  }, [])
+
+  const deleteSchedule = useCallback((taskId: string, scheduleId: string) => {
+    setSchedules(prev => ({
+      ...prev,
+      [taskId]: prev[taskId].filter(s => s.id !== scheduleId),
+    }))
+  }, [])
 
   useEffect(() => {
-    if (!taskUpdates?.length) return
+    updates.forEach(update => {
+      const taskSchedules = schedules[update.taskId]
+      if (!taskSchedules) return
 
-    setTasks(prev =>
-      prev.map(task => {
-        const update = taskUpdates.find(u => u.task_id === task.id)
-        if (!update) return task
-
-        return {
-          ...task,
-          status: update.status,
-          result: update.description,
-          updatedAt: new Date().toISOString(),
-        }
+      updateSchedule(update.taskId, {
+        ...taskSchedules.find(s => s.id === update.scheduleId)!,
+        lastRunAt: update.lastRunAt,
+        nextRunAt: update.nextRunAt,
       })
-    )
-  }, [taskUpdates])
-
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      const aTime = a.updatedAt ?? a.createdAt
-      const bTime = b.updatedAt ?? b.createdAt
-      return new Date(bTime).getTime() - new Date(aTime).getTime()
     })
-  }, [tasks])
-
-  const upcoming = sortedTasks.filter(t =>
-    [TaskStatus.Pending, TaskStatus.Drafted, TaskStatus.Finalized].includes(t.status)
-  )
-
-  const running = sortedTasks.filter(t => t.status === TaskStatus.Running)
-
-  const finished = sortedTasks.filter(t =>
-    [TaskStatus.Completed, TaskStatus.Failed].includes(t.status)
-  )
+  }, [updates, updateSchedule])
 
   if (loading) return <LoadingScreen />
   if (!isAuthenticated) return <Error error="You must be logged in to view tasks." />
@@ -77,10 +97,28 @@ export default function TaskSummaryDashboard() {
   }
 
   return (
-    <div className="flex flex-col flex-1 w-full min-h-0">
-      <TaskSection title="Upcoming" tasks={upcoming} />
-      <TaskSection title="Running" tasks={running} />
-      <TaskSection title="Finished" tasks={finished} />
-    </div>
+    <>
+      <div className="flex flex-col gap-3 p-4">
+        {tasks.map(task => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            schedules={schedules[task.id] || []}
+            onClick={() => setSelectedTask(task)}
+          />
+        ))}
+      </div>
+
+      {selectedTask && (
+        <TaskDashboardPanel
+          task={selectedTask}
+          schedules={schedules[selectedTask.id] || []}
+          addSchedule={addSchedule}
+          updateSchedule={updateSchedule}
+          deleteSchedule={deleteSchedule}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
+    </>
   )
 }

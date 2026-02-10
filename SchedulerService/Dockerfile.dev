@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS dev
+WORKDIR /app
+EXPOSE 5007
+
+RUN mkdir -p /app/SchedulerService /app/Contracts
+
+COPY SchedulerService/SchedulerService.csproj ./SchedulerService/
+COPY Contracts/Contracts.csproj ./Contracts/
+
+RUN dotnet restore ./SchedulerService/SchedulerService.csproj
+
+COPY SchedulerService ./SchedulerService
+COPY Contracts ./Contracts
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "SchedulerService/SchedulerService.csproj", "--urls", "http://0.0.0.0:5007"]

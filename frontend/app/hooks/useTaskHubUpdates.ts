@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import * as signalR from '@microsoft/signalr'
-import { TaskUpdate } from '@/app/lib/types'
+import { RunUpdate } from '@/app/lib/types'
 const API_URL = process.env.NEXT_PUBLIC_EVENT_API_URL
 
 export function useTaskHubUpdates() {
-  const [updates, setUpdates] = useState<Record<string, TaskUpdate>>({})
+  const [updates, setUpdates] = useState<Record<string, RunUpdate>>({})
 
   useEffect(() => {
     const setupConnection = async () => {
@@ -21,10 +21,12 @@ export function useTaskHubUpdates() {
         .withAutomaticReconnect()
         .build()
 
-      connection.on('TaskUpdated', (update: TaskUpdate) => {
+      connection.on('RunUpdated', (update: RunUpdate) => {
+        console.log('RunUpdated raw payload:', update)
+
         setUpdates(prev => ({
           ...prev,
-          [update.task_id]: update
+          [update.runId]: update
         }))
       })
 

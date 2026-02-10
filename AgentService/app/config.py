@@ -4,14 +4,14 @@ class Settings(BaseSettings):
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:6000"
     # with workflow service
     TASK_CREATED_EXCHANGE: str = "Contracts.Workflow:WorkflowTaskCreated"
-    PLAN_CREATED_EXCHANGE: str = "Contracts.Workflow:WorkflowPlanCreated"
+    RUN_CREATED_EXCHANGE: str = "Contracts.Workflow:RunCreated"
 
     # with tool service
     TOOL_CALL_EXCHANGE: str = "tool-call"
     TOOL_RESULT_EXCHANGE: str = "tool-result"
 
     # with event service
-    TASK_UPDATED_EXCHANGE: str = "task-updates"
+    RUN_UPDATED_EXCHANGE: str = "run-updates"
     PLAN_DRAFT_EXCHANGE: str = "plan-draft"
     AGENT_DB: str = "host=localhost port=6502 dbname=AutoOpsAgent user=postgres password=password"
 

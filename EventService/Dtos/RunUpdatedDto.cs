@@ -2,12 +2,15 @@ using System.Text.Json.Serialization;
 
 namespace EventService.Dtos
 {
-    public record TaskUpdatedDto(
-        [property: JsonPropertyName("task_id")]
-        string TaskId,
+    public record RunUpdatedDto(
+        [property: JsonPropertyName("runId")]
+        string RunId,
 
-        [property: JsonPropertyName("user_id")]
+        [property: JsonPropertyName("userId")]
         string UserId,
+
+        [property: JsonPropertyName("taskId")]
+        string TaskId,
 
         [property: JsonPropertyName("status")]
         int Status,

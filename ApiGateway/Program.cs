@@ -1,5 +1,6 @@
 using AuthService.Protos;
 using WorkflowService.Protos;
+using SchedulerService.Protos;
 using Grpc.Net.Client;
 using Grpc.Core;
 using ApiGateway.Dtos;
@@ -10,6 +11,8 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +97,9 @@ var authServiceUrl = builder.Configuration["Grpc:AuthService"]
 var workflowServiceUrl = builder.Configuration["Grpc:WorkflowService"] 
                              ?? throw new Exception("Grpc:WorkflowService configuration is missing");
 
+var schedulerServiceUrl = builder.Configuration["Grpc:SchedulerService"] 
+                             ?? throw new Exception("Grpc:SchedulerService configuration is missing");
+
 var notifServiceUrl = builder.Configuration["NotifServiceUrl"] 
                       ?? throw new Exception("NotifServiceUrl configuration is missing");
 
@@ -114,6 +120,20 @@ builder.Services.AddGrpcClient<WorkflowTaskSvc.WorkflowTaskSvcClient>(o =>
 builder.Services.AddGrpcClient<WorkflowPlanSvc.WorkflowPlanSvcClient>(o =>
 {
     o.Address = new Uri(workflowServiceUrl);
+})
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
+
+builder.Services.AddGrpcClient<RunSvc.RunSvcClient>(o =>
+{
+    o.Address = new Uri(workflowServiceUrl);
+})
+.ConfigureChannel(o => o.MaxRetryAttempts = 0)
+.AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
+
+builder.Services.AddGrpcClient<ScheduleSvc.ScheduleSvcClient>(o =>
+{
+    o.Address = new Uri(schedulerServiceUrl);
 })
 .ConfigureChannel(o => o.MaxRetryAttempts = 0)
 .AddInterceptor(() => new DeadlineInterceptor(TimeSpan.FromSeconds(1.5)));
@@ -272,13 +292,74 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
     return Results.Ok(tasksDto);
 }).RequireAuthorization();
 
+app.MapGet("/tasks/{id}/runs", async (string id, HttpContext context, RunSvc.RunSvcClient runClient, bool latest = false) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var taskId))
+        return Results.BadRequest(new { error = "Invalid task ID" });
+
+    var response = await runClient.GetTaskRunsAsync(new GetTaskRunsModel
+    {
+        UserId = userId,
+        TaskId = taskId.ToString(),
+        Latest = latest
+    });
+
+    var runsDto = response.Runs.Select(run => new RunDto
+    (
+        run.Id,
+        run.UserId,
+        run.TaskId,
+        run.PlanId,
+        run.Status,
+        run.Result,
+        run.CreatedAt.ToDateTime(),
+        run.UpdatedAt?.ToDateTime()
+    ));
+
+    return Results.Ok(runsDto);
+}).RequireAuthorization();
+
+app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var taskId))
+        return Results.BadRequest(new { error = "Invalid task ID" });
+
+    var response = await scheduleClient.GetTaskSchedulesAsync(new GetTaskSchedulesModel
+    {
+        UserId = userId,
+        TaskId = taskId.ToString(),
+    });
+
+    var schedulesDto = response.Schedules.Select(s => new ScheduleDto
+    (
+        s.Id,
+        s.TaskId,
+        s.Status,
+        s.CronEx,
+        s.Timezone,
+        s.NextRunAt?.ToDateTime(),
+        s.LastRunAt?.ToDateTime()
+    ));
+
+    return Results.Ok(schedulesDto);
+}).RequireAuthorization();
+
 app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
+    if (!Guid.TryParse(id, out var taskId))
+        return Results.BadRequest(new { error = "Invalid task ID" });
+
     var task = await wftClient.GetTaskAsync(new GetWorkflowTaskModel { 
-        Id = id,
+        Id = taskId.ToString(),
         UserId = userId
     });
     
@@ -348,6 +429,54 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     return Results.Ok(new IdDto(result.Id));
 }).RequireAuthorization();
 
+app.MapPost("/runs", async (CreateRunDto dto, HttpContext context, RunSvc.RunSvcClient runClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var result = await runClient.CreateRunAsync(new CreateRunModel
+    {
+        UserId = userId,
+        TaskId = dto.TaskId,
+    });
+
+    return Results.Ok(new RunDto(
+        result.Id,
+        result.UserId,
+        result.TaskId,
+        result.PlanId,
+        result.Status,
+        result.Result,
+        result.CreatedAt.ToDateTime(),
+        result.UpdatedAt?.ToDateTime()
+    ));
+}).RequireAuthorization();
+
+app.MapGet("/runs", async (HttpContext context, RunSvc.RunSvcClient runClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var response = await runClient.GetUserRunsAsync(new GetUserRunsModel
+    {
+        UserId = userId
+    });
+
+    var runsDto = response.Runs.Select(run => new RunDto
+    (
+        run.Id,
+        run.UserId,
+        run.TaskId,
+        run.PlanId,
+        run.Status,
+        run.Result,
+        run.CreatedAt.ToDateTime(),
+        run.UpdatedAt?.ToDateTime()
+    ));
+
+    return Results.Ok(runsDto);
+}).RequireAuthorization();
+
 app.MapPost("/notifications/channels", async (AddChannelDto dto, HttpContext context, IHttpClientFactory httpFactory) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -404,6 +533,79 @@ app.MapGet("/notifications/channels", async (HttpContext context, IHttpClientFac
 
     var channels = await resp.Content.ReadFromJsonAsync<List<ChannelResponseDto>>();
     return Results.Ok(channels);
+}).RequireAuthorization();
+
+app.MapPost("/schedules", async (CreateScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var result = await scheduleClient.CreateScheduleAsync(new CreateScheduleModel
+    {
+        UserId = userId,
+        TaskId = dto.TaskId,
+        CronEx = dto.CronEx,
+        Timezone = dto.Timezone
+    });
+
+    return Results.Ok(new ScheduleDto
+    (
+        result.Id,
+        result.TaskId,
+        result.Status,
+        result.CronEx,
+        result.Timezone,
+        result.NextRunAt?.ToDateTime(),
+        result.LastRunAt?.ToDateTime()
+    ));
+}).RequireAuthorization();
+
+app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var scheduleId))
+        return Results.BadRequest(new { error = "Invalid schedule ID" });
+
+    var result = await scheduleClient.EditScheduleAsync(new EditScheduleModel
+    {
+        Id = scheduleId.ToString(),
+        UserId = userId,
+        CronEx = dto.CronEx,
+        Status = dto.Status
+    });
+
+    return Results.Ok(new ScheduleDto
+    (
+        result.Id,
+        result.TaskId,
+        result.Status,
+        result.CronEx,
+        result.Timezone,
+        result.NextRunAt?.ToDateTime(),
+        result.LastRunAt?.ToDateTime()
+    ));
+}).RequireAuthorization();
+
+app.MapDelete("/schedules/{id}", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    if (!Guid.TryParse(id, out var scheduleId))
+        return Results.BadRequest(new { error = "Invalid schedule ID" });
+
+    var result = await scheduleClient.DeleteScheduleAsync(new DeleteScheduleModel
+    {
+        Id = scheduleId.ToString(),
+        UserId = userId,
+    });
+
+    if (!result.Success)
+        return Results.NotFound();
+
+    return Results.NoContent();
 }).RequireAuthorization();
 
 app.MapGet("/health", () => Results.Ok());

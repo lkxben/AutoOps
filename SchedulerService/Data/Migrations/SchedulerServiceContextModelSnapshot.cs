@@ -2,31 +2,28 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using WorkflowService.Data;
+using SchedulerService.Data;
 
 #nullable disable
 
-namespace WorkflowService.Data.Migrations
+namespace SchedulerService.Data.Migrations
 {
-    [DbContext(typeof(WorkflowServiceContext))]
-    [Migration("20260115171239_InitialCreate")]
-    partial class InitialCreate
+    [DbContext(typeof(SchedulerServiceContext))]
+    partial class SchedulerServiceContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("workflow")
+                .HasDefaultSchema("scheduler")
                 .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("WorkflowService.Entities.WorkflowPlan", b =>
+            modelBuilder.Entity("SchedulerService.Entities.Schedule", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -35,44 +32,26 @@ namespace WorkflowService.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Graph")
+                    b.Property<string>("CronEx")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime?>("LastRunAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("WorkflowPlans", "workflow");
-                });
-
-            modelBuilder.Entity("WorkflowService.Entities.WorkflowTask", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime?>("LockedUntil")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Prompt")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Result")
-                        .HasColumnType("text");
+                    b.Property<DateTime?>("NextRunAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Title")
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Timezone")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -84,7 +63,27 @@ namespace WorkflowService.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkflowTasks", "workflow");
+                    b.ToTable("Schedules", "scheduler");
+                });
+
+            modelBuilder.Entity("SchedulerService.Entities.TaskUserMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TaskUserMappings", "scheduler");
                 });
 #pragma warning restore 612, 618
         }

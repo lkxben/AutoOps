@@ -1,5 +1,5 @@
 from app.messaging.tool_call_publisher import ToolCallPublisher
-from app.messaging.task_updated_publisher import TaskUpdatedPublisher
+from app.messaging.run_updated_publisher import RunUpdatedPublisher
 from app.messaging.plan_draft_publisher import PlanDraftPublisher
 from app.messaging.notif_call_publisher import NotifCallPublisher
 from app.agent.mcp import MCPRequest
@@ -12,7 +12,7 @@ from typing import Dict, List, Any, Tuple, Coroutine
 
 logger = logging.getLogger(__name__)
 tool_publisher = ToolCallPublisher()
-event_publisher = TaskUpdatedPublisher()
+event_publisher = RunUpdatedPublisher()
 plan_draft_publisher = PlanDraftPublisher()
 notif_pub = NotifCallPublisher()
 
@@ -84,33 +84,6 @@ async def tool_call(task: dict, tool_type: str, inputs):
     }
     await tool_publisher.publish(payload)
 
-async def publish_result(context: dict, result: str):
-    payload = {
-        "task_id": context["task"]["task_id"],
-        "user_id": context["task"]["user_id"],
-        "status": 4,
-        "description": result
-    }
-    await event_publisher.publish(payload)
-
-async def publish_error(context: dict):
-    payload = {
-        "task_id": context["task"]["task_id"],
-        "user_id": context["task"]["user_id"],
-        "status": 5,
-        "description": "LLM failed to call tool"
-    }
-    await event_publisher.publish(payload)
-
-async def publish_start(context: dict):
-    payload = {
-        "task_id": context["task"]["task_id"],
-        "user_id": context["task"]["user_id"],
-        "status": 3,
-        "description": "Run started"
-    }
-    await event_publisher.publish(payload)
-
 async def publish_plan_draft(task_id: str, user_id: str, plan: str):
     payload = {
         "task_id": task_id,
@@ -118,6 +91,36 @@ async def publish_plan_draft(task_id: str, user_id: str, plan: str):
         "graph": parse_minimal_plan_to_reactflow(plan)
     }
     await plan_draft_publisher.publish(payload)
+
+async def publish_start(context: dict):
+    payload = {
+        "run_id": context["run_id"],
+        "user_id": context["task"]["user_id"],
+        "task_id": context["task"]["task_id"],
+        "status": 1,
+        "description": "Run started"
+    }
+    await event_publisher.publish(payload)
+
+async def publish_result(context: dict, result: str):
+    payload = {
+        "run_id": context["run_id"],
+        "user_id": context["task"]["user_id"],
+        "task_id": context["task"]["task_id"],
+        "status": 2,
+        "description": result
+    }
+    await event_publisher.publish(payload)
+
+async def publish_error(context: dict):
+    payload = {
+        "run_id": context["run_id"],
+        "user_id": context["task"]["user_id"],
+        "task_id": context["task"]["task_id"],
+        "status": 3,
+        "description": "LLM failed to call tool"
+    }
+    await event_publisher.publish(payload)
 
 def parse_minimal_plan(plan_str: str):
     nodes: Dict[int, Dict[str, Any]] = {}

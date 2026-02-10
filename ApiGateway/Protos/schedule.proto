@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+option csharp_namespace = "SchedulerService.Protos";
+
+package ScheduleSvc;
+
+service ScheduleSvc {
+    rpc GetTaskSchedules (GetTaskSchedulesModel) returns (GetTaskSchedulesResponse);
+    rpc CreateSchedule (CreateScheduleModel) returns (ScheduleModel);
+    rpc EditSchedule (EditScheduleModel) returns (ScheduleModel);
+    rpc DeleteSchedule (DeleteScheduleModel) returns (DeleteScheduleResponse);
+}
+
+message GetTaskSchedulesModel {
+  string taskId = 1;
+  string userId = 2;
+}
+
+message ScheduleModel {
+    string id = 1;
+    string taskId = 2;
+    ScheduleStatus status = 3;
+    string cronEx = 4;
+    string timezone = 5;
+    google.protobuf.Timestamp nextRunAt = 6;
+    google.protobuf.Timestamp lastRunAt = 7;
+}
+
+message GetTaskSchedulesResponse {
+  repeated ScheduleModel schedules = 1;
+}
+
+message CreateScheduleModel {
+    string userId = 1;
+    string taskId = 2;
+    string cronEx = 3;
+    string timezone = 4;
+}
+
+enum ScheduleStatus {
+    ACTIVE = 0;
+    PAUSED = 1;
+}
+
+message EditScheduleModel {
+    string id = 1;
+    string userId = 2;
+    ScheduleStatus status = 3;
+    string cronEx = 4;
+}
+
+message DeleteScheduleModel {
+    string id = 1;
+    string userId = 2;
+}
+
+message DeleteScheduleResponse {
+    bool success = 1;
+}

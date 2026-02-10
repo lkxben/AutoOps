@@ -37,9 +37,53 @@ export type PlanModel = {
   graph: string
 }
 
-export type TaskUpdate = {
-  task_id: string
-  user_id: string
+export type RunModel = {
+  id: string
+  userId: string
+  taskId: string
+  planId: string
+  status: number
+  result?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export enum RunStatus {
+  Pending = 0,
+  Running = 1,
+  Completed = 2,
+  Failed = 3
+}
+
+export type RunUpdate = {
+  runId: string
+  userId: string
+  taskId: string
   status: number
   description?: string
+}
+
+export enum ScheduleStatus {
+  Active = 0,
+  Paused = 1,
+}
+
+export type ScheduleModel = {
+  id: string,
+  taskId: string,
+  status: ScheduleStatus,
+  cronEx: string,
+  timezone: string,
+  nextRunAt: string,
+  lastRunAt?: string
+}
+
+export type ScheduleType = 'minutes' | 'hours' | 'daily' | 'weekly'
+
+export type ScheduleUpdate = {
+  userId: string
+  taskId: string
+  scheduleId: string
+  nextRunAt: string
+  lastRunAt: string
 }

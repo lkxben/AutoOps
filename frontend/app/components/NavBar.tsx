@@ -20,7 +20,10 @@ export default function NavBar() {
             AutoOps
           </Link>
           <Link href="/tasks" className="text-white hover:underline transition">
-            Dashboard
+            Tasks
+          </Link>
+          <Link href="/runs" className="text-white hover:underline transition">
+            Runs
           </Link>
         </div>
 

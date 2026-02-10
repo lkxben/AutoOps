@@ -48,6 +48,8 @@ var uri = new Uri($"rabbitmq://{rabbitMQSettings.Host}:{port}/");
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<RunCreateRequestConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(uri, h =>
@@ -57,14 +59,14 @@ builder.Services.AddMassTransit(x =>
         });
 
         cfg.Publish<Contracts.Workflow.WorkflowTaskCreated>(p => p.Durable = true);
-        cfg.Publish<Contracts.Workflow.WorkflowPlanCreated>(p => p.Durable = true);
+        cfg.Publish<Contracts.Workflow.RunCreated>(p => p.Durable = true);
 
         cfg.ConfigureEndpoints(context);
     });
 });
 
 builder.Services.AddHostedService<PlanDraftConsumer>();
-builder.Services.AddHostedService<TaskUpdatedConsumer>();
+builder.Services.AddHostedService<RunUpdatedConsumer>();
 
 var app = builder.Build();
 
@@ -91,5 +93,6 @@ while (true)
 
 app.MapGrpcService<WorkflowTaskSvcImp>();
 app.MapGrpcService<WorkflowPlanSvcImp>();
+app.MapGrpcService<RunSvcImp>();
 app.MapGet("/health", () => Results.Ok());
 app.Run();

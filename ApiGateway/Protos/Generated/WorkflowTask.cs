@@ -37,16 +37,16 @@ namespace WorkflowService.Protos {
             "YXRlZEF0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIjChFH",
             "ZXRVc2VyVGFza3NNb2RlbBIOCgZ1c2VySWQYASABKAkiRgoRVXNlclRhc2tz",
             "UmVzcG9uc2USMQoFdGFza3MYASADKAsyIi5Xb3JrZmxvd1Rhc2tTdmMuV29y",
-            "a2Zsb3dUYXNrTW9kZWwqZQoSV29ya2Zsb3dUYXNrU3RhdHVzEgsKB1BFTkRJ",
-            "TkcQABILCgdEUkFGVEVEEAESDQoJRklOQUxJWkVEEAISCwoHUlVOTklORxAD",
-            "Eg0KCUNPTVBMRVRFRBAEEgoKBkZBSUxFRBAFMqQCCg9Xb3JrZmxvd1Rhc2tT",
-            "dmMSYwoKQ3JlYXRlVGFzaxIoLldvcmtmbG93VGFza1N2Yy5DcmVhdGVXb3Jr",
-            "Zmxvd1Rhc2tNb2RlbBorLldvcmtmbG93VGFza1N2Yy5DcmVhdGVXb3JrZmxv",
-            "d1Rhc2tSZXNwb25zZRJUCgdHZXRUYXNrEiUuV29ya2Zsb3dUYXNrU3ZjLkdl",
-            "dFdvcmtmbG93VGFza01vZGVsGiIuV29ya2Zsb3dUYXNrU3ZjLldvcmtmbG93",
-            "VGFza01vZGVsElYKDEdldFVzZXJUYXNrcxIiLldvcmtmbG93VGFza1N2Yy5H",
-            "ZXRVc2VyVGFza3NNb2RlbBoiLldvcmtmbG93VGFza1N2Yy5Vc2VyVGFza3NS",
-            "ZXNwb25zZUIZqgIWV29ya2Zsb3dTZXJ2aWNlLlByb3Rvc2IGcHJvdG8z"));
+            "a2Zsb3dUYXNrTW9kZWwqPQoSV29ya2Zsb3dUYXNrU3RhdHVzEgsKB1BFTkRJ",
+            "TkcQABILCgdEUkFGVEVEEAESDQoJRklOQUxJWkVEEAIypAIKD1dvcmtmbG93",
+            "VGFza1N2YxJjCgpDcmVhdGVUYXNrEiguV29ya2Zsb3dUYXNrU3ZjLkNyZWF0",
+            "ZVdvcmtmbG93VGFza01vZGVsGisuV29ya2Zsb3dUYXNrU3ZjLkNyZWF0ZVdv",
+            "cmtmbG93VGFza1Jlc3BvbnNlElQKB0dldFRhc2sSJS5Xb3JrZmxvd1Rhc2tT",
+            "dmMuR2V0V29ya2Zsb3dUYXNrTW9kZWwaIi5Xb3JrZmxvd1Rhc2tTdmMuV29y",
+            "a2Zsb3dUYXNrTW9kZWwSVgoMR2V0VXNlclRhc2tzEiIuV29ya2Zsb3dUYXNr",
+            "U3ZjLkdldFVzZXJUYXNrc01vZGVsGiIuV29ya2Zsb3dUYXNrU3ZjLlVzZXJU",
+            "YXNrc1Jlc3BvbnNlQhmqAhZXb3JrZmxvd1NlcnZpY2UuUHJvdG9zYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::WorkflowService.Protos.WorkflowTaskStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -66,15 +66,11 @@ namespace WorkflowService.Protos {
     [pbr::OriginalName("PENDING")] Pending = 0,
     [pbr::OriginalName("DRAFTED")] Drafted = 1,
     [pbr::OriginalName("FINALIZED")] Finalized = 2,
-    [pbr::OriginalName("RUNNING")] Running = 3,
-    [pbr::OriginalName("COMPLETED")] Completed = 4,
-    [pbr::OriginalName("FAILED")] Failed = 5,
   }
 
   #endregion
 
   #region Messages
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class CreateWorkflowTaskModel : pb::IMessage<CreateWorkflowTaskModel>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -288,11 +284,7 @@ namespace WorkflowService.Protos {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -319,11 +311,7 @@ namespace WorkflowService.Protos {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -346,7 +334,6 @@ namespace WorkflowService.Protos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class GetWorkflowTaskModel : pb::IMessage<GetWorkflowTaskModel>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -531,11 +518,7 @@ namespace WorkflowService.Protos {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -558,11 +541,7 @@ namespace WorkflowService.Protos {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -581,7 +560,6 @@ namespace WorkflowService.Protos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class CreateWorkflowTaskResponse : pb::IMessage<CreateWorkflowTaskResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -737,11 +715,7 @@ namespace WorkflowService.Protos {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -760,11 +734,7 @@ namespace WorkflowService.Protos {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -779,7 +749,6 @@ namespace WorkflowService.Protos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class WorkflowTaskModel : pb::IMessage<WorkflowTaskModel>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1144,11 +1113,7 @@ namespace WorkflowService.Protos {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1201,11 +1166,7 @@ namespace WorkflowService.Protos {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1254,7 +1215,6 @@ namespace WorkflowService.Protos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class GetUserTasksModel : pb::IMessage<GetUserTasksModel>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1410,11 +1370,7 @@ namespace WorkflowService.Protos {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1433,11 +1389,7 @@ namespace WorkflowService.Protos {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1452,7 +1404,6 @@ namespace WorkflowService.Protos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class UserTasksResponse : pb::IMessage<UserTasksResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1597,11 +1548,7 @@ namespace WorkflowService.Protos {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1620,11 +1567,7 @@ namespace WorkflowService.Protos {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

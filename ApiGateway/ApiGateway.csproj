@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.protobuf" Version="3.33.2" />
     <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />
     <PackageReference Include="grpc.net.clientfactory" Version="2.76.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
@@ -15,6 +14,14 @@
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+    <PackageReference Include="Google.protobuf" Version="3.33.2" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+    <!-- <PackageReference Include="Grpc.Tools" Version="2.55.1">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Protobuf Include="Protos\schedule.proto" GrpcServices="Client"/> -->
+  </ItemGroup>
 </Project>

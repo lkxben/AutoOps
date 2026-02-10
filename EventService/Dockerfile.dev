@@ -2,4 +2,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS dev
 WORKDIR /app
 EXPOSE 5004
 
-ENTRYPOINT ["dotnet", "watch", "run", "--project", "EventService.csproj", "--urls", "http://0.0.0.0:5004"]
+RUN mkdir -p /app/EventService /app/Contracts
+
+COPY EventService/EventService.csproj ./EventService/
+COPY Contracts/Contracts.csproj ./Contracts/
+
+RUN dotnet restore ./EventService/EventService.csproj
+
+COPY EventService ./EventService
+COPY Contracts ./Contracts
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "EventService/EventService.csproj", "--urls", "http://0.0.0.0:5004"]

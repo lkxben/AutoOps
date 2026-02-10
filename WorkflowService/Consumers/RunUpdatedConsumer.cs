@@ -2,26 +2,37 @@ using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using EventService.Dtos;
-using Microsoft.AspNetCore.SignalR;
-using EventService.Hubs;
+using WorkflowService.Protos;
+using WorkflowService.Dtos;
+using WorkflowService.Data;
+using Microsoft.EntityFrameworkCore;
+using WorkflowService.Entities;
 
-namespace EventService.Consumers
+namespace WorkflowService.Consumers
 {
-    public class TaskUpdatedConsumer : BackgroundService
+    public class RunUpdatedConsumer : BackgroundService
     {
-        private readonly IHubContext<TaskHub> _hub;
         private readonly RabbitMQSettings _settings;
-        private const string ExchangeName = "task-updates";
-        private const string QueueName = "event.task-updates.queue";
-        private const string DlqExchangeName = "event.task-updates.dlx";
-        private const string DlqQueueName = "event.task-updates.dlq";
+        private const string ExchangeName = "run-updates";
+        private const string QueueName = "workflow.run-updates.queue";
+        private const string DlqExchangeName = "workflow.run-updates.dlx";
+        private const string DlqQueueName = "workflow.run-updates.dlq";
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public TaskUpdatedConsumer(IHubContext<TaskHub> hub, RabbitMQSettings settings)
+        public RunUpdatedConsumer(IServiceScopeFactory scopeFactory, RabbitMQSettings settings)
         {
-            _hub = hub;
+            _scopeFactory = scopeFactory;
             _settings = settings;
         }
+
+        private bool IsValidTransition(RunStatus from, RunStatus to) =>
+        (from, to) switch
+        {
+            (RunStatus.Pending, RunStatus.Running) => true,
+            (RunStatus.Running, RunStatus.Completed) => true,
+            (RunStatus.Running, RunStatus.Failed) => true,
+            _ => false
+        };
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -88,14 +99,40 @@ namespace EventService.Consumers
                 try
                 {
                     var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-                    var dto = JsonSerializer.Deserialize<TaskUpdatedDto>(json);
+                    var dto = JsonSerializer.Deserialize<RunUpdatedDto>(json);
 
-                    if (dto == null)
-                        return;
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<WorkflowServiceContext>();
 
-                    await _hub.Clients
-                        .User(dto.UserId)
-                        .SendAsync("TaskUpdated", dto);
+                    var runId = Guid.Parse(dto.RunId);
+                    var run = await db.Runs
+                        .FirstOrDefaultAsync(r => r.Id == runId);
+
+                    if (run == null)
+                        throw new Exception("Run not found");
+
+                    if (!Enum.IsDefined(typeof(RunStatus), dto.Status))
+                    {
+                        throw new InvalidOperationException($"Invalid run status: {dto.Status}");
+                    }
+
+                    var newStatus = (RunStatus)dto.Status;
+                    var timestampUnix = ea.BasicProperties?.Timestamp.UnixTime ?? 0;
+                    var dt = timestampUnix != 0
+                        ? DateTimeOffset.FromUnixTimeSeconds((long)timestampUnix).UtcDateTime
+                        : DateTime.UtcNow;
+
+                    if (IsValidTransition(run.Status, newStatus))
+                    {
+                        run.Status = newStatus;
+                        if (run.Status == RunStatus.Completed)
+                        {
+                            run.Result = dto.Description;
+                            run.UpdatedAt = dt;
+                        }
+
+                        await db.SaveChangesAsync();
+                    }
 
                     channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }

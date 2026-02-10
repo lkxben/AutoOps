@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace WorkflowService.Data.Migrations
+namespace SchedulerService.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -12,42 +12,43 @@ namespace WorkflowService.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "workflow");
+                name: "scheduler");
 
             migrationBuilder.CreateTable(
-                name: "WorkflowPlans",
-                schema: "workflow",
+                name: "Schedules",
+                schema: "scheduler",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     TaskId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Graph = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CronEx = table.Column<string>(type: "text", nullable: false),
+                    Timezone = table.Column<string>(type: "text", nullable: false),
+                    NextRunAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastRunAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LockedUntil = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WorkflowPlans", x => x.Id);
+                    table.PrimaryKey("PK_Schedules", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "WorkflowTasks",
-                schema: "workflow",
+                name: "TaskUserMappings",
+                schema: "scheduler",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TaskId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Title = table.Column<string>(type: "text", nullable: false),
-                    Prompt = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    Result = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WorkflowTasks", x => x.Id);
+                    table.PrimaryKey("PK_TaskUserMappings", x => x.Id);
                 });
         }
 
@@ -55,12 +56,12 @@ namespace WorkflowService.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "WorkflowPlans",
-                schema: "workflow");
+                name: "Schedules",
+                schema: "scheduler");
 
             migrationBuilder.DropTable(
-                name: "WorkflowTasks",
-                schema: "workflow");
+                name: "TaskUserMappings",
+                schema: "scheduler");
         }
     }
 }

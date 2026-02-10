@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using WorkflowService.Entities;
 
@@ -21,5 +22,7 @@ namespace WorkflowService.Data
 
         public DbSet<WorkflowTask> WorkflowTasks { get; set; } = default!;
         public DbSet<WorkflowPlan> WorkflowPlans { get; set; } = default;
+
+        public DbSet<Run> Runs { get; set; } = default;
     }
 }

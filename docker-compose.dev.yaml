@@ -87,10 +87,10 @@ services:
     environment:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TASK_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowTaskCreated"
-      PLAN_CREATED_EXCHANGE: "Contracts.Workflow:WorkflowPlanCreated"
+      RUN_CREATED_EXCHANGE: "Contracts.Workflow:RunCreated"
       TOOL_CALL_EXCHANGE: "tool-call"
       TOOL_RESULT_EXCHANGE: "tool-result"
-      TASK_UPDATED_EXCHANGE: "task-updates"
+      RUN_UPDATED_EXCHANGE: "run-updates"
       PLAN_DRAFT_EXCHANGE: "plan-draft"
       AGENT_DB: "host=postgres-auto port=5432 dbname=AutoOps user=postgres password=password"
       GROQ_API_KEY: "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"
@@ -135,6 +135,29 @@ services:
     networks:
       - backend
 
+  scheduler-service:
+    build:
+      context: .
+      dockerfile: SchedulerService/Dockerfile.dev
+    volumes:
+      - ./SchedulerService:/app/SchedulerService:cached
+      - ./Contracts:/app/Contracts:cached
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Grpc__Port: 5007
+      ConnectionStrings__SchedulerServiceDb: "Host=postgres-auto;Port=5432;Database=AutoOps;Username=postgres;Password=password"
+      RabbitMQSettings__Host: rabbitmq
+      RabbitMQSettings__Port: 5672
+      RabbitMQSettings__Username: guest
+      RabbitMQSettings__Password: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-auto:
+        condition: service_healthy
+    networks:
+      - backend
+
   # External-facing microservices
   api-gateway:
     build:
@@ -152,21 +175,24 @@ services:
       Jwt__ExpiryMinutes: 180
       Grpc__AuthService: "http://auth-service:5002"
       Grpc__WorkflowService: "http://workflow-service:5003"
+      Grpc__SchedulerService: "http://scheduler-service:5007"
       NotifServiceUrl: "http://notification-service:8000"
     ports:
       - "5001:5001"
     depends_on:
       - auth-service
       - workflow-service
+      - scheduler-service
     networks:
       - backend
 
   event-service:
     build:
-      context: ./EventService
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: EventService/Dockerfile.dev
     volumes:
-      - ./EventService:/app:cached
+      - ./EventService:/app/EventService:cached
+      - ./Contracts:/app/Contracts:cached
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'

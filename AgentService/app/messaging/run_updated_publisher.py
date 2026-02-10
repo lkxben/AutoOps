@@ -3,7 +3,7 @@ import json
 from app.config import settings
 from datetime import datetime
 
-class TaskUpdatedPublisher:
+class RunUpdatedPublisher:
     def __init__(self):
         self.connection = None
         self.channel = None
@@ -17,7 +17,7 @@ class TaskUpdatedPublisher:
         self.channel = await self.connection.channel()
 
         self.exchange = await self.channel.declare_exchange(
-            settings.TASK_UPDATED_EXCHANGE,
+            settings.RUN_UPDATED_EXCHANGE,
             aio_pika.ExchangeType.FANOUT,
             durable=True
         )
