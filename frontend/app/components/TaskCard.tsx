@@ -5,6 +5,7 @@ import { TaskModel, RunModel, ScheduleModel } from '@/app/lib/types'
 import { apiGet, apiPost } from '@/app/lib/api'
 import TimeAgo from 'react-timeago'
 import { formatter } from '@/app/lib/timeago'
+import { toast } from 'sonner'
 
 type TaskCardProps = {
   task: TaskModel & { schedule?: string }
@@ -22,7 +23,9 @@ export default function TaskCard({ task, schedules, onClick }: TaskCardProps) {
       .then((runs: RunModel[]) => {
         if (runs.length) setLatestRun(runs[0])
       })
-      .catch(err => console.error('Failed to fetch latest run', err))
+      .catch(err => {
+        toast.error('Failed to fetch latest run')
+      })
       .finally(() => setLoadingRun(false))
   }, [task.id])
 
@@ -57,8 +60,8 @@ export default function TaskCard({ task, schedules, onClick }: TaskCardProps) {
       if (response && response.id) {
         setLatestRun(response)
       }
-    } catch (err) {
-      console.error('Failed to start run', err)
+    } catch (err: any) {
+      toast.error('Failed to start run')
     }
   }
 

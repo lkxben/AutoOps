@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ScheduleModel, ScheduleType } from '@/app/lib/types'
 import { apiPatch } from '@/app/lib/api'
+import { toast } from 'sonner'
 
 interface ScheduleEditFormProps {
   schedule: ScheduleModel
@@ -91,9 +92,13 @@ export default function ScheduleEditForm({
   }
 
   const handleSave = async () => {
-    const cronEx = buildCronUtc()
-    const updated = await apiPatch(`/schedules/${schedule.id}`, { cronEx, timezone: 'UTC' })
-    onEdit(updated)
+    try {
+      const cronEx = buildCronUtc()
+      const updated = await apiPatch(`/schedules/${schedule.id}`, { cronEx, timezone: 'UTC' })
+      onEdit(updated)
+    } catch (e: any) {
+      toast.error('Failed to update schedule')
+    }
   }
 
   return (

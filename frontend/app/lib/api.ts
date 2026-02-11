@@ -1,61 +1,24 @@
-const PROXY_BASE = "/api/proxyWithCookie";
+const PROXY_BASE = "/api/proxyWithCookie"
 
-export async function apiGet(endpoint: string) {
+async function apiRequest(method: string, endpoint: string, data?: any) {
   const res = await fetch(`${PROXY_BASE}${endpoint}`, {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('API request failed');
+    method,
+    credentials: "include",
+    headers: data ? { "Content-Type": "application/json" } : undefined,
+    body: data ? JSON.stringify(data) : undefined,
+  })
 
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `API request failed: ${res.status}`)
+  }
+
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
 }
 
-export async function apiPost(endpoint: string, data: any) {
-  const res = await fetch(`${PROXY_BASE}${endpoint}`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('API request failed');
-
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-export async function apiPut(endpoint: string, data: any) {
-  const res = await fetch(`${PROXY_BASE}${endpoint}`, {
-    method: 'PUT',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('API request failed');
-
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-export async function apiPatch(endpoint: string, data: any) {
-  const res = await fetch(`${PROXY_BASE}${endpoint}`, {
-    method: 'PATCH',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('API request failed');
-
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-export async function apiDelete(endpoint: string) {
-  const res = await fetch(`${PROXY_BASE}${endpoint}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('API request failed');
-
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
+export const apiGet = (endpoint: string) => apiRequest("GET", endpoint)
+export const apiPost = (endpoint: string, data: any) => apiRequest("POST", endpoint, data)
+export const apiPut = (endpoint: string, data: any) => apiRequest("PUT", endpoint, data)
+export const apiPatch = (endpoint: string, data: any) => apiRequest("PATCH", endpoint, data)
+export const apiDelete = (endpoint: string) => apiRequest("DELETE", endpoint)

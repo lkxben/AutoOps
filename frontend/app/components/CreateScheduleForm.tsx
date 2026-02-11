@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { ScheduleType } from '@/app/lib/types'
+import { toast } from 'sonner'
 
 interface ScheduleCreateFormProps {
-  onCreate: (cronEx: string) => void
+  onCreate: (cronEx: string) => Promise<void> | void
   browserTimezone: string
 }
 
@@ -45,9 +46,13 @@ export default function ScheduleCreateForm({ onCreate, browserTimezone }: Schedu
     }
   }
 
-  const handleCreateClick = () => {
-    const cronEx = buildCronUtc()
-    onCreate(cronEx)
+  const handleCreateClick = async () => {
+    try {
+      const cronEx = buildCronUtc()
+      await onCreate(cronEx)
+    } catch (e: any) {
+      toast.error('Failed to create schedule')
+    }
   }
 
   return (
