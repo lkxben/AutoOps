@@ -70,8 +70,8 @@ export default function NotificationForm({ isOpen, onClose }: NotificationFormPr
             setChannels((prev) =>
                 prev.map((c, i) => (i === index ? { ...c, address: "", exists: false } : c))
             )
+            toast.success(`${ch.channel} delete successfully`)
         } catch (err: any) {
-            console.error(err)
             toast.error(`Failed to delete ${ch.channel}`)
         }
     }
@@ -103,9 +103,10 @@ export default function NotificationForm({ isOpen, onClose }: NotificationFormPr
                 })
             )
             setChannels(updated)
+            toast.success("Channels saved successfully")
         } catch (err: any) {
             console.error(err)
-            toast.error("Failed to save notifications")
+            toast.error("Failed to save channels")
         } finally {
             setLoading(false)
         }

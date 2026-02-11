@@ -22,6 +22,7 @@ export default function TaskForm() {
     try {
       const res = await createTask.mutateAsync({ title, prompt })
       router.push(`/tasks/${res.id}`)
+      toast.success('Task created successfully')
     } catch (err: any) {
       toast.error('Failed to create task')
     }

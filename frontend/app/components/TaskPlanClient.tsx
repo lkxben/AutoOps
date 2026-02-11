@@ -53,7 +53,7 @@ export default function TaskPlanClient({ taskId }: Props) {
   }
 
   return (
-    <div className="flex flex-col flex-1 w-full min-h-0">
+    <div className="w-full h-screen">
       {task.status === TaskStatus.Pending && (
         <CenteredMessage>
           Agent is planning your task…

@@ -30,6 +30,7 @@ export default function TaskSchedulesSection({
     try {
       await apiDelete(`/schedules/${scheduleId}`)
       deleteSchedule(task.id, scheduleId)
+      toast.success("Schedule deleted successfully")
     } catch (err: any) {
       toast.error("Failed to delete schedule")
     }
@@ -45,6 +46,7 @@ export default function TaskSchedulesSection({
 
       addSchedule(task.id, created)
       setShowCreate(false)
+      toast.success("Schedule created successfully")
     } catch (err: any) {
       toast.error("Failed to create schedule")
     }

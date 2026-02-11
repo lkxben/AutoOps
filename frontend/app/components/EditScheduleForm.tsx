@@ -96,6 +96,7 @@ export default function ScheduleEditForm({
       const cronEx = buildCronUtc()
       const updated = await apiPatch(`/schedules/${schedule.id}`, { cronEx, timezone: 'UTC' })
       onEdit(updated)
+      toast.success('Schedule updated successfully')
     } catch (e: any) {
       toast.error('Failed to update schedule')
     }
