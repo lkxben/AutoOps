@@ -45,16 +45,20 @@ tool_registry = {
         "description": "Return the absolute value of an integer.",
         "inputs": ["a"]
     },
-    "search_web": {
-        "description": "Search the web for the given query and return a list of urls.",
-        "inputs": ["query", "max_results"]
-    },
-    "web_scrape_text": {
-        "description": """
-Fetch a webpage and extract its main readable text (no JS, no interaction).
-Use after web_search when a relevant URL is known.
-Returns cleaned plain text.""",
-        "inputs": ["url"]
+#     "search_web": {
+#         "description": "Search the web for the given query and return a list of urls.",
+#         "inputs": ["query", "max_results"]
+#     },
+#     "web_scrape_text": {
+#         "description": """
+# Fetch a webpage and extract its main readable text (no JS, no interaction).
+# Use after web_search when a relevant URL is known.
+# Returns cleaned plain text.""",
+#         "inputs": ["url"]
+#     },
+    "research": {
+        "description": "Perform bounded web research using LLM to generate search query, parse articles, and extract answer with sources.",
+        "inputs": ["task", "question"],
     },
     "send_notification": {
         "description": "Send a notification to the user via a specified channel such as telegram or email.",
