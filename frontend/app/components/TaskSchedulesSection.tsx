@@ -5,6 +5,7 @@ import { apiPost, apiDelete } from '@/app/lib/api'
 import { TaskModel, ScheduleModel } from '@/app/lib/types'
 import ScheduleCard from './ScheduleCard'
 import ScheduleCreateForm from './CreateScheduleForm'
+import { toast } from 'sonner'
 
 interface TaskSchedulesSectionProps {
   task: TaskModel
@@ -22,7 +23,6 @@ export default function TaskSchedulesSection({
   deleteSchedule,
 }: TaskSchedulesSectionProps) {
   const [showCreate, setShowCreate] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
@@ -30,8 +30,9 @@ export default function TaskSchedulesSection({
     try {
       await apiDelete(`/schedules/${scheduleId}`)
       deleteSchedule(task.id, scheduleId)
+      toast.success("Schedule deleted successfully")
     } catch (err: any) {
-      setError(err.message)
+      toast.error("Failed to delete schedule")
     }
   }
 
@@ -45,8 +46,9 @@ export default function TaskSchedulesSection({
 
       addSchedule(task.id, created)
       setShowCreate(false)
+      toast.success("Schedule created successfully")
     } catch (err: any) {
-      setError(err.message)
+      toast.error("Failed to create schedule")
     }
   }
 
@@ -56,8 +58,6 @@ export default function TaskSchedulesSection({
 
   return (
     <div className="flex flex-col gap-4">
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-
       <button
         onClick={() => setShowCreate(v => !v)}
         className={`w-full py-2 rounded ${

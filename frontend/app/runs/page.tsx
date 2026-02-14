@@ -108,7 +108,7 @@ export default function RunDashboard() {
 
   if (loading) return <LoadingScreen />
   if (!isAuthenticated) return <Error error="You must be logged in to view runs." />
-  if (error) return <Error error={error} />
+  if (error) return <Error error={"Error loading runs"} />
   if (!runs.length) {
     return <EmptyState message="No runs yet" />
   }

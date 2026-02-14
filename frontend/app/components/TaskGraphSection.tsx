@@ -8,6 +8,8 @@ import CenteredMessage from '@/app/components/CenteredMessage'
 import ConditionalEdge from '@/app/components/ConditionalEdge'
 import { layoutGraph } from '@/app/lib/layoutGraph'
 import DisplayGraphNode from './DisplayGraphNode'
+import { toast } from 'sonner'
+import LoadingScreen from '../loading'
 
 const NODE_TYPES = { custom: DisplayGraphNode }
 const EDGE_TYPES = { conditional: ConditionalEdge }
@@ -20,7 +22,6 @@ export default function TaskGraphSection({ taskId }: TaskGraphSectionProps) {
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -32,14 +33,12 @@ export default function TaskGraphSection({ taskId }: TaskGraphSectionProps) {
         setEdges(edges)
       })
       .catch((err) => {
-        console.error(err)
-        setError('Failed to load graph plan')
+        toast.error('Failed to load graph plan')
       })
       .finally(() => setLoading(false))
   }, [taskId])
 
-  if (loading) return <CenteredMessage>Loading graph…</CenteredMessage>
-  if (error) return <CenteredMessage>{error}</CenteredMessage>
+  if (loading) return <LoadingScreen />
   if (!nodes.length && !edges.length) return <CenteredMessage>No graph data available</CenteredMessage>
 
   return (

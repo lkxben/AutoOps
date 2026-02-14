@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useCreateTask } from '@/app/hooks/useCreateTask'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function TaskForm() {
   const [title, setTitle] = useState('')
@@ -12,15 +13,20 @@ export default function TaskForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !prompt.trim()) return
+
+    if (!title.trim() || !prompt.trim()) {
+      toast.error('Please fill in both title and prompt')
+      return
+    }
 
     try {
       const res = await createTask.mutateAsync({ title, prompt })
       router.push(`/tasks/${res.id}`)
-    } catch (err) {
-      console.error(err)
-      alert("Failed to create task")
+      toast.success('Task created successfully')
+    } catch (err: any) {
+      toast.error('Failed to create task')
     }
+
     setTitle('')
     setPrompt('')
   }

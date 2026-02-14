@@ -91,7 +91,7 @@ export default function TaskDashboard() {
 
   if (loading) return <LoadingScreen />
   if (!isAuthenticated) return <Error error="You must be logged in to view tasks." />
-  if (error) return <Error error={error} />
+  if (error) return <Error error={"Error loading tasks"} />
   if (!tasks.length) {
     return <EmptyState message="No tasks yet" />
   }
