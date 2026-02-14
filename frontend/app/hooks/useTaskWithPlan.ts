@@ -20,7 +20,7 @@ export function useTaskWithPlan(taskId?: string) {
 
     Promise.all([
       apiGet(`/tasks/${taskId}`),
-      apiGet(`/plans?taskId=${taskId}`).catch(() => null),
+      apiGet(`/tasks/${taskId}/plan`).catch(() => null),
     ])
       .then(([taskData, planData]: [TaskModel, PlanModel | null]) => {
         setTask(taskData)

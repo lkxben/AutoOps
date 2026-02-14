@@ -19,12 +19,15 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     const newErrors: typeof errors = {}
 
     if (!name.trim()) newErrors.name = 'Name is required'
+    else if (name.trim().length < 3) newErrors.name = 'Name must be at least 3 characters'
 
     if (!username.trim()) newErrors.username = 'Username is required'
-    else if (username.length < 3) newErrors.username = 'Username must be at least 3 characters'
+    else if (username.trim().length < 3) newErrors.username = 'Username must be at least 3 characters'
 
     if (!password.trim()) newErrors.password = 'Password is required'
     else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password))
+      newErrors.password = 'Password must contain at least one special character'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0

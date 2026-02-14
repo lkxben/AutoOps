@@ -45,10 +45,36 @@ public class ScheduleRunner
 
         foreach (var schedule in schedules)
         {
-            var cron = CrontabSchedule.Parse(schedule.CronEx);
-            var tz = TZConvert.GetTimeZoneInfo(schedule.Timezone);
+            CrontabSchedule cron;
+            TimeZoneInfo tz;
+
+            try
+            {
+                cron = CrontabSchedule.Parse(schedule.CronEx);
+            }
+            catch
+            {
+                _logger.LogError("Invalid cron expression for Schedule {ScheduleId}: {CronEx}", schedule.Id, schedule.CronEx);
+                continue;
+            }
+
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(schedule.Timezone);
+            }
+            catch
+            {
+                _logger.LogError("Invalid timezone for Schedule {ScheduleId}: {Timezone}", schedule.Id, schedule.Timezone);
+                continue;
+            }
 
             var nowLocal = TimeZoneInfo.ConvertTime(now, tz);
+
+            if (schedule.Id == Guid.Empty || schedule.TaskId == Guid.Empty || schedule.UserId == Guid.Empty)
+            {
+                _logger.LogError("Invalid IDs for Schedule {ScheduleId}", schedule.Id);
+                continue;
+            }
 
             var isTooLate = schedule.NextRunAt < now - maxDelay;
 
@@ -68,9 +94,8 @@ public class ScheduleRunner
                     schedule.NextRunAt
                 );
             }
-            var baseTime = schedule.NextRunAt > now
-                ? TimeZoneInfo.ConvertTime(schedule.NextRunAt, tz)
-                : nowLocal;
+            var nextLocalBase = TimeZoneInfo.ConvertTime(schedule.NextRunAt, tz);
+            var baseTime = nextLocalBase > nowLocal ? nextLocalBase : nowLocal;
 
             var nextLocal = cron.GetNextOccurrence(baseTime);
             var nextUtc = TimeZoneInfo.ConvertTimeToUtc(nextLocal, tz);
