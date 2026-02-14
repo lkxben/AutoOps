@@ -77,7 +77,7 @@ builder.Services.AddAuthentication(options =>
         OnMessageReceived = context =>
         {
             context.Token = context.Request.Cookies["auth"];
-            return Task.CompletedTask;
+            return Task.CompletedTask; 
         },
         OnChallenge = context =>
         {
@@ -141,12 +141,6 @@ builder.Services.AddGrpcClient<ScheduleSvc.ScheduleSvcClient>(o =>
 var app = builder.Build();
 
 app.UseCors();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 app.UseAuthentication();
 app.UseAuthorization(); 
@@ -230,7 +224,7 @@ app.MapPost("/register", async (RegisterDto registerDto, Auth.AuthClient authCli
             response.User.Name
         )
     );
-});
+}).AddEndpointFilter<ValidationFilter<RegisterDto>>();
 
 app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient, HttpContext context) =>
 {
@@ -259,7 +253,7 @@ app.MapPost("/login", async (LoginDto loginDto, Auth.AuthClient authClient, Http
             response.User.Name
         )
     );
-});
+}).AddEndpointFilter<ValidationFilter<LoginDto>>();
 
 app.MapPost("/logout", (HttpContext context) =>
 {
@@ -292,18 +286,15 @@ app.MapGet("/tasks", async (HttpContext context, WorkflowTaskSvc.WorkflowTaskSvc
     return Results.Ok(tasksDto);
 }).RequireAuthorization();
 
-app.MapGet("/tasks/{id}/runs", async (string id, HttpContext context, RunSvc.RunSvcClient runClient, bool latest = false) =>
+app.MapGet("/tasks/{id}/runs", async (Guid id, HttpContext context, RunSvc.RunSvcClient runClient, bool latest = false) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    if (!Guid.TryParse(id, out var taskId))
-        return Results.BadRequest(new { error = "Invalid task ID" });
-
     var response = await runClient.GetTaskRunsAsync(new GetTaskRunsModel
     {
         UserId = userId,
-        TaskId = taskId.ToString(),
+        TaskId = id.ToString(),
         Latest = latest
     });
 
@@ -322,18 +313,15 @@ app.MapGet("/tasks/{id}/runs", async (string id, HttpContext context, RunSvc.Run
     return Results.Ok(runsDto);
 }).RequireAuthorization();
 
-app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+app.MapGet("/tasks/{id}/schedules", async (Guid id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    if (!Guid.TryParse(id, out var taskId))
-        return Results.BadRequest(new { error = "Invalid task ID" });
-
     var response = await scheduleClient.GetTaskSchedulesAsync(new GetTaskSchedulesModel
     {
         UserId = userId,
-        TaskId = taskId.ToString(),
+        TaskId = id.ToString(),
     });
 
     var schedulesDto = response.Schedules.Select(s => new ScheduleDto
@@ -348,6 +336,29 @@ app.MapGet("/tasks/{id}/schedules", async (string id, HttpContext context, IHttp
     ));
 
     return Results.Ok(schedulesDto);
+}).RequireAuthorization();
+
+app.MapGet("/tasks/{id}/plan", async (Guid id, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var plan = await wfpClient.GetPlanByTaskIdAsync(new GetPlanByTaskIdModel
+    {
+        UserId = userId,
+        TaskId = id.ToString()
+    });
+
+    if (plan is null)
+        return Results.NotFound();
+
+    return Results.Ok(new WorkflowPlanDto(
+        plan.Id,
+        plan.TaskId,
+        plan.Graph,
+        plan.CreatedAt.ToDateTime(),
+        plan.UpdatedAt?.ToDateTime()
+    ));
 }).RequireAuthorization();
 
 app.MapGet("/tasks/{id}", async (string id, HttpContext context, WorkflowTaskSvc.WorkflowTaskSvcClient wftClient) =>
@@ -389,30 +400,7 @@ app.MapPost("/tasks", async (CreateWorkflowTaskDto dto, HttpContext context, Wor
     });
 
     return Results.Ok(new IdDto(result.Id));
-}).RequireAuthorization();
-
-app.MapGet("/plans", async (string taskId, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
-{
-    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
-
-    var plan = await wfpClient.GetPlanByTaskIdAsync(new GetPlanByTaskIdModel
-    {
-        UserId = userId,
-        TaskId = taskId
-    });
-
-    if (plan is null)
-        return Results.NotFound();
-
-    return Results.Ok(new WorkflowPlanDto(
-        plan.Id,
-        plan.TaskId,
-        plan.Graph,
-        plan.CreatedAt.ToDateTime(),
-        plan.UpdatedAt?.ToDateTime()
-    ));
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<CreateWorkflowTaskDto>>();
 
 app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, WorkflowPlanSvc.WorkflowPlanSvcClient wfpClient) =>
 {
@@ -427,7 +415,7 @@ app.MapPut("/plans", async (CreateWorkflowPlanDto dto, HttpContext context, Work
     });
 
     return Results.Ok(new IdDto(result.Id));
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<CreateWorkflowPlanDto>>();
 
 app.MapPost("/runs", async (CreateRunDto dto, HttpContext context, RunSvc.RunSvcClient runClient) =>
 {
@@ -450,7 +438,7 @@ app.MapPost("/runs", async (CreateRunDto dto, HttpContext context, RunSvc.RunSvc
         result.CreatedAt.ToDateTime(),
         result.UpdatedAt?.ToDateTime()
     ));
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<CreateRunDto>>();
 
 app.MapGet("/runs", async (HttpContext context, RunSvc.RunSvcClient runClient) =>
 {
@@ -491,7 +479,7 @@ app.MapPost("/notifications/channels", async (AddChannelDto dto, HttpContext con
     };
     var resp = await client.PostAsJsonAsync($"{notifServiceUrl}/notifications/channels", payload);
     return resp.IsSuccessStatusCode ? Results.Created("", null) : Results.StatusCode((int)resp.StatusCode);
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<AddChannelDto>>();
 
 app.MapPut("/notifications/channels/{channel}", async (string channel, UpdateChannelDto dto, HttpContext context, IHttpClientFactory httpFactory) =>
 {
@@ -502,7 +490,7 @@ app.MapPut("/notifications/channels/{channel}", async (string channel, UpdateCha
     var payload = new { user_id = userId, address = dto.Address };
     var resp = await client.PutAsJsonAsync($"{notifServiceUrl}/notifications/channels/{channel}", payload);
     return resp.IsSuccessStatusCode ? Results.Ok() : Results.StatusCode((int)resp.StatusCode);
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<UpdateChannelDto>>();
 
 app.MapDelete("/notifications/channels/{channel}", async (string channel, HttpContext context, IHttpClientFactory httpFactory) =>
 {
@@ -558,19 +546,16 @@ app.MapPost("/schedules", async (CreateScheduleDto dto, HttpContext context, IHt
         result.NextRunAt?.ToDateTime(),
         result.LastRunAt?.ToDateTime()
     ));
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<CreateScheduleDto>>();
 
-app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+app.MapPatch("/schedules/{id}", async (Guid id, EditScheduleDto dto, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    if (!Guid.TryParse(id, out var scheduleId))
-        return Results.BadRequest(new { error = "Invalid schedule ID" });
-
     var result = await scheduleClient.EditScheduleAsync(new EditScheduleModel
     {
-        Id = scheduleId.ToString(),
+        Id = id.ToString(),
         UserId = userId,
         CronEx = dto.CronEx,
         Status = dto.Status
@@ -586,19 +571,16 @@ app.MapPatch("/schedules/{id}", async (string id, EditScheduleDto dto, HttpConte
         result.NextRunAt?.ToDateTime(),
         result.LastRunAt?.ToDateTime()
     ));
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter<EditScheduleDto>>();
 
-app.MapDelete("/schedules/{id}", async (string id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
+app.MapDelete("/schedules/{id}", async (Guid id, HttpContext context, IHttpClientFactory httpFactory, ScheduleSvc.ScheduleSvcClient scheduleClient) =>
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    if (!Guid.TryParse(id, out var scheduleId))
-        return Results.BadRequest(new { error = "Invalid schedule ID" });
-
     var result = await scheduleClient.DeleteScheduleAsync(new DeleteScheduleModel
     {
-        Id = scheduleId.ToString(),
+        Id = id.ToString(),
         UserId = userId,
     });
 

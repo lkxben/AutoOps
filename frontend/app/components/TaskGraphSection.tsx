@@ -25,7 +25,7 @@ export default function TaskGraphSection({ taskId }: TaskGraphSectionProps) {
 
   useEffect(() => {
     setLoading(true)
-    apiGet(`/plans?taskId=${taskId}`)
+    apiGet(`/tasks/${taskId}/plan`)
       .then((plan) => {
         const parsedGraph = JSON.parse(plan.graph)
         const { nodes, edges } = parsedGraph

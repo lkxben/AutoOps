@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 namespace ApiGateway.Dtos;
 
-public record class CreateRunDto(
-    string TaskId
-);
+public record CreateRunDto
+{
+    [Required]
+    public string TaskId { get; init; } = default!;
+}
