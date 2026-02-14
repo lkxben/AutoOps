@@ -160,6 +160,9 @@ namespace SchedulerService.Protos
                 tz = TimeZoneInfo.Utc;
             }
 
+            if (!System.Enum.IsDefined(typeof(ScheduleStatus), request.Status))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid schedule status."));
+
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
             var nextLocal = cron.GetNextOccurrence(nowLocal);
             var nextUtc = TimeZoneInfo.ConvertTimeToUtc(nextLocal, tz);

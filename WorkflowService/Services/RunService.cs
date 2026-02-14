@@ -28,8 +28,14 @@ namespace WorkflowService.Protos
 
         public override async Task<RunModel> CreateRun(CreateRunModel request, ServerCallContext context)
         {
-            var task = await _db.WorkflowTasks.FirstOrDefaultAsync(t => t.Id == Guid.Parse(request.TaskId) 
-                && t.UserId == Guid.Parse(request.UserId));
+            if (!Guid.TryParse(request.TaskId, out var taskId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid taskId"));
+
+            if (!Guid.TryParse(request.UserId, out var userId))
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid userId"));
+
+            var task = await _db.WorkflowTasks.FirstOrDefaultAsync(t => t.Id == taskId
+                && t.UserId == userId);
             
             if (task == null)
             {
