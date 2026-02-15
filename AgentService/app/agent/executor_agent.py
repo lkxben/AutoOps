@@ -86,7 +86,7 @@ class ExecutorAgent:
         self.llm = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.0,
-            max_tokens=100
+            max_tokens=400
         )
 
     async def _async_init(self):

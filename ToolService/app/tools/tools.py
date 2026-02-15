@@ -1,46 +1,13 @@
 import httpx
+import re
+import json
+import math
+from typing import List, Dict, Any
 from ddgs import DDGS
 from bs4 import BeautifulSoup
 from readability import Document
-import re
-import json
 from langchain_core.messages import SystemMessage
 from langchain_groq import ChatGroq
-
-# arithmetic
-def add(a: int, b: int) -> int:
-    """Add two integers and return the result."""
-    return a + b
-
-
-def subtract(a: int, b: int) -> int:
-    """Subtract the second integer from the first integer."""
-    return a - b
-
-
-def multiply(a: int, b: int) -> int:
-    """Multiply two integers and return the product."""
-    return a * b
-
-
-def divide(a: int, b: int) -> float:
-    """Divide the first integer by the second integer. The second integer must not be zero."""
-    return a / b
-
-
-def modulo(a: int, b: int) -> int:
-    """Return the remainder when the first integer is divided by the second integer."""
-    return a % b
-
-
-def power(base: int, exponent: int) -> int:
-    """Raise the first integer to the power of the second integer."""
-    return base ** exponent
-
-
-def absolute(a: int) -> int:
-    """Return the absolute value of an integer."""
-    return abs(a)
 
 # web search
 def search_web(query: str, max_results: int = 5):
@@ -130,7 +97,8 @@ def chunk_text(text: str, chunk_size: int = 1500):
 
     return chunks
 
-async def research(task: str, question: str, max_sources: int = 3):
+# research
+async def research(task: str, question: str, max_sources: int = 5):
 
     llm = ChatGroq(
         model="llama-3.1-8b-instant",
@@ -279,3 +247,47 @@ Return ONLY valid JSON:
         "sources": [],
         "confidence": 0.2
     }
+
+# report generation
+def generate_report(research_results: List[Dict[str, Any]], title: str = "Research Report", max_findings: int = 5) -> str:
+    report_lines = [f"# {title}\n"]
+
+    if not research_results:
+        report_lines.append("No research results available.\n")
+        return "\n".join(report_lines)
+
+    for idx, res in enumerate(research_results[:max_findings], start=1):
+        answer = res.get("answer", "No answer")
+        sources = res.get("sources", [])
+        confidence = res.get("confidence", 0.0)
+
+        report_lines.append(f"## Finding {idx}")
+        report_lines.append(f"{answer}")
+
+        # Only include top 1-2 sources to save tokens
+        if sources:
+            report_lines.append("Sources:")
+            for src in sources[:2]:
+                report_lines.append(f"- {src}")
+
+    return "\n".join(report_lines)
+
+# computation
+def compute_expression(expression: str, variables: Dict[str, float] = None) -> Dict[str, Any]:
+    safe_globals = {
+        "__builtins__": {},
+        "abs": abs,
+        "round": round,
+        "min": min,
+        "max": max,
+        "pow": pow,
+        "math": math
+    }
+
+    safe_locals = variables.copy() if variables else {}
+
+    try:
+        result = eval(expression, safe_globals, safe_locals)
+        return {"result": result}
+    except Exception as e:
+        return {"error": str(e)}
