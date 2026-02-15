@@ -3,6 +3,9 @@ from ddgs import DDGS
 from bs4 import BeautifulSoup
 from readability import Document
 import re
+import json
+from langchain_core.messages import SystemMessage
+from langchain_groq import ChatGroq
 
 # arithmetic
 def add(a: int, b: int) -> int:
@@ -47,76 +50,102 @@ def search_web(query: str, max_results: int = 5):
         for result in ddg.text(query, max_results=max_results):
             results.append({
                 "title": result.get("title"),
-                "url": result.get("href")
+                "url": result.get("href"),
+                "snippet": result.get("body")
             })
     return results
 
-# web scrap
-def web_scrape_text(url: str, max_chars: int = 4000) -> str:
-    """
-    Fetch a webpage and extract its main readable text (no JS, no interaction).
-    Returns cleaned plain text. Returns None on errors.
-    """
+# fetch html
+def fetch_html(url: str, timeout: int = 10):
     headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/118.0.5993.90 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (compatible; ResearchBot/1.0)",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
     }
 
     try:
-        with httpx.Client(follow_redirects=True, timeout=10) as client:
+        with httpx.Client(follow_redirects=True, timeout=timeout) as client:
             resp = client.get(url, headers=headers)
-            resp.raise_for_status()
-            html = resp.text
-    except (httpx.RequestError, httpx.HTTPStatusError) as e:
-        print(f"[web_scrape_text] Failed to fetch {url}: {e}")
-        return None
-
-    try:
-        doc = Document(html)
-        main_html = doc.summary(html_partial=True)
-        soup = BeautifulSoup(main_html, "html.parser")
-
-        for tag in soup(["script", "style", "noscript", "svg"]):
-            tag.decompose()
-
-        for img in soup.find_all("img"):
-            if img.get("alt"):
-                img.replace_with(f"[Image: {img['alt']}]")
-            else:
-                img.decompose()
-
-        lines = [elem.get_text(strip=True) for elem in soup.find_all(["h1","h2","h3","p","li"]) if elem.get_text(strip=True)]
-        text = "\n".join(lines)
-        text = re.sub(r"\n{3,}", "\n\n", text)
-
-        title = doc.title()
-        if not title:
-            raw_soup = BeautifulSoup(html, "html.parser")
-            title = raw_soup.title.get_text(strip=True) if raw_soup.title else "No title"
-
-        output = f"Title: {title}\n\n{text}".strip()
-        if len(text.strip()) < 200:
-            return None
-
-        return output[:max_chars]
-
+            if resp.status_code >= 400:
+                print(f"[fetch_html] Bad status {resp.status_code} for {url}")
+                return None
+            return resp.text
     except Exception as e:
-        print(f"[web_scrape_text] Error parsing {url}: {e}")
+        print(f"[fetch_html] Failed {url}: {e}")
         return None
 
-import json
-from langchain_core.messages import SystemMessage
-from langchain_groq import ChatGroq
+# parse page
+def parse_page(html: str):
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Remove junk
+    for tag in soup(["script", "style", "noscript", "svg"]):
+        tag.decompose()
+
+    # Title
+    title = ""
+    if soup.title and soup.title.string:
+        title = soup.title.string.strip()
+
+    # Meta description
+    meta_description = ""
+    meta_tag = soup.find("meta", attrs={"name": "description"})
+    if meta_tag and meta_tag.get("content"):
+        meta_description = meta_tag["content"].strip()
+
+    # Extract visible text
+    text = "\n".join(soup.stripped_strings)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    # Extract JSON-LD structured data
+    json_ld = []
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(script.string)
+            json_ld.append(data)
+        except Exception:
+            continue
+
+    return {
+        "title": title,
+        "meta_description": meta_description,
+        "json_ld": json_ld,
+        "text": text
+    }
+
+# chunking
+def chunk_text(text: str, chunk_size: int = 1500):
+    paragraphs = text.split("\n")
+    chunks = []
+    current = ""
+
+    for p in paragraphs:
+        if len(current) + len(p) < chunk_size:
+            current += p + "\n"
+        else:
+            chunks.append(current.strip())
+            current = p + "\n"
+
+    if current:
+        chunks.append(current.strip())
+
+    return chunks
 
 async def research(task: str, question: str, max_sources: int = 3):
+
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",
+        temperature=0.0,
+        max_tokens=400
+    )
+
     def _invoke_json(prompt: str, max_attempts: int = 3):
         last_error = None
         last_output = None
+
         for _ in range(max_attempts):
             response = llm.invoke([SystemMessage(content=prompt)])
             raw = response.content
+
             try:
                 return json.loads(raw)
             except json.JSONDecodeError as e:
@@ -130,15 +159,13 @@ ERROR:
 {last_error}
 
 You MUST return valid JSON only.
+
 {prompt}
 """
         return None
-    
-    llm = ChatGroq(
-        model="llama-3.1-8b-instant",
-        temperature=0.0,
-        max_tokens=300
-    )
+
+
+    # Generate Search Query
 
     query_prompt = f"""
 You are generating a web search query.
@@ -149,34 +176,52 @@ Task:
 Question:
 {question}
 
-Generate a concise, factual search query suitable for a search engine.
+Return ONLY valid JSON:
 
-Return ONLY valid JSON in the format:
 {{
-  "query": "<search query>"
+  "query": "<concise search query>"
 }}
 """
     query_result = _invoke_json(query_prompt)
+
     if not query_result or "query" not in query_result:
-        return {"answer": "Failed to generate search query.", "sources": [], "confidence": 0.0}
+        return {
+            "answer": "Failed to generate search query.",
+            "sources": [],
+            "confidence": 0.0
+        }
 
     search_query = query_result["query"]
+    print(f"[Research] Query: {search_query}")
 
+    # Search
     results = search_web(search_query, max_results=max_sources)
-    sources_used = []
 
+    # Iterate Through Results
     for result in results:
         url = result.get("url")
         if not url:
             continue
 
-        text = web_scrape_text(url)
-        if not text:
-            print(f"[Research] Skipping {url} due to fetch/parse failure")
+        print(f"[Research] Fetching {url}")
+
+        html = fetch_html(url)
+        if not html:
             continue
 
-        suff_prompt = f"""
-You are evaluating whether an article contains enough factual information to directly answer a question.
+        parsed = parse_page(html)
+
+        if len(parsed["text"]) < 300:
+            print(f"[Research] Skipping low-content page {url}")
+            continue
+
+        chunks = chunk_text(parsed["text"])
+
+        # Check Sufficiency per Chunk
+        for chunk in chunks[:5]:  # limit chunk checks for efficiency
+
+            suff_prompt = f"""
+You are evaluating whether this text contains enough factual information to answer a question.
 
 Task:
 {task}
@@ -184,24 +229,25 @@ Task:
 Question:
 {question}
 
-Article Content:
-{text[:4000]}
+Text:
+{chunk}
 
-Return ONLY valid JSON in the format:
+Return ONLY valid JSON:
+
 {{
   "sufficient": true/false,
   "reason": "<short reason>",
   "confidence": 0.0-1.0
 }}
 """
-        sufficiency = _invoke_json(suff_prompt)
-        if not sufficiency:
-            continue
+            sufficiency = _invoke_json(suff_prompt)
+            if not sufficiency:
+                continue
 
-        if sufficiency.get("sufficient"):
-            # 5️⃣ Extract answer
-            extract_prompt = f"""
-You are extracting a precise factual answer.
+            if sufficiency.get("sufficient"):
+
+                extract_prompt = f"""
+Extract a precise factual answer.
 
 Task:
 {task}
@@ -209,24 +255,24 @@ Task:
 Question:
 {question}
 
-Article Content:
-{text[:4000]}
+Text:
+{chunk}
 
-Return ONLY valid JSON in the format:
+Return ONLY valid JSON:
+
 {{
   "answer": "<clear factual answer>"
 }}
 """
-            extracted = _invoke_json(extract_prompt)
-            if not extracted or "answer" not in extracted:
-                continue
+                extracted = _invoke_json(extract_prompt)
+                if not extracted or "answer" not in extracted:
+                    continue
 
-            sources_used.append(url)
-            return {
-                "answer": extracted["answer"],
-                "sources": sources_used,
-                "confidence": sufficiency.get("confidence", 0.7)
-            }
+                return {
+                    "answer": extracted["answer"],
+                    "sources": [url],
+                    "confidence": sufficiency.get("confidence", 0.7)
+                }
 
     return {
         "answer": "Insufficient reliable information found to answer the question.",
