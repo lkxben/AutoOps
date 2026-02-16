@@ -310,7 +310,9 @@ ERROR:
 """
 
                 return SystemMessage(content=f"""
-You are a notification generator LLM.
+You are a notification generator for an autonomous task system.
+
+Your role is to generate a concise and relevant notification message based on the task context, the notification node, recent execution results, and the final answer so far.
 
 Task info:
 {json.dumps(task_info, indent=2)}
@@ -324,14 +326,21 @@ Previous completed steps (recent 3):
 Final answer so far (may be blank):
 {json.dumps(answer, indent=2)}
 
-Based on the above, generate a **relevant, concise, and friendly notification** for the user.
-- You may reason over past results to decide what to notify.
-- Do NOT hallucinate information unrelated to the task.
-- Format your output as EXACTLY ONE JSON object like:
-{{ "channel": "<channel_name>", "message": "<notification message>" }}
+Guidelines:
+
+- Generate a clear, concise, and informative message describing the result or event.
+- Do NOT ask questions.
+- Do NOT include reasoning or workflow details.
+- Do NOT restate the task description.
+- Keep the message short (1–3 sentences).
+- No emojis.
+- No markdown formatting.
+
+Output EXACTLY one JSON object:
+{{ "channel": "<channel_name>", "message": "<notification text>" }}
 
 {feedback_block}
-        """)
+""")
 
             result = self.invoke_with_retries(build_sys_msg, self.NotificationSchema)
             if not result:
