@@ -9,17 +9,17 @@ AutoOps uses a microservices architecture with RabbitMQ for asynchronous communi
 ```
 Frontend (Next.js Dashboard)
         │
-Backend API Gateway (ASP.NET)
+Backend API Gateway (ASP.NET Core)
         │
-┌───────────────────────────────────────┐
-│ Auth Service     (ASP.NET)            │
-│ Agent Service    (FastAPI, LangGraph) │
-│ Tool Service     (FastAPI)            │
-│ Workflow Service (ASP.NET)            │
-│ Event Service    (ASP.NET, SignalR)   │
-│ Notification Service (FastAPI)        │
-│ Scheduler Service (ASP.NET, Hangfire) │
-└───────────────────────────────────────┘
+┌────────────────────────────────────────────┐
+│ Auth Service     (ASP.NET Core)            │
+│ Agent Service    (FastAPI, LangGraph)      │
+│ Tool Service     (FastAPI)                 │
+│ Workflow Service (ASP.NET Core)            │
+│ Event Service    (ASP.NET Core, SignalR)   │
+│ Notification Service (FastAPI)             │
+│ Scheduler Service (ASP.NET Core, Hangfire) │
+└────────────────────────────────────────────┘
         │
 Database (PostgreSQL)
 ```
@@ -32,7 +32,7 @@ Database (PostgreSQL)
 - **WebSockets (SignalR)** – Live updates from backend events. The dashboard can remain open and will automatically update with task progress, notifications, and results in real time.
 
 ### Backend
-- **ASP.NET (C#)** – API Gateway, Auth Service, Workflow Service, Scheduler Service, Event Service
+- **ASP.NET Core (C#)** – API Gateway, Auth Service, Workflow Service, Scheduler Service, Event Service
 - **FastAPI (Python)** – Agent Service (reasoning and planning), Tool Service (high-level tools), Notification Service
 - **RabbitMQ / MassTransit** – Asynchronous communication between services
 - **PostgreSQL** – Persistent storage
