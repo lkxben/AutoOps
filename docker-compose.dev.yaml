@@ -112,6 +112,7 @@ services:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TOOL_CALL_EXCHANGE: "tool-call"
       TOOL_RESULT_EXCHANGE: "tool-result"
+      GROQ_API_KEY: "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"
     depends_on:
       rabbitmq:
         condition: service_healthy

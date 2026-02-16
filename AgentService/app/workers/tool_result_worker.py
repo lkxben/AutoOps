@@ -6,6 +6,7 @@ from collections import defaultdict
 from app.agent.executor_agent import ExecutorAgent
 from app.config import settings
 from app.agent.mcp import MCPResponse
+from app.agent.agent_helper import publish_error
 
 agent = None
 thread_locks = defaultdict(lambda: asyncio.Lock())
@@ -33,6 +34,8 @@ async def handle_tool_result(payload: dict):
 
     tool_result = mcp_response.output
     context = mcp_response.context
+    if event_type == "error":
+        publish_error(context, "Tool call failed")
 
     logger.info(f"[ToolResultWorker] Continuing run {context['run_id']} after tool call with result {tool_result}")
 

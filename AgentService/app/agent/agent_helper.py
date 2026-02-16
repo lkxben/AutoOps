@@ -17,44 +17,9 @@ plan_draft_publisher = PlanDraftPublisher()
 notif_pub = NotifCallPublisher()
 
 tool_registry = {
-    "add": {
-        "description": "Add two integers and return the result.",
-        "inputs": ["a", "b"]
-    },
-    "subtract": {
-        "description": "Subtract the second integer from the first integer.",
-        "inputs": ["a", "b"]
-    },
-    "multiply": {
-        "description": "Multiply two integers and return the product.",
-        "inputs": ["a", "b"]
-    },
-    "divide": {
-        "description": "Divide the first integer by the second integer and return the result. The second integer must not be zero.",
-        "inputs": ["a", "b"]
-    },
-    "modulo": {
-        "description": "Return the remainder when the first integer is divided by the second integer.",
-        "inputs": ["a", "b"]
-    },
-    "power": {
-        "description": "Raise the first integer to the power of the second integer.",
-        "inputs": ["base", "exponent"]
-    },
-    "absolute": {
-        "description": "Return the absolute value of an integer.",
-        "inputs": ["a"]
-    },
-    "search_web": {
-        "description": "Search the web for the given query and return a list of urls.",
-        "inputs": ["query", "max_results"]
-    },
-    "web_scrape_text": {
-        "description": """
-Fetch a webpage and extract its main readable text (no JS, no interaction).
-Use after web_search when a relevant URL is known.
-Returns cleaned plain text.""",
-        "inputs": ["url"]
+    "research": {
+        "description": "Perform bounded web research using LLM to generate search query, parse articles, and extract answer with sources.",
+        "inputs": ["task", "question"],
     },
     "send_notification": {
         "description": "Send a notification to the user via a specified channel such as telegram or email.",
@@ -63,6 +28,21 @@ Returns cleaned plain text.""",
     "generate_final_answer": {
         "description": "Generate the final result based on past execution. Do NOT produce results yourself or include any previous outputs. This tool does not require any inputs.",
         "inputs": []
+    },
+    "compute_expression": {
+        "description": (
+            "Evaluate a mathematical expression safely using Python operators and the math library. "
+            "Supports variables passed in a dictionary. Example: 'sqrt(x**2 + y**2)' with variables={'x': 3, 'y': 4}."
+        ),
+        "inputs": ["expression", "variables"]
+    },
+    "generate_report": {
+        "description": (
+            "Generate a structured report from a list of research results. "
+            "Each research result should contain 'answer', 'sources', and 'confidence'. "
+            "Returns a Markdown-formatted report that can be displayed or sent."
+        ),
+        "inputs": ["research_results", "title"]
     }
 }
 
@@ -112,13 +92,13 @@ async def publish_result(context: dict, result: str):
     }
     await event_publisher.publish(payload)
 
-async def publish_error(context: dict):
+async def publish_error(context: dict, description: str):
     payload = {
         "run_id": context["run_id"],
         "user_id": context["task"]["user_id"],
         "task_id": context["task"]["task_id"],
         "status": 3,
-        "description": "LLM failed to call tool"
+        "description": description
     }
     await event_publisher.publish(payload)
 

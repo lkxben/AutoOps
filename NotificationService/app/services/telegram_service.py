@@ -30,9 +30,9 @@ async def send_telegram_message(result: str, context: dict):
     chat_id = row["address"]
 
     text = (
-        f"Run {run_id} of Task Completed\n\n"
+        f"Notification for Run {run_id} of Task\n\n"
         f"Title: {title}\n"
-        f"\nResult:\n{result}"
+        f"\n{result}"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -42,7 +42,6 @@ async def send_telegram_message(result: str, context: dict):
             json={
                 "chat_id": chat_id,
                 "text": text,
-                "parse_mode": "Markdown"
             }
         ) as resp:
             if resp.status != 200:

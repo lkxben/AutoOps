@@ -9,3 +9,5 @@ ddgs
 beautifulsoup4
 readability-lxml
 lxml
+langchain_groq
+langchain-core
