@@ -42,7 +42,6 @@ async def send_telegram_message(result: str, context: dict):
             json={
                 "chat_id": chat_id,
                 "text": text,
-                "parse_mode": "Markdown"
             }
         ) as resp:
             if resp.status != 200:

@@ -208,7 +208,7 @@ Available tools:
                 return {"messages": [AIMessage(content=tool_call_result.json())], "notify": True }
 
             if not tool_call_result:
-                safe_create_task(publish_error(state["context"]))
+                safe_create_task(publish_error(state["context"]), "LLM failed to call tools")
                 return {}
                 
             return {"messages": [AIMessage(content=tool_call_result.json())]}
@@ -272,7 +272,7 @@ Schema:
             )
 
             if not result:
-                safe_create_task(publish_error(state["context"]))
+                safe_create_task(publish_error(state["context"], "LLM failed to generate final answer"))
                 return {}
 
             current_node = state["current_node"] 
@@ -335,7 +335,7 @@ Based on the above, generate a **relevant, concise, and friendly notification** 
 
             result = self.invoke_with_retries(build_sys_msg, self.NotificationSchema)
             if not result:
-                safe_create_task(publish_error(state["context"]))
+                safe_create_task(publish_error(state["context"], "LLM failed to generate notification"))
                 return {}
             safe_create_task(publish_notification(state["context"], result.channel, result.message))
 
