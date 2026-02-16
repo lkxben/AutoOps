@@ -7,7 +7,7 @@ AutoOps is an autonomous agent platform with a web dashboard, orchestration back
 AutoOps uses a microservices architecture with RabbitMQ for asynchronous communication:
 
 ```
-Frontend (React Dashboard)
+Frontend (Next.js Dashboard)
         │
 Backend API Gateway (ASP.NET)
         │
@@ -27,7 +27,7 @@ Database (PostgreSQL)
 ## Tech Stack
 
 ### Frontend
-- **React** – Dashboard and user interface
+- **Next.js** – Dashboard and user interface
 - **TailwindCSS** – Styling and component library
 - **WebSockets (SignalR)** – Live updates from backend events. The dashboard can remain open and will automatically update with task progress, notifications, and results in real time.
 
