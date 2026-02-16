@@ -5,7 +5,6 @@ class Settings(BaseSettings):
 
     NOTIF_CALL_EXCHANGE: str = "notif-call"
     TELEGRAM_BOT_TOKEN: str = ""
-    TELEGRAM_CHAT_ID: str = ""
     NOTIF_DB: str = "postgresql://postgres:password@localhost:6503/AutoOpsNotif"
 
 settings = Settings()

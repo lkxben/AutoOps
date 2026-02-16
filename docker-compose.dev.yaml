@@ -93,7 +93,7 @@ services:
       RUN_UPDATED_EXCHANGE: "run-updates"
       PLAN_DRAFT_EXCHANGE: "plan-draft"
       AGENT_DB: "host=postgres-auto port=5432 dbname=AutoOps user=postgres password=password"
-      GROQ_API_KEY: "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"
+      GROQ_API_KEY: ${GROQ_API_KEY}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -112,7 +112,7 @@ services:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TOOL_CALL_EXCHANGE: "tool-call"
       TOOL_RESULT_EXCHANGE: "tool-result"
-      GROQ_API_KEY: "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"
+      GROQ_API_KEY: ${GROQ_API_KEY}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -128,7 +128,6 @@ services:
     environment:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
       NOTIF_DB: "postgresql://postgres:password@postgres-auto:5432/AutoOps"
     depends_on:
       rabbitmq:

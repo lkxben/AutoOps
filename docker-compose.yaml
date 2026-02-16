@@ -84,7 +84,7 @@ services:
       TASK_UPDATED_EXCHANGE: "task-updates"
       PLAN_DRAFT_EXCHANGE: "plan-draft"
       AGENT_DB: "host=postgres-auto port=5432 dbname=AutoOps user=postgres password=password"
-      GROQ_API_KEY: "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"
+      GROQ_API_KEY: ${GROQ_API_KEY}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -100,6 +100,7 @@ services:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TOOL_CALL_EXCHANGE: "tool-call"
       TOOL_RESULT_EXCHANGE: "tool-result"
+      GROQ_API_KEY: ${GROQ_API_KEY}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -112,10 +113,29 @@ services:
     environment:
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
       NOTIF_DB: "postgresql://postgres:password@postgres-auto:5432/AutoOps"
     depends_on:
       rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+
+  scheduler-service:
+    build:
+      context: .
+      dockerfile: SchedulerService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Grpc__Port: 5007
+      ConnectionStrings__SchedulerServiceDb: "Host=postgres-auto;Port=5432;Database=AutoOps;Username=postgres;Password=password"
+      RabbitMQSettings__Host: rabbitmq
+      RabbitMQSettings__Port: 5672
+      RabbitMQSettings__Username: guest
+      RabbitMQSettings__Password: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-auto:
         condition: service_healthy
     networks:
       - backend
@@ -134,18 +154,21 @@ services:
       Jwt__ExpiryMinutes: 180
       Grpc__AuthService: "http://auth-service:5002"
       Grpc__WorkflowService: "http://workflow-service:5003"
+      Grpc__SchedulerService: "http://scheduler-service:5007"
       NotifServiceUrl: "http://notification-service:8000"
     ports:
       - "5001:5001"
     depends_on:
       - auth-service
       - workflow-service
+      - scheduler-service
     networks:
       - backend
 
   event-service:
     build:
-      context: ./EventService
+      context: .
+      dockerfile: EventService/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Frontend__Prod: '^https://auto-ops-theta\.vercel\.app$'
